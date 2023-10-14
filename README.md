@@ -1,12 +1,12 @@
 # Stargate-beyond-the-universe
 
-Description du Projet :
+#Description du Projet :
 Suite a la perte de nombreux fichier du jeux source j’ai décidé de recréer le jeu avec un nouveau moteur, nouvelle feature, contenu ... 
 Mais également plus optimiser, en effet le jeu originellement manquait cruellement de contenu et d’optimisation.
 
 
 
-Description du Jeu
+#Description du Jeu :
 Le jeu prend place à bord du Destiny car son contexte de survit est très propice au gameplay survivaliste du jeu.
 Le jeux se pilote a partir de ligne de commande que l’utilisateur va devoir rentrez pour Controller les différents système du vaisseau. 
 Il sera guider par des interface pour lui donné des conseil sur sa position, sur les systèmes opérations, les dommage subit …

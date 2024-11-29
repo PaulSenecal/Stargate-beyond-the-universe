@@ -26,7 +26,7 @@ tout doit être trouvé et réparé. Comme si cela ne suffisait pas, il semblera
 même aux confins de l’univers. Ces jeunes Terriens devront faire face à de nombreux dangers tout en étant perdus dans les profondeurs de l’univers.
 
 ## Organisation des fichiers
-ProjectRoot/
+ProjectRoot/  
 ├── CMakeLists.txt                  # Fichier de configuration principal  
 │  
 ├── src/                            # Code source principal  

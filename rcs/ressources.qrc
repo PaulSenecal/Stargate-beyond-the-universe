@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/Background">
+        <file>destinyPlan.jpg</file>
+    </qresource>
+</RCC>

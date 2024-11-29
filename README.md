@@ -27,18 +27,18 @@ même aux confins de l’univers. Ces jeunes Terriens devront faire face à de n
 
 ## Organisation des fichiers
 ProjectRoot/
-├── CMakeLists.txt                  # Fichier de configuration principal
-│
-├── src/                            # Code source principal
-│   ├── main.cpp
-│   ├── game.h                      # Classe principale du jeu
-│   ├── game.cpp
-│   │
-│   ├── core/                       # Composants fondamentaux
-│   │   ├── gamestate.h            # Gestion des états du jeu
-│   │   ├── gamestate.cpp
-│   │   ├── settings.h             # Gestionnaire de configuration
-│   │   └── settings.cpp
+├── CMakeLists.txt                  # Fichier de configuration principal  
+│  
+├── src/                            # Code source principal  
+│   ├── main.cpp  
+│   ├── game.h                      # Classe principale du jeu  
+│   ├── game.cpp  
+│   │  
+│   ├── core/                       # Composants fondamentaux  
+│   │   ├── gamestate.h            # Gestion des états du jeu  
+│   │   ├── gamestate.cpp  
+│   │   ├── settings.h             # Gestionnaire de configuration  
+│   │   └── settings.cpp  
 │   │
 │   │
 │   ├── ui/                        # Interfaces utilisateur

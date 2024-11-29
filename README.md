@@ -39,80 +39,79 @@ ProjectRoot/
 │   │   ├── gamestate.cpp  
 │   │   ├── settings.h             # Gestionnaire de configuration  
 │   │   └── settings.cpp  
-│   │
-│   │
-│   ├── ui/                        # Interfaces utilisateur
-│   │   ├── menus/                 # Menus du jeu
-│   │   │   ├── mainmenu.h
-│   │   │   ├── mainmenu.cpp
-│   │   │   ├── mainmenu.ui
-│   │   │   ├── settings/
-│   │   │   │   ├── settingsmenu.h
-│   │   │   │   ├── settingsmenu.cpp
-│   │   │   │   └── settingsmenu.ui
-│   │   │   ├── pause/
-│   │   │   │    ├── pausemenu.h
-│   │   │   │    ├── pausemenu.cpp
-│   │   │   │    └── pausemenu.ui
-│   │   │   ├──battle/                # Scène de bataille
-│   │   │   │     ├── battlescene.h
-│   │   │   │     ├── battlescene.cpp
-│   │   │   │     └── battlescene.ui
-│   │   │   └──Arena/                # Scène de bataille
-│   │   │        ├── arenascene.h
-│   │   │        ├── arenascene.cpp
-│   │   │        └── arenascene.ui            
-│   │   └── hud/                   # Éléments d'interface en jeu
-│   │       ├── gameinfo.h
-│   │       └── gameinfo.cpp
-│   │
-│   ├── entities/                  # Entités du jeu
-│   │   ├── entity.h              # Classe de base pour les entités
-│   │   ├── entity.cpp
-│   │   ├── ships/                # Vaisseaux
-│   │   │   ├── ship.h           # Classe de base pour les vaisseaux
-│   │   │   ├── ship.cpp
-│   │   │   ├── playership.h
-│   │   │   └── playership.cpp
-│   │   └── players/              # Joueurs
-│   │       ├── player.h
-│   │       └── player.cpp
-│   │
-│   ├── physics/                   # Moteur physique
-│   │   ├── physicengine.h
-│   │   ├── physicengine.cpp
-│   │   ├── collisions/
-│   │   │   ├── collisiondetector.h
-│   │   │   └── collisiondetector.cpp
-│   │   └── movements/
-│   │       ├── movement.h
-│   │       └── movement.cpp
-│   │
-│   └── utils/                     # Utilitaires
-│       ├── logger.h              # Système de logging
-│       ├── logger.cpp
-│       ├── config.h             # Configuration
-│       └── config.cpp
-│
-├── resources/                     # Ressources du jeu
-│   ├── images/
-│   │   ├── sprites/
-│   │   ├── backgrounds/
-│   │   └── ui/
-│   ├── audio/
-│   │   ├── music/
-│   │   └── sfx/
-│   ├── videos/
-│   ├── fonts/
-│   └── translations/             # Fichiers de traduction
-│
-├── tests/                        # Tests unitaires
-│   ├── CMakeLists.txt
-│   ├── test_physics.cpp
-│   └── test_entities.cpp
-│
-└── docs/                         # Documentation
-    ├── api/
-    ├── design/
-    └── README.md
-Last edited il y a 5 minutes
+│   │  
+│   │  
+│   ├── ui/                        # Interfaces utilisateur  
+│   │   ├── menus/                 # Menus du jeu  
+│   │   │   ├── mainmenu.h  
+│   │   │   ├── mainmenu.cpp  
+│   │   │   ├── mainmenu.ui  
+│   │   │   ├── settings/  
+│   │   │   │   ├── settingsmenu.h  
+│   │   │   │   ├── settingsmenu.cpp  
+│   │   │   │   └── settingsmenu.ui  
+│   │   │   ├── pause/  
+│   │   │   │    ├── pausemenu.h  
+│   │   │   │    ├── pausemenu.cpp  
+│   │   │   │    └── pausemenu.ui  
+│   │   │   ├──battle/                # Scène de bataille  
+│   │   │   │     ├── battlescene.h  
+│   │   │   │     ├── battlescene.cpp  
+│   │   │   │     └── battlescene.ui  
+│   │   │   └──Arena/                # Scène de bataille  
+│   │   │        ├── arenascene.h  
+│   │   │        ├── arenascene.cpp  
+│   │   │        └── arenascene.ui              
+│   │   └── hud/                   # Éléments d'interface en jeu  
+│   │       ├── gameinfo.h  
+│   │       └── gameinfo.cpp  
+│   │  
+│   ├── entities/                  # Entités du jeu  
+│   │   ├── entity.h              # Classe de base pour les entités  
+│   │   ├── entity.cpp  
+│   │   ├── ships/                # Vaisseaux  
+│   │   │   ├── ship.h           # Classe de base pour les vaisseaux  
+│   │   │   ├── ship.cpp  
+│   │   │   ├── playership.h  
+│   │   │   └── playership.cpp  
+│   │   └── players/              # Joueurs  
+│   │       ├── player.h  
+│   │       └── player.cpp  
+│   │  
+│   ├── physics/                   # Moteur physique  
+│   │   ├── physicengine.h  
+│   │   ├── physicengine.cpp  
+│   │   ├── collisions/  
+│   │   │   ├── collisiondetector.h  
+│   │   │   └── collisiondetector.cpp  
+│   │   └── movements/  
+│   │       ├── movement.h  
+│   │       └── movement.cpp  
+│   │  
+│   └── utils/                     # Utilitaires  
+│       ├── logger.h              # Système de logging  
+│       ├── logger.cpp  
+│       ├── config.h             # Configuration  
+│       └── config.cpp  
+│  
+├── resources/                     # Ressources du jeu  
+│   ├── images/  
+│   │   ├── sprites/  
+│   │   ├── backgrounds/  
+│   │   └── ui/  
+│   ├── audio/  
+│   │   ├── music/  
+│   │   └── sfx/  
+│   ├── videos/  
+│   ├── fonts/  
+│   └── translations/             # Fichiers de traduction 
+│  
+├── tests/                        # Tests unitaires  
+│   ├── CMakeLists.txt  
+│   ├── test_physics.cpp  
+│   └── test_entities.cpp  
+│  
+└── docs/                         # Documentation   
+    ├── api/  
+    ├── design/  
+    └── README.md  

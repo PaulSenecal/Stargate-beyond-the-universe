@@ -6,7 +6,12 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //menuBackground();
+    Logger::getInstance().setLogFile("application.log");
+    LOG_INFO("Application démarrée");
+    LOG_DEBUG("Valeur de la variable x: 42");
+    LOG_WARNING("Attention, espace disque faible");
+    LOG_ERROR("Erreur lors de la connexion à la base de données");
+    LOG_CRITICAL("Erreur critique: arrêt de l'application");
 
 }
 
@@ -22,25 +27,6 @@ void MainWindow::on_pushButton_clicked()
     // close();
 }
 
-
-void MainWindow::menuBackground()
-{
-    // Créer un QLabel pour l'image
-    QLabel *backGroundLabel = new QLabel(this);
-    QPixmap image(":/images/background/destinyPlan.jpg");
-
-    // Configurer le QLabel pour qu'il s'adapte à la taille du widget
-    backGroundLabel->setPixmap(image);
-    backGroundLabel->setScaledContents(true); // Permet de redimensionner l'image au QLabel
-    backGroundLabel->setAlignment(Qt::AlignCenter); // Alignement central
-
-    // S'assurer que le QLabel prend toute la place
-    backGroundLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    // Ajouter le QLabel au layout central
-    backGroundLabel->setScaledContents(true);
-    backGroundLabel->setGeometry(0,0,1920,1080);
-}
 
 void MainWindow::on_campaignButton_clicked()
 {

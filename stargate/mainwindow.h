@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "src/Menu/campaign/campaign.h"
 #include <QMessageBox>
+#include "src/utils/logger.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -18,7 +19,6 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void menuBackground();
 
 private slots:
     void on_pushButton_clicked();

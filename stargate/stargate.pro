@@ -13,12 +13,14 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     src/Menu/campaign/campaign.cpp \
-    src/core/commandmanager.cpp
+    src/core/commandmanager.cpp \
+    src/utils/logger.cpp
 
 HEADERS += \
     mainwindow.h \
     src/Menu/campaign/campaign.h \
-    src/core/commandmanager.h
+    src/core/commandmanager.h \
+    src/utils/logger.h
 
 FORMS += \
     mainwindow.ui \

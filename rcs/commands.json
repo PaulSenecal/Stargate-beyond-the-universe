@@ -1,0 +1,139 @@
+{
+    "commands": {
+      "combat": {
+        "name": "Combat",
+        "subcommands": {
+          "scan": {
+            "name": "Scan",
+            "params": ["target"]
+          },
+          "attack": {
+            "name": "Attack",
+            "params": ["x"]
+          },
+          "disable_weapon": {
+            "name": "disable",
+            "params": ["weapon"]
+          },
+          "activate_weapon": {
+            "name": "activate",
+            "params": ["weapon"]
+          },
+          "activate": {
+            "name": "activate",
+            "params": []
+          },
+          "main_tower": {
+            "name": "maintower",
+            "params": []
+          },
+          "pulse_weapon": {
+            "name": "pulseweapon",
+            "defaultValue": "all"
+          },
+          "secondary_tower": {
+            "name": "secondarytower",
+            "params": []
+          },
+          "send_team": {
+            "name": "Sendteamto",
+            "params": ["sector"]
+          },
+          "weapon_status": {
+            "name": "Weaponstatus",
+            "params": []
+          },
+          "destiny_status": {
+            "name": "Destinystatus",
+            "params": []
+          },
+          "deploy_shuttle": {
+            "name": "deployeshuttle",
+            "params": ["namevessel"]
+          },
+          "shield": {
+            "name": "shield",
+            "params": ["status"]
+          },
+          "patrol": {
+            "name": "patrol",
+            "params": ["a", "b"]
+          },
+          "hold_position": {
+            "name": "holdposition",
+            "params": ["x"]
+          }
+        }
+      },
+      "movement": {
+        "name": "Movement",
+        "subcommands": {
+          "move_to": {
+            "name": "Moveto",
+            "params": ["x", "y"]
+          },
+          "scan_position": {
+            "name": "Scan",
+            "params": ["x"]
+          },
+          "scan_sector": {
+            "name": "Scansector",
+            "params": []
+          },
+          "engine": {
+            "name": "Engine",
+            "modes": ["FTL", "Conventional"]
+          },
+          "deploy_shuttle": {
+            "name": "deployeshuttle",
+            "params": ["planetname"]
+          },
+          "show_resources": {
+            "name": "showressource",
+            "params": []
+          },
+          "explore": {
+            "name": "explore",
+            "params": []
+          }
+        }
+      },
+      "gestion": {
+        "name": "gestion",
+        "subcommands": {
+          "close_door": {
+            "name": "Close door",
+            "params": ["x"]
+          },
+          "repair": {
+            "name": "Repair",
+            "params": ["x"]
+          },
+          "sector_derivate_energy": {
+            "name": "Sectordereivateenegy",
+            "params": ["a", "b"]
+          },
+          "switch_off": {
+            "name": "Switchoff",
+            "params": ["x"]
+          },
+          "switch_on": {
+            "name": "Switchon",
+            "params": ["x"]
+          },
+          "depressure_sector": {
+            "name": "Depressuresector",
+            "params": ["x"]
+          },
+          "stargate": {
+            "name": "Stargate",
+            "params": ["xxxxxxx"]
+          },
+          "send_vessel": {
+            "name": "Sendvessel",
+            "params": ["name"]
+          }
+        }
+      }
+    }
+  }

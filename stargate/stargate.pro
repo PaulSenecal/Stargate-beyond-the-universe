@@ -1,4 +1,5 @@
 QT       += core gui
+QT += widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -10,13 +11,18 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    src/Menu/campaign/campaign.cpp \
+    src/core/commandmanager.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    src/Menu/campaign/campaign.h \
+    src/core/commandmanager.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    src/Menu/campaign/campaign.ui
 
 TRANSLATIONS += \
     stargate_fr_FR.ts

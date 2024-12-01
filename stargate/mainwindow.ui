@@ -14,34 +14,163 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="buttonCommandLine">
+   <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>370</x>
-      <y>150</y>
-      <width>241</width>
-      <height>151</height>
+      <x>-100</x>
+      <y>-20</y>
+      <width>1920</width>
+      <height>1080</height>
      </rect>
     </property>
     <property name="text">
-     <string>Campaign</string>
+     <string/>
     </property>
-    <property name="shortcut">
-     <string>Return</string>
+    <property name="pixmap">
+     <pixmap resource="../rcs/ressources.qrc">:/images/background/destinyPlan.jpg</pixmap>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>300</x>
-      <y>380</y>
-      <width>421</width>
-      <height>301</height>
+      <x>460</x>
+      <y>90</y>
+      <width>651</width>
+      <height>1821</height>
      </rect>
     </property>
-    <property name="text">
-     <string>quit</string>
+    <property name="title">
+     <string/>
     </property>
+    <widget class="QPushButton" name="campaignButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>50</y>
+       <width>320</width>
+       <height>80</height>
+      </rect>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>20</pointsize>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #E1E1E1;
+color:black;</string>
+     </property>
+     <property name="text">
+      <string>CAMPAIGN</string>
+     </property>
+     <property name="shortcut">
+      <string>Return</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="arenaButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>180</y>
+       <width>320</width>
+       <height>80</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>20</pointsize>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #E1E1E1;
+color:black;</string>
+     </property>
+     <property name="text">
+      <string>Arena</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="battleButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>310</y>
+       <width>320</width>
+       <height>80</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>20</pointsize>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #E1E1E1;
+color:black;</string>
+     </property>
+     <property name="text">
+      <string>Battle</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="optionButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>440</y>
+       <width>320</width>
+       <height>80</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>20</pointsize>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #E1E1E1;
+color:black;</string>
+     </property>
+     <property name="text">
+      <string>Option</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>570</y>
+       <width>320</width>
+       <height>80</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>20</pointsize>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #E1E1E1;
+color:black;</string>
+     </property>
+     <property name="text">
+      <string>EXIT</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -55,6 +184,8 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../rcs/ressources.qrc"/>
+ </resources>
  <connections/>
 </ui>

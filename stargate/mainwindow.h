@@ -18,13 +18,14 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    void menuBackground();
 
 private slots:
-    void on_buttonCommandLine_clicked();
-
     void on_pushButton_clicked();
+    void on_campaignButton_clicked();
 
 private:
     Ui::MainWindow *ui;
+
 };
 #endif // MAINWINDOW_H

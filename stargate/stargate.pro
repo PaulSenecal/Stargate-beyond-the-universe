@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui sql network
 QT += widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -13,12 +13,24 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     src/Menu/campaign/campaign.cpp \
-    src/core/commandmanager.cpp
+    src/core/commandmanager.cpp \
+    src/db/databasemanager.cpp \
+    src/db/repositories/characterrepository.cpp \
+    src/db/repositories/componentrepository.cpp \
+    src/db/repositories/resourcerepository.cpp \
+    src/db/repositories/shiprepository.cpp \
+    src/db/repositories/zonerepository.cpp
 
 HEADERS += \
     mainwindow.h \
     src/Menu/campaign/campaign.h \
-    src/core/commandmanager.h
+    src/core/commandmanager.h \
+    src/db/databasemanager.h \
+    src/db/repositories/characterrepository.h \
+    src/db/repositories/componentrepository.h \
+    src/db/repositories/resourcerepository.h \
+    src/db/repositories/shiprepository.h \
+    src/db/repositories/zonerepository.h
 
 FORMS += \
     mainwindow.ui \

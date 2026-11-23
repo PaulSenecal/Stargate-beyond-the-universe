@@ -10,6 +10,7 @@
 #include "commandconsole.h"
 #include "hudimagepanel.h"
 #include "routemapwidget.h"
+#include "shipstatuswidget.h"
 #include "src/core/commandmanager.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
@@ -52,7 +53,8 @@ GameMenu::GameMenu(QWidget *parent)
     auto *left = new QVBoxLayout;
     left->setSpacing(8);
     left->addWidget(new HudImagePanel(":/hud/navigation.png", topArea), 1);
-    left->addWidget(new HudImagePanel(":/hud/shipStatus.png", topArea), 1);
+    m_shipStatus = new ShipStatusWidget(topArea);
+    left->addWidget(m_shipStatus, 1);
 
     auto *right = new QVBoxLayout;
     right->setSpacing(8);
@@ -134,6 +136,23 @@ GameMenu::GameMenu(QWidget *parent)
                               .arg(m_route->state().gateRemaining, 0, 'f', 1));
     m_console->appendLine(tr("Hostile ships detected - shields up"), CommandConsole::Tone::Warning);
     m_console->appendLine(tr("Type 'help' for the command list"));
+
+    m_shipStatus->setProvider([this] {
+        ShipStatusData data;
+        data.hull = m_battle->hull();
+        data.shield = m_battle->shieldStrength();
+        data.shieldUp = m_battle->shieldActive();
+        for (const ShipComponent &c : m_destiny.components()) {
+            const QString key = m_destiny.systemKeyOf(c.name);
+            data.components.append({c.name, c.currentHp, c.maxHp,
+                                    !key.isEmpty() && m_battle->secondsSinceHit(key) < 1.5f});
+        }
+        for (const QVector3D &f : m_battle->fireSpots())
+            data.fires << QPointF(f.x(), f.z());
+        for (const HitMark &h : m_battle->recentHits())
+            data.hits.append({QPointF(h.local.x(), h.local.z()), h.age, h.shield});
+        return data;
+    });
 
     updateNavigation();
     updatePlanetView();

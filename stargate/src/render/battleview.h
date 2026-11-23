@@ -35,6 +35,13 @@ class QTimer;
 //  Mouse: drag = orbit the camera, wheel = zoom.
 // ================================================================
 
+// A recent impact on the Destiny, in ship-local coordinates
+struct HitMark {
+    QVector3D local;
+    float age = 0;          // seconds
+    bool shield = false;    // absorbed by the shield
+};
+
 class BattleView : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
 {
     Q_OBJECT
@@ -67,6 +74,11 @@ public:
     float shieldStrength() const { return m_shieldStrength; }
     bool shieldActive() const { return m_shieldOrdered; }
     int hostileCount() const { return int(aliveIds().size()); }
+
+    // --- Damage feed for the ship status panel
+    QList<HitMark> recentHits() const;
+    QList<QVector3D> fireSpots() const { return QList<QVector3D>(m_fires.begin(), m_fires.end()); }
+    float secondsSinceHit(const QString &key) const;     // system key, large if never hit
     void restoreDefenses(float hull, float shield, bool shieldOn);
 
     // --- Navigation
@@ -139,6 +151,7 @@ private:
         QVector3D localPos;
         QPointF labelOffset;        // screen-space callout direction (px)
         float health = 100;
+        float lastHit = -1000;      // m_time of the last damage
     };
 
     // Simulation
@@ -148,7 +161,8 @@ private:
     void hitEnemy(Enemy &e, const Projectile &p);
     void hitShield(const Projectile &p);
     void hitHull(const Projectile &p);
-    void damageRandomSubsystem(float amount);
+    // Damages the system closest to the impact point (ship-local)
+    void damageSubsystemNear(const QVector3D &local, float amount);
     void shoot(bool fromDestiny, const QVector3D &from, int targetId, const QVector3D &aimLocal,
                float damage, float speed, const QVector3D &color, float length, float width,
                float delay = 0.0f);
@@ -206,6 +220,7 @@ private:
     std::vector<Projectile> m_projectiles;
     std::vector<Effect> m_effects;
     std::vector<QVector3D> m_fires;           // burning hull spots (local space)
+    std::vector<std::pair<QVector3D, std::pair<float, bool>>> m_hits;   // local pos, (time, shield)
     std::vector<Subsystem> m_subsystems;
     std::vector<QVector3D> m_turrets;         // local space
     int m_nextEnemyId = 1;

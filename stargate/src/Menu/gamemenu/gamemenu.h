@@ -11,12 +11,13 @@ class CommandConsole;
 class CommandManager;
 class QuestSystem;
 class RouteMapWidget;
+class ShipStatusWidget;
 class QTimer;
 
 // ================================================================
 //  GameMenu
 //  Main in-game screen, shown when the game starts:
-//   - left:   navigation / ship status screens
+//   - left:   navigation screen / live ship damage panel
 //   - center: real-time 3D battle view (BattleView)
 //   - right:  live route map / weapon status screen
 //   - bottom: command console on the full width, resizable
@@ -66,6 +67,7 @@ private:
     BattleView *m_battle = nullptr;
     CommandConsole *m_console = nullptr;
     RouteMapWidget *m_map = nullptr;
+    ShipStatusWidget *m_shipStatus = nullptr;
     QuestSystem *m_quests = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;

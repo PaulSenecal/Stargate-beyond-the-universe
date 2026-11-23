@@ -60,6 +60,14 @@ public:
     void setSubsystemHealth(const QString &key, float health);
     float systemHealth(const QString &key) const;   // also accepts "hull"
 
+    // --- Navigation
+    void spawnWave(bool announce);
+    // FTL jump: every enemy is left behind; new contacts may show up
+    // after `calmSeconds`
+    void clearBattlefield(float calmSeconds);
+    // Lines drawn in the bottom-right corner of the view
+    void setNavigationLines(const QStringList &lines);
+
     // --- Reports for the console
     QString destinyReport() const;
     QString weaponReport() const;
@@ -123,7 +131,6 @@ private:
 
     // Simulation
     void step(float dt);
-    void spawnWave(bool announce);
     void updateEnemy(Enemy &e, float dt);
     void updateProjectiles(float dt);
     void hitEnemy(Enemy &e, const Projectile &p);
@@ -193,6 +200,7 @@ private:
     int m_lockedId = -1;
     int m_kills = 0;
     float m_waveTimer = -1;
+    QStringList m_navigationLines;
 
     float m_hull = 100;
     float m_shieldStrength = 100;

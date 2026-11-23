@@ -47,7 +47,7 @@ CommandConsole::CommandConsole(QWidget *parent)
     m_input->setFont(inputFont);
     m_input->setFixedHeight(34);
     m_input->setFrame(false);
-    m_input->setPlaceholderText(tr("Type a command — 'help' for the list"));
+    m_input->setPlaceholderText(tr("Type a command — Tab completes, 'help' for the list"));
     m_input->setStyleSheet("QLineEdit { background: transparent; color: #111; }");
     m_input->installEventFilter(this);
 
@@ -80,9 +80,15 @@ void CommandConsole::appendLine(const QString &text, Tone tone)
     case Tone::Warning:  color = "#f2c94c"; break;
     case Tone::Critical: color = "#ff5a48"; break;
     }
+    // Follow new lines only when the reader is already at the bottom:
+    // if they scrolled up to read, keep their position
+    QScrollBar *bar = m_log->verticalScrollBar();
+    const bool atBottom = bar->value() >= bar->maximum() - 4;
+    const int position = bar->value();
+
     m_log->append(QStringLiteral("<span style=\"color:%1\">%2%3</span>")
                       .arg(color, prefix, text.toHtmlEscaped()));
-    m_log->verticalScrollBar()->setValue(m_log->verticalScrollBar()->maximum());
+    bar->setValue(atBottom ? bar->maximum() : position);
 }
 
 void CommandConsole::clearLog()
@@ -109,11 +115,64 @@ void CommandConsole::submit()
         m_history.append(command);
     m_historyPos = -1;
     m_input->clear();
+    // A new command: go back to the bottom to read its result
+    m_log->verticalScrollBar()->setValue(m_log->verticalScrollBar()->maximum());
     emit commandEntered(command);
+}
+
+void CommandConsole::setCompletionProvider(CompletionProvider provider)
+{
+    m_completionProvider = std::move(provider);
+}
+
+void CommandConsole::completeWithTab()
+{
+    if (!m_completionProvider)
+        return;
+    const QString text = m_input->text();
+    const QStringList candidates = m_completionProvider(text);
+    if (candidates.isEmpty()) {
+        m_lastTabText.clear();
+        return;
+    }
+    if (candidates.size() == 1) {
+        m_input->setText(candidates.first() + ' ');
+        m_lastTabText.clear();
+        return;
+    }
+
+    // Several choices: complete up to their common prefix…
+    QString common = candidates.first();
+    for (const QString &c : candidates) {
+        int i = 0;
+        while (i < common.size() && i < c.size() && common.at(i).toLower() == c.at(i).toLower())
+            ++i;
+        common.truncate(i);
+    }
+    if (common.size() > text.size()) {
+        m_input->setText(common);
+        m_lastTabText = common;
+        return;
+    }
+
+    // …and list them when Tab is pressed again without progress
+    if (m_lastTabText == text) {
+        QStringList words;
+        for (const QString &c : candidates)
+            words << c.section(' ', -1);
+        appendLine(tr("Possible: %1").arg(words.join("   ")), Tone::Info);
+    }
+    m_lastTabText = text;
 }
 
 bool CommandConsole::eventFilter(QObject *watched, QEvent *event)
 {
+    if (watched == m_input && event->type() == QEvent::KeyPress
+        && static_cast<QKeyEvent *>(event)->key() == Qt::Key_Tab) {
+        m_completer->popup()->hide();
+        completeWithTab();
+        return true;    // keep the focus in the command bar
+    }
     if (watched == m_input && event->type() == QEvent::KeyPress && !m_completer->popup()->isVisible()) {
         const int key = static_cast<QKeyEvent *>(event)->key();
         if (key == Qt::Key_Up && !m_history.isEmpty()) {

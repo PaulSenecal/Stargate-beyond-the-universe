@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QStringList>
+#include <functional>
 
 class QCompleter;
 class QLineEdit;
@@ -30,6 +31,10 @@ public:
     void setCompletions(const QStringList &words);
     void focusInput();
 
+    // Tab completion: returns the full lines that can complete the text
+    using CompletionProvider = std::function<QStringList(const QString &text)>;
+    void setCompletionProvider(CompletionProvider provider);
+
 signals:
     void commandEntered(const QString &command);
 
@@ -39,12 +44,15 @@ protected:
 
 private:
     void submit();
+    void completeWithTab();
 
     QTextEdit *m_log = nullptr;
     QLineEdit *m_input = nullptr;
     QCompleter *m_completer = nullptr;
     QStringList m_history;
     int m_historyPos = -1;
+    CompletionProvider m_completionProvider;
+    QString m_lastTabText;      // second Tab on the same text lists the choices
 };
 
 #endif // COMMANDCONSOLE_H

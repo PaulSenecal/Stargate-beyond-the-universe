@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -66,6 +67,13 @@ public:
     QStringList getAvailableCommands() const;            // display names
     QStringList usages(const QString &category = QString()) const;
     QStringList categories() const;
+
+    // Tab completion: every full line that can follow `input`
+    // (command names, then allowed parameter values). `dynamicValues`
+    // adds values known only at runtime for the first parameter of a
+    // command, keyed by compact name (e.g. "stargate" -> gate addresses).
+    QStringList completions(const QString &input,
+                            const QHash<QString, QStringList> &dynamicValues = {}) const;
 
 signals:
     void commandValidated(bool valid, const QString &message);

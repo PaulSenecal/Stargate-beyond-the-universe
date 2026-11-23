@@ -1,6 +1,9 @@
 #include "gamemenu.h"
 
 #include <QHBoxLayout>
+#include <QRandomGenerator>
+#include <QSettings>
+#include <QSplitter>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -8,45 +11,82 @@
 #include "hudimagepanel.h"
 #include "src/core/commandmanager.h"
 #include "src/db/databasemanager.h"
+#include "src/db/repositories/worldrepository.h"
+#include "src/world/planetgenerator.h"
+
+namespace {
+constexpr double kHoursPerTick = 0.25;     // 1 real second = 15 game minutes
+constexpr int kLowWater = 40;
+constexpr int kLowFood = 25;
+
+QString percent(float value)
+{
+    return QStringLiteral("%1%").arg(qRound(value * 100.0f));
+}
+} // namespace
 
 GameMenu::GameMenu(QWidget *parent)
     : QWidget(parent)
     , m_battle(new BattleView(this))
     , m_console(new CommandConsole(this))
     , m_commands(new CommandManager(this))
+    , m_route(new DestinyRoute(this))
+    , m_simTimer(new QTimer(this))
 {
     setAutoFillBackground(true);
     QPalette pal = palette();
     pal.setColor(QPalette::Window, QColor(6, 6, 8));
     setPalette(pal);
 
-    // --- Left column: legend + HUD screens
+    // --- Top area: HUD screens on both sides of the 3D view
+    auto *topArea = new QWidget(this);
     auto *left = new QVBoxLayout;
     left->setSpacing(8);
-    left->addWidget(new HudImagePanel(":/hud/maps.png", this), 1);
-    left->addWidget(new HudImagePanel(":/hud/navigation.png", this), 1);
-    left->addWidget(new HudImagePanel(":/hud/shipStatus.png", this), 1);
+    left->addWidget(new HudImagePanel(":/hud/navigation.png", topArea), 1);
+    left->addWidget(new HudImagePanel(":/hud/shipStatus.png", topArea), 1);
 
-    auto *top = new QHBoxLayout;
+    auto *right = new QVBoxLayout;
+    right->setSpacing(8);
+    right->addWidget(new HudImagePanel(":/hud/maps.png", topArea), 1);
+    right->addWidget(new HudImagePanel(":/hud/weaponStatus.png", topArea), 1);
+
+    auto *top = new QHBoxLayout(topArea);
+    top->setContentsMargins(0, 0, 0, 0);
     top->setSpacing(12);
-    top->addLayout(left, 27);
-    top->addWidget(m_battle, 73);
+    top->addLayout(left, 20);
+    top->addWidget(m_battle, 60);
+    top->addLayout(right, 20);
 
-    // --- Bottom row: console + weapon status
-    auto *bottom = new QHBoxLayout;
-    bottom->setSpacing(12);
-    bottom->addWidget(m_console, 72);
-    bottom->addWidget(new HudImagePanel(":/hud/weaponStatus.png", this), 28);
+    // --- Console on the full width; the handle between the 3D view and
+    // the console can be dragged, its position is remembered
+    auto *splitter = new QSplitter(Qt::Vertical, this);
+    splitter->setChildrenCollapsible(false);
+    splitter->setHandleWidth(8);
+    splitter->setStyleSheet("QSplitter::handle { background: #1c1a12; }"
+                            "QSplitter::handle:hover { background: #e2bf3e; }");
+    splitter->addWidget(topArea);
+    splitter->addWidget(m_console);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 0);
+    splitter->setSizes({650, 350});
+
+    QSettings settings("Stargate", "stargate");
+    const QByteArray savedLayout = settings.value("gameMenu/splitter").toByteArray();
+    if (!savedLayout.isEmpty())
+        splitter->restoreState(savedLayout);
+    connect(splitter, &QSplitter::splitterMoved, this, [splitter] {
+        QSettings("Stargate", "stargate").setValue("gameMenu/splitter", splitter->saveState());
+    });
 
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(10, 8, 10, 10);
-    root->setSpacing(10);
-    root->addLayout(top, 76);
-    root->addLayout(bottom, 24);
+    root->addWidget(splitter);
 
     // --- Wiring
     connect(m_console, &CommandConsole::commandEntered, this, &GameMenu::onCommandEntered);
     connect(m_battle, &BattleView::logMessage, this, &GameMenu::onBattleLog);
+    connect(m_route, &DestinyRoute::notice, this, &GameMenu::onRouteNotice);
+    connect(m_simTimer, &QTimer::timeout, this, &GameMenu::simulate);
 
     if (m_commands->loadCommandsFromFile(":/commandList/commands.json")) {
         QStringList words;
@@ -56,14 +96,33 @@ GameMenu::GameMenu(QWidget *parent)
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
+        m_console->setCompletionProvider([this](const QString &text) {
+            QStringList addresses{"destiny"};
+            for (const Planet &p : m_route->currentPlanets())
+                addresses << p.gateAddress();
+            QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
+            for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear")})
+                if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
+                    && !text.contains(' '))
+                    lines << local;
+            return lines;
+        });
     } else {
         m_console->appendLine(tr("Command database unavailable"), CommandConsole::Tone::Critical);
     }
 
     m_console->appendLine(tr("Destiny tactical console online"), CommandConsole::Tone::Success);
     loadSave();
+    recordCurrentSystem();
+    m_console->appendLine(tr("Dropped out of FTL in %1 - %2 planet(s), gate window %3 h - type 'scansector'")
+                              .arg(m_route->galaxyName(m_route->currentStop().galaxy))
+                              .arg(m_route->currentStop().numVariants)
+                              .arg(m_route->state().gateRemaining, 0, 'f', 1));
     m_console->appendLine(tr("Hostile ships detected - shields up"), CommandConsole::Tone::Warning);
     m_console->appendLine(tr("Type 'help' for the command list"));
+
+    updateNavigation();
+    m_simTimer->start(1000);
 
     QTimer::singleShot(0, m_console, &CommandConsole::focusInput);
 }
@@ -120,8 +179,19 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
     } else if (name == "scan") {
         m_battle->lockTarget(args.value(0).toInt() - 1);
     } else if (name == "scansector") {
+        logReport(systemReport());
         logReport(m_battle->sectorReport());
+    } else if (name == "engine") {
+        if (args.value(0) == "ftl")
+            jumpFtl();
+        else
+            m_console->appendLine(tr("Sublight engines engaged"), CommandConsole::Tone::Info);
+    } else if (name == "stargate") {
+        dialGate(args.value(0));
+    } else if (name == "explore") {
+        explore();
     } else if (name == "destinystatus") {
+        logReport(routeReport());
         logReport(m_battle->destinyReport());
     } else if (name == "weaponstatus") {
         logReport(m_battle->weaponReport());
@@ -143,7 +213,8 @@ void GameMenu::showHelp()
     for (const QString &category : m_commands->categories())
         m_console->appendLine(QStringLiteral("%1: %2").arg(category.toUpper(),
                                                           m_commands->usages(category).join(", ")));
-    m_console->appendLine(tr("Examples: attack 1, scan 2, shield off, close door a20, repair engines"));
+    m_console->appendLine(tr("Combat: attack 1, scan 2, shield off, pulseweapon - Repair: repair engines"));
+    m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -209,6 +280,257 @@ void GameMenu::showResources()
                                   .arg(r.name.leftJustified(14, ' '))
                                   .arg(r.quantity, 4)
                                   .arg(r.rarity.toLower()));
+}
+
+// ================================================================
+//  Exploration
+// ================================================================
+
+void GameMenu::onRouteNotice(const QString &text, DestinyRoute::Severity severity)
+{
+    CommandConsole::Tone tone = CommandConsole::Tone::Info;
+    switch (severity) {
+    case DestinyRoute::Severity::Good:     tone = CommandConsole::Tone::Success; break;
+    case DestinyRoute::Severity::Neutral:  tone = CommandConsole::Tone::Info; break;
+    case DestinyRoute::Severity::Warning:  tone = CommandConsole::Tone::Warning; break;
+    case DestinyRoute::Severity::Critical: tone = CommandConsole::Tone::Critical; break;
+    }
+    m_console->appendLine(text, tone);
+}
+
+void GameMenu::simulate()
+{
+    m_route->tick(kHoursPerTick);
+
+    // Crew supplies
+    if (m_destiny.isLoaded()) {
+        const bool fed = m_destiny.consumeSupplies(m_route->state().crew, kHoursPerTick);
+        if (!fed) {
+            if (!m_starving) {
+                m_starving = true;
+                m_console->appendLine(tr("Supplies exhausted: water or food missing - crew in danger"),
+                                      CommandConsole::Tone::Critical);
+            }
+            m_starvingHours += kHoursPerTick;
+            if (m_starvingHours >= 12.0) {
+                m_starvingHours = 0;
+                m_route->changeCrew(-1);
+                m_console->appendLine(tr("A crew member died of deprivation (%1 left)").arg(m_route->state().crew),
+                                      CommandConsole::Tone::Critical);
+            }
+        } else if (m_starving) {
+            m_starving = false;
+            m_starvingHours = 0;
+            m_console->appendLine(tr("Supplies restored"), CommandConsole::Tone::Success);
+        }
+
+        const int water = m_destiny.stockOf("water");
+        const int food = m_destiny.stockOf("food");
+        if (water < kLowWater && !m_lowWaterWarned)
+            m_console->appendLine(tr("Water reserves low (%1) - find a planet with water").arg(water),
+                                  CommandConsole::Tone::Warning);
+        if (food < kLowFood && !m_lowFoodWarned)
+            m_console->appendLine(tr("Food reserves low (%1) - find a planet with organics").arg(food),
+                                  CommandConsole::Tone::Warning);
+        m_lowWaterWarned = water < kLowWater;
+        m_lowFoodWarned = food < kLowFood;
+    }
+
+    updateNavigation();
+}
+
+void GameMenu::updateNavigation()
+{
+    const RouteState &s = m_route->state();
+    const RouteStop &stop = m_route->currentStop();
+
+    QStringList lines;
+    lines << tr("G%1 %2 - SYSTEM %3")
+                 .arg(stop.galaxy, 2, 10, QChar('0'))
+                 .arg(m_route->galaxyName(stop.galaxy).toUpper())
+                 .arg(stop.sequence, 4, 10, QChar('0'));
+    lines << tr("FTL %1   POWER %2").arg(percent(float(s.ftlCharge)), percent(float(s.power)));
+
+    QString gate = s.gateOpen ? tr("GATE OPEN %1 h").arg(s.gateRemaining, 0, 'f', 1) : tr("GATE CLOSED");
+    if (s.teamPlanet >= 0)
+        gate += tr("  TEAM ON %1").arg(QChar('A' + s.teamPlanet));
+    lines << gate;
+
+    QString crew = tr("CREW %1").arg(s.crew);
+    if (m_destiny.isLoaded())
+        crew += tr("   WATER %1   FOOD %2").arg(m_destiny.stockOf("water")).arg(m_destiny.stockOf("food"));
+    lines << crew;
+
+    const int hours = int(s.hours);
+    lines << tr("DAY %1  %2:%3").arg(hours / 24 + 1)
+                 .arg(hours % 24, 2, 10, QChar('0'))
+                 .arg(int((s.hours - hours) * 60), 2, 10, QChar('0'));
+
+    m_battle->setNavigationLines(lines);
+}
+
+void GameMenu::recordCurrentSystem()
+{
+    if (m_destiny.isLoaded())
+        WorldRepository::recordSystem(m_route->galaxyName(m_route->currentStop().galaxy),
+                                      m_route->currentPlanets());
+}
+
+void GameMenu::jumpFtl()
+{
+    GameEvent event;
+    QString reason;
+    if (!m_route->jump(&event, &reason)) {
+        m_console->appendLine(tr("FTL jump impossible: %1").arg(reason), CommandConsole::Tone::Warning);
+        return;
+    }
+
+    // Enemies are left behind; new contacts may show up later
+    m_battle->clearBattlefield(float(25 + QRandomGenerator::global()->bounded(50)));
+    m_console->appendLine(tr("FTL jump - the Destiny enters hyperspace"), CommandConsole::Tone::Info);
+
+    CommandConsole::Tone tone = CommandConsole::Tone::Info;
+    switch (event.severity) {
+    case GameEvent::Severity::Good:     tone = CommandConsole::Tone::Success; break;
+    case GameEvent::Severity::Neutral:  tone = CommandConsole::Tone::Info; break;
+    case GameEvent::Severity::Warning:  tone = CommandConsole::Tone::Warning; break;
+    case GameEvent::Severity::Critical: tone = CommandConsole::Tone::Critical; break;
+    }
+    m_console->appendLine(tr("Transit: %1 - %2").arg(event.title, event.description), tone);
+
+    QStringList effects;
+    if (event.powerDelta != 0.0)
+        effects << tr("power %1%2%").arg(event.powerDelta > 0 ? "+" : "").arg(qRound(event.powerDelta * 100));
+    if (event.ftlDelta != 0.0)
+        effects << tr("FTL charge %1%2%").arg(event.ftlDelta > 0 ? "+" : "").arg(qRound(event.ftlDelta * 100));
+    if (event.crewDelta != 0)
+        effects << tr("crew %1%2").arg(event.crewDelta > 0 ? "+" : "").arg(event.crewDelta);
+    const QString gained = m_destiny.addResources({{"water", event.water}, {"food", event.food},
+                                                   {"naquadah", event.naquadah}, {"minerals", event.minerals}});
+    if (!gained.isEmpty())
+        effects << gained;
+    if (!effects.isEmpty())
+        m_console->appendLine(tr("Effects: %1").arg(effects.join(", ")), tone);
+
+    if (event.hostiles)
+        m_battle->spawnWave(true);
+
+    recordCurrentSystem();
+    const RouteStop &stop = m_route->currentStop();
+    m_console->appendLine(tr("Dropped out of FTL: G%1 %2, system %3 - %4 planet(s), gate window %5 h")
+                              .arg(stop.galaxy, 2, 10, QChar('0'))
+                              .arg(m_route->galaxyName(stop.galaxy))
+                              .arg(stop.sequence, 4, 10, QChar('0'))
+                              .arg(stop.numVariants)
+                              .arg(m_route->state().gateRemaining, 0, 'f', 1),
+                          CommandConsole::Tone::Success);
+    updateNavigation();
+}
+
+void GameMenu::dialGate(const QString &address)
+{
+    QString error;
+    if (address.compare("destiny", Qt::CaseInsensitive) == 0) {
+        if (m_route->recallTeam(&error))
+            m_console->appendLine(tr("Gate dialed home - the team is back aboard the Destiny"),
+                                  CommandConsole::Tone::Success);
+        else
+            m_console->appendLine(tr("Recall impossible: %1").arg(error), CommandConsole::Tone::Warning);
+        updateNavigation();
+        return;
+    }
+
+    const int variant = m_route->variantForAddress(address);
+    if (variant < 0) {
+        m_console->appendLine(tr("No gate answers at %1 - addresses of this system: 'scansector'")
+                                  .arg(address.toUpper()),
+                              CommandConsole::Tone::Warning);
+        return;
+    }
+    if (!m_route->dial(variant, &error)) {
+        m_console->appendLine(tr("Dialing failed: %1").arg(error), CommandConsole::Tone::Warning);
+        return;
+    }
+
+    const Planet p = PlanetGenerator::generate(m_route->currentStop().galaxy, m_route->currentStop().sequence, variant);
+    m_console->appendLine(tr("Chevron 7 locked - team deployed on %1 \"%2\" (%3)")
+                              .arg(p.code, p.nickname, p.classificationName()),
+                          CommandConsole::Tone::Success);
+    if (p.conditions.toxicity > 0.5f || p.conditions.radiation > 0.4f)
+        m_console->appendLine(tr("Hazardous environment: toxicity %1, radiation %2")
+                                  .arg(percent(p.conditions.toxicity), percent(p.conditions.radiation)),
+                              CommandConsole::Tone::Warning);
+    m_console->appendLine(tr("Type 'explore' to search for resources, 'stargate destiny' to come back"));
+    updateNavigation();
+}
+
+void GameMenu::explore()
+{
+    const int variant = m_route->state().teamPlanet;
+    if (variant < 0) {
+        m_console->appendLine(tr("No team deployed - dial a planet first ('stargate <address>')"),
+                              CommandConsole::Tone::Warning);
+        return;
+    }
+    const Planet p = PlanetGenerator::generate(m_route->currentStop().galaxy, m_route->currentStop().sequence, variant);
+    if (m_route->hasCollected(variant)) {
+        m_console->appendLine(tr("%1 already explored - nothing more to find").arg(p.code),
+                              CommandConsole::Tone::Warning);
+        return;
+    }
+
+    m_route->markCollected(variant);
+    const QString result = m_destiny.isLoaded() ? m_destiny.collectFromPlanet(p) : tr("no save database");
+    m_console->appendLine(tr("Exploration of %1: %2").arg(p.code, result), CommandConsole::Tone::Success);
+    if (p.isAncientSite())
+        m_console->appendLine(tr("Ancient site found: \"%1\"").arg(p.ancientName), CommandConsole::Tone::Success);
+
+    // Hostile surfaces can cost a team member
+    const float danger = p.conditions.toxicity + p.conditions.radiation;
+    if (danger > 0.8f && QRandomGenerator::global()->generateDouble() < 0.35) {
+        m_route->changeCrew(-1);
+        m_console->appendLine(tr("A team member was lost on the hostile surface (crew %1)").arg(m_route->state().crew),
+                              CommandConsole::Tone::Critical);
+    }
+    updateNavigation();
+}
+
+QString GameMenu::systemReport() const
+{
+    const RouteState &s = m_route->state();
+    const RouteStop &stop = m_route->currentStop();
+    QString report = tr("System G%1-%2 (%3) - gate window %4")
+                         .arg(stop.galaxy, 2, 10, QChar('0'))
+                         .arg(stop.sequence, 4, 10, QChar('0'))
+                         .arg(m_route->galaxyName(stop.galaxy))
+                         .arg(s.gateOpen ? tr("open %1 h").arg(s.gateRemaining, 0, 'f', 1) : tr("closed"));
+
+    for (const Planet &p : m_route->currentPlanets()) {
+        QString line = tr("\n%1 \"%2\" %3 - address %4").arg(p.code, p.nickname, p.classificationName(), p.gateAddress());
+        if (s.teamPlanet == p.variant)
+            line += tr(" [TEAM]");
+        if (m_route->hasCollected(p.variant))
+            line += tr(" [explored]");
+        const PlanetConditions &c = p.conditions;
+        line += tr("\n   water %1  O2 %2  minerals %3  energy %4  organics %5  | toxicity %6  radiation %7%8")
+                    .arg(percent(c.water), percent(c.oxygen), percent(c.minerals), percent(c.energy),
+                         percent(c.organics), percent(c.toxicity), percent(c.radiation))
+                    .arg(c.hasLife ? tr("  | life signs") : QString());
+        report += line;
+    }
+    return report;
+}
+
+QString GameMenu::routeReport() const
+{
+    const RouteState &s = m_route->state();
+    return tr("Route stop %1/%2 | Crew %3 | Power %4 | FTL %5 | Planets discovered: %6")
+        .arg(m_route->currentIndex() + 1)
+        .arg(m_route->totalStops())
+        .arg(s.crew)
+        .arg(percent(float(s.power)))
+        .arg(percent(float(s.ftlCharge)))
+        .arg(m_destiny.isLoaded() ? WorldRepository::discoveredPlanetCount() : 0);
 }
 
 void GameMenu::logReport(const QString &report)

@@ -30,6 +30,7 @@ SOURCES += \
     src/entities/vessel.cpp \
     src/render/battleview.cpp \
     src/render/meshbuilder.cpp \
+    src/render/planetlook.cpp \
     src/utils/logger.cpp \
     src/world/destinyroute.cpp \
     src/world/eventsystem.cpp \
@@ -55,6 +56,7 @@ HEADERS += \
     src/entities/vessel.h \
     src/render/battleview.h \
     src/render/meshbuilder.h \
+    src/render/planetlook.h \
     src/utils/logger.h \
     src/world/destinyroute.h \
     src/world/eventsystem.h \

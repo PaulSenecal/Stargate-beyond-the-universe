@@ -15,9 +15,11 @@
 #include <vector>
 
 #include "meshbuilder.h"
+#include "planetlook.h"
 
 class QPainter;
 class QTimer;
+
 
 // ================================================================
 //  BattleView
@@ -73,6 +75,7 @@ public:
     void clearBattlefield(float calmSeconds);
     // Lines drawn in the bottom-right corner of the view
     void setNavigationLines(const QStringList &lines);
+    void setPlanetLook(const PlanetLook &look);
 
     // --- Reports for the console
     QString destinyReport() const;
@@ -207,6 +210,7 @@ private:
     int m_kills = 0;
     float m_waveTimer = -1;
     QStringList m_navigationLines;
+    PlanetLook m_planetLook;
 
     float m_hull = 100;
     float m_shieldStrength = 100;

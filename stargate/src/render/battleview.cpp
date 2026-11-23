@@ -52,6 +52,15 @@ uniform int uMode;          // 0 hull, 1 planet, 2 shield, 3 glow
 uniform vec3 uLightDir;     // direction the light travels
 uniform vec3 uCamPos;
 uniform float uTime;
+// Planet look (mode 1)
+uniform vec3 uOcean;
+uniform vec3 uGround;
+uniform vec3 uGroundAlt;
+uniform vec3 uAtmosphere;
+uniform float uWaterLevel;
+uniform float uCloudCover;
+uniform float uLights;
+uniform vec3 uPlanetSeed;
 out vec4 fragColor;
 
 float hash(vec3 p) {
@@ -91,16 +100,20 @@ void main() {
         return;
     }
     if (uMode == 1) {                       // procedural planet
-        vec3 p = normalize(vObjPos);
-        float land = fbm(p * 3.0);
-        float clouds = fbm(p * 6.0 + vec3(uTime * 0.01, 0.0, 0.0));
-        vec3 ocean = vec3(0.02, 0.05, 0.12);
-        vec3 ground = mix(vec3(0.16, 0.14, 0.11), vec3(0.32, 0.29, 0.23), fbm(p * 9.0));
-        vec3 base = land > 0.52 ? ground : ocean;
-        base = mix(base, vec3(0.75), smoothstep(0.55, 0.78, clouds) * 0.85);
+        vec3 q = normalize(vObjPos) + uPlanetSeed;
+        float land = fbm(q * 3.0);
+        float clouds = fbm(q * 6.0 + vec3(uTime * 0.01, 0.0, 0.0));
+        vec3 ground = mix(uGround, uGroundAlt, fbm(q * 9.0));
+        bool isLand = land > uWaterLevel;
+        vec3 base = isLand ? ground : uOcean;
+        base = mix(base, vec3(0.75), smoothstep(0.62 - 0.12 * uCloudCover, 0.80, clouds) * uCloudCover);
         float diff = max(dot(N, L), 0.0);
         float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-        vec3 col = base * (0.03 + diff) + vec3(0.25, 0.45, 1.0) * rim * (0.15 + diff);
+        vec3 col = base * (0.03 + diff) + uAtmosphere * rim * (0.15 + diff);
+        // Ancient site: city lights on the night side
+        float night = 1.0 - smoothstep(-0.05, 0.15, dot(N, L));
+        float city = isLand ? step(0.8, noise(q * 70.0)) : 0.0;
+        col += vec3(0.45, 0.75, 1.0) * city * night * uLights;
         fragColor = vec4(col, 1.0);
         return;
     }
@@ -388,6 +401,11 @@ void BattleView::clearBattlefield(float calmSeconds)
     m_effects.clear();
     m_lockedId = -1;
     m_waveTimer = calmSeconds;
+}
+
+void BattleView::setPlanetLook(const PlanetLook &look)
+{
+    m_planetLook = look;
 }
 
 void BattleView::setNavigationLines(const QStringList &lines)
@@ -1007,6 +1025,14 @@ void BattleView::paintGL()
     planet.rotate(18.0f, 0, 0, 1);
     planet.rotate(m_time * 0.6f, 0, 1, 0);
     planet.scale(100.0f);
+    m_lit.setUniformValue("uOcean", m_planetLook.ocean);
+    m_lit.setUniformValue("uGround", m_planetLook.ground);
+    m_lit.setUniformValue("uGroundAlt", m_planetLook.groundAlt);
+    m_lit.setUniformValue("uAtmosphere", m_planetLook.atmosphere);
+    m_lit.setUniformValue("uWaterLevel", m_planetLook.waterLevel);
+    m_lit.setUniformValue("uCloudCover", m_planetLook.cloudCover);
+    m_lit.setUniformValue("uLights", m_planetLook.lights);
+    m_lit.setUniformValue("uPlanetSeed", m_planetLook.seed);
     drawMesh(m_sphere, planet, {}, 0.0f, 1.0f, ModePlanet);
 
     drawDestiny();

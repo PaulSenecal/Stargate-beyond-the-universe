@@ -13,6 +13,7 @@
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/saverepository.h"
 #include "src/db/repositories/worldrepository.h"
+#include "src/render/planetlook.h"
 #include "src/world/planetgenerator.h"
 
 namespace {
@@ -25,6 +26,7 @@ QString percent(float value)
 {
     return QStringLiteral("%1%").arg(qRound(value * 100.0f));
 }
+
 } // namespace
 
 GameMenu::GameMenu(QWidget *parent)
@@ -127,6 +129,7 @@ GameMenu::GameMenu(QWidget *parent)
     m_console->appendLine(tr("Type 'help' for the command list"));
 
     updateNavigation();
+    updatePlanetView();
     m_simTimer->start(1000);
     if (m_sessionId >= 0)
         m_autosaveTimer->start(kAutosaveMs);
@@ -362,6 +365,10 @@ void GameMenu::updateNavigation()
                  .arg(m_route->galaxyName(stop.galaxy).toUpper())
                  .arg(stop.sequence, 4, 10, QChar('0'));
     lines << tr("FTL %1   POWER %2").arg(percent(float(s.ftlCharge)), percent(float(s.power)));
+    {
+        const Planet shown = PlanetGenerator::generate(stop.galaxy, stop.sequence, std::max(0, s.teamPlanet));
+        lines << tr("VIEW %1 \"%2\" %3").arg(shown.code, shown.nickname.toUpper(), shown.classificationName().toUpper());
+    }
 
     QString gate = s.gateOpen ? tr("GATE OPEN %1 h").arg(s.gateRemaining, 0, 'f', 1) : tr("GATE CLOSED");
     if (s.teamPlanet >= 0)
@@ -454,6 +461,14 @@ void GameMenu::saveGame(bool announce)
                               ok ? CommandConsole::Tone::Success : CommandConsole::Tone::Critical);
 }
 
+void GameMenu::updatePlanetView()
+{
+    // The planet where the team is, otherwise the first of the system
+    const RouteStop &stop = m_route->currentStop();
+    const int variant = std::max(0, m_route->state().teamPlanet);
+    m_battle->setPlanetLook(lookOf(PlanetGenerator::generate(stop.galaxy, stop.sequence, variant)));
+}
+
 void GameMenu::recordCurrentSystem()
 {
     if (m_destiny.isLoaded())
@@ -502,6 +517,7 @@ void GameMenu::jumpFtl()
 
     recordCurrentSystem();
     saveGame(false);
+    updatePlanetView();
     const RouteStop &stop = m_route->currentStop();
     m_console->appendLine(tr("Dropped out of FTL: G%1 %2, system %3 - %4 planet(s), gate window %5 h")
                               .arg(stop.galaxy, 2, 10, QChar('0'))
@@ -523,6 +539,7 @@ void GameMenu::dialGate(const QString &address)
         else
             m_console->appendLine(tr("Recall impossible: %1").arg(error), CommandConsole::Tone::Warning);
         updateNavigation();
+        updatePlanetView();
         return;
     }
 
@@ -548,6 +565,7 @@ void GameMenu::dialGate(const QString &address)
                               CommandConsole::Tone::Warning);
     m_console->appendLine(tr("Type 'explore' to search for resources, 'stargate destiny' to come back"));
     updateNavigation();
+    updatePlanetView();
 }
 
 void GameMenu::explore()

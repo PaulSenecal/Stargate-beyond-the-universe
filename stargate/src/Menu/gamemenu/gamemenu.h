@@ -54,6 +54,7 @@ private:
     void restoreGame();
     void saveGame(bool announce);
     void updateNavigation();
+    void updatePlanetView();
     QString systemReport() const;
     QString routeReport() const;
 

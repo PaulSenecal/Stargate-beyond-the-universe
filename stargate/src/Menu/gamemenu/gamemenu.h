@@ -9,6 +9,7 @@
 
 class CommandConsole;
 class CommandManager;
+class QuestSystem;
 class RouteMapWidget;
 class QTimer;
 
@@ -57,12 +58,15 @@ private:
     void updateNavigation();
     void updatePlanetView();
     void updateMap();
+    void loadQuests();
+    void updateObjectives();
     QString systemReport() const;
     QString routeReport() const;
 
     BattleView *m_battle = nullptr;
     CommandConsole *m_console = nullptr;
     RouteMapWidget *m_map = nullptr;
+    QuestSystem *m_quests = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;
     DestinyRoute *m_route = nullptr;

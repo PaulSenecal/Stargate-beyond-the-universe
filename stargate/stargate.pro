@@ -19,9 +19,11 @@ SOURCES += \
     src/Menu/gamemenu/routemapwidget.cpp \
     src/core/commandmanager.cpp \
     src/core/destinystate.cpp \
+    src/core/questsystem.cpp \
     src/db/databasemanager.cpp \
     src/db/repositories/characterrepository.cpp \
     src/db/repositories/componentrepository.cpp \
+    src/db/repositories/questrepository.cpp \
     src/db/repositories/resourcerepository.cpp \
     src/db/repositories/saverepository.cpp \
     src/db/repositories/shiprepository.cpp \
@@ -46,9 +48,11 @@ HEADERS += \
     src/Menu/gamemenu/routemapwidget.h \
     src/core/commandmanager.h \
     src/core/destinystate.h \
+    src/core/questsystem.h \
     src/db/databasemanager.h \
     src/db/repositories/characterrepository.h \
     src/db/repositories/componentrepository.h \
+    src/db/repositories/questrepository.h \
     src/db/repositories/resourcerepository.h \
     src/db/repositories/saverepository.h \
     src/db/repositories/shiprepository.h \

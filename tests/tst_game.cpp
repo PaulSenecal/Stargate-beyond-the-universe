@@ -13,7 +13,9 @@
 
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
+#include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
+#include "src/db/repositories/questrepository.h"
 #include "src/db/repositories/saverepository.h"
 #include "src/db/repositories/worldrepository.h"
 #include "src/world/destinyroute.h"
@@ -351,6 +353,65 @@ private slots:
 
         QVERIFY(SaveRepository::reset(session));
         QVERIFY(!SaveRepository::load(session).has_value());
+    }
+
+    void tutorialCampaign()
+    {
+        QVERIFY(QuestRepository::migrate());
+        const int player = QuestRepository::playerIdOfShip(m_destiny.shipId());
+        QVERIFY(player > 0);
+
+        QuestSystem quests;
+        QStringList started, objectives, completed;
+        bool firstFlag = false;
+        bool campaignDone = false;
+        QList<std::pair<QString, int>> lastRewards;
+        connect(&quests, &QuestSystem::questStarted, this, [&](const QString &t, const QString &, bool first) {
+            started << t;
+            firstFlag = firstFlag || first;
+        });
+        connect(&quests, &QuestSystem::objectiveCompleted, this, [&](const QString &d) { objectives << d; });
+        connect(&quests, &QuestSystem::questCompleted, this,
+                [&](const QString &t, const QList<std::pair<QString, int>> &r) { completed << t; lastRewards = r; });
+        connect(&quests, &QuestSystem::campaignCompleted, this, [&] { campaignDone = true; });
+
+        QVERIFY(quests.load(player));
+        QCOMPARE(started, QStringList{"First Contact"});
+        QVERIFY(firstFlag);
+        QCOMPARE(quests.hint(), QStringLiteral("repair lifesupport"));
+
+        // Quest 1: two repairs + status, in any order; wrong targets ignored
+        quests.notify("REPAIR", "Shield Generator");
+        QVERIFY(objectives.isEmpty());
+        quests.notify("REPAIR", "Life Support");
+        quests.notify("STATUS");
+        QCOMPARE(objectives.size(), 2);
+        QCOMPARE(quests.hint(), QStringLiteral("repair engines"));
+        quests.notify("REPAIR", "Sublight Engine");
+        QCOMPARE(completed, QStringList{"First Contact"});
+        QCOMPARE(quests.activeQuest()->title, QStringLiteral("Power Shortage"));
+
+        // Quest 2: 10 naquadah, counted across gains, other resources ignored
+        quests.notify("COLLECT", "water", 50);
+        quests.notify("COLLECT", "naquadah", 4);
+        QVERIFY(quests.objectiveLines().join('\n').contains("(4/10)"));
+        quests.notify("COLLECT", "naquadah", 9);
+        QCOMPARE(completed.last(), QStringLiteral("Power Shortage"));
+        QCOMPARE(lastRewards, (QList<std::pair<QString, int>>{{"naquadah", 5}}));
+
+        // Progress survives a reload
+        QuestSystem reloaded;
+        QVERIFY(reloaded.load(player));
+        QCOMPARE(reloaded.completedCount(), 2);
+        QCOMPARE(reloaded.activeQuest()->title, QStringLiteral("Signal in the Dark"));
+
+        // Quest 3: through the gate and back
+        quests.notify("EXPLORE");
+        quests.notify("SURVIVE");
+        QVERIFY(campaignDone);
+        QCOMPARE(quests.completedCount(), 3);
+        QVERIFY(quests.objectiveLines().isEmpty());
+        QVERIFY(!quests.hint().isEmpty());
     }
 };
 

@@ -165,6 +165,20 @@ bool DestinyRoute::recallTeam(QString *error)
 //  Simulation
 // ================================================================
 
+void DestinyRoute::restore(int stopIndex, const RouteState &state, const QList<int> &collected)
+{
+    m_index = std::clamp(stopIndex, 0, int(m_route.size()) - 1);
+    m_state = state;
+    m_state.crew = std::max(1, m_state.crew);
+    m_state.power = std::clamp(m_state.power, 0.05, 1.0);
+    m_state.ftlCharge = std::clamp(m_state.ftlCharge, 0.0, 1.0);
+    if (m_state.teamPlanet >= currentStop().numVariants)
+        m_state.teamPlanet = -1;
+    m_collected = QSet<int>(collected.begin(), collected.end());
+    m_chargeAnnounced = m_state.ftlCharge >= 1.0;
+    m_closingWarned = m_state.gateOpen && m_state.gateRemaining <= m_state.gateTotal * 0.25;
+}
+
 void DestinyRoute::changeCrew(int delta)
 {
     m_state.crew = std::max(1, m_state.crew + delta);

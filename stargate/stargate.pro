@@ -22,6 +22,7 @@ SOURCES += \
     src/db/repositories/characterrepository.cpp \
     src/db/repositories/componentrepository.cpp \
     src/db/repositories/resourcerepository.cpp \
+    src/db/repositories/saverepository.cpp \
     src/db/repositories/shiprepository.cpp \
     src/db/repositories/worldrepository.cpp \
     src/db/repositories/zonerepository.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
     src/db/repositories/characterrepository.h \
     src/db/repositories/componentrepository.h \
     src/db/repositories/resourcerepository.h \
+    src/db/repositories/saverepository.h \
     src/db/repositories/shiprepository.h \
     src/db/repositories/worldrepository.h \
     src/db/repositories/zonerepository.h \

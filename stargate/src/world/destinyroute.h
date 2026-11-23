@@ -74,6 +74,10 @@ public:
     void changeCrew(int delta);
     const RouteState &state() const { return m_state; }
 
+    // --- Save / restore
+    QList<int> collectedPlanets() const { return m_collected.values(); }
+    void restore(int stopIndex, const RouteState &state, const QList<int> &collected);
+
 signals:
     void notice(const QString &text, DestinyRoute::Severity severity);
 

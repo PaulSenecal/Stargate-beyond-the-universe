@@ -30,6 +30,7 @@ class GameMenu : public QWidget
 
 public:
     explicit GameMenu(QWidget *parent = nullptr);
+    ~GameMenu() override;     // saves the game
 
 private slots:
     void onCommandEntered(const QString &command);
@@ -50,6 +51,8 @@ private:
     void dialGate(const QString &address);
     void explore();
     void recordCurrentSystem();
+    void restoreGame();
+    void saveGame(bool announce);
     void updateNavigation();
     QString systemReport() const;
     QString routeReport() const;
@@ -60,6 +63,8 @@ private:
     DestinyState m_destiny;
     DestinyRoute *m_route = nullptr;
     QTimer *m_simTimer = nullptr;
+    QTimer *m_autosaveTimer = nullptr;
+    int m_sessionId = -1;
     bool m_starving = false;
     double m_starvingHours = 0;
     bool m_lowWaterWarned = false;

@@ -60,6 +60,12 @@ public:
     void setSubsystemHealth(const QString &key, float health);
     float systemHealth(const QString &key) const;   // also accepts "hull"
 
+    // --- Save / restore
+    float hull() const { return m_hull; }
+    float shieldStrength() const { return m_shieldStrength; }
+    bool shieldActive() const { return m_shieldOrdered; }
+    void restoreDefenses(float hull, float shield, bool shieldOn);
+
     // --- Navigation
     void spawnWave(bool announce);
     // FTL jump: every enemy is left behind; new contacts may show up

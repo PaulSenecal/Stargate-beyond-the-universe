@@ -16,6 +16,7 @@ SOURCES += \
     src/Menu/gamemenu/commandconsole.cpp \
     src/Menu/gamemenu/gamemenu.cpp \
     src/Menu/gamemenu/hudimagepanel.cpp \
+    src/Menu/gamemenu/routemapwidget.cpp \
     src/core/commandmanager.cpp \
     src/core/destinystate.cpp \
     src/db/databasemanager.cpp \
@@ -42,6 +43,7 @@ HEADERS += \
     src/Menu/gamemenu/commandconsole.h \
     src/Menu/gamemenu/gamemenu.h \
     src/Menu/gamemenu/hudimagepanel.h \
+    src/Menu/gamemenu/routemapwidget.h \
     src/core/commandmanager.h \
     src/core/destinystate.h \
     src/db/databasemanager.h \

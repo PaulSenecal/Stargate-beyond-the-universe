@@ -9,6 +9,7 @@
 
 #include "commandconsole.h"
 #include "hudimagepanel.h"
+#include "routemapwidget.h"
 #include "src/core/commandmanager.h"
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/saverepository.h"
@@ -52,7 +53,8 @@ GameMenu::GameMenu(QWidget *parent)
 
     auto *right = new QVBoxLayout;
     right->setSpacing(8);
-    right->addWidget(new HudImagePanel(":/hud/maps.png", topArea), 1);
+    m_map = new RouteMapWidget(topArea);
+    right->addWidget(m_map, 1);
     right->addWidget(new HudImagePanel(":/hud/weaponStatus.png", topArea), 1);
 
     auto *top = new QHBoxLayout(topArea);
@@ -386,6 +388,39 @@ void GameMenu::updateNavigation()
                  .arg(int((s.hours - hours) * 60), 2, 10, QChar('0'));
 
     m_battle->setNavigationLines(lines);
+    updateMap();
+}
+
+void GameMenu::updateMap()
+{
+    const RouteState &s = m_route->state();
+    const RouteStop &stop = m_route->currentStop();
+
+    RouteMapData data;
+    data.galaxyCode = QStringLiteral("G%1").arg(stop.galaxy, 2, 10, QChar('0'));
+    data.galaxyName = m_route->galaxyName(stop.galaxy);
+    data.stops = m_route->stopsInGalaxy(stop.galaxy);
+    data.currentSequence = stop.sequence;
+    data.gateOpen = s.gateOpen;
+    data.gateRemaining = s.gateRemaining;
+    data.hostiles = m_battle->hostileCount();
+
+    for (const Planet &p : m_route->currentPlanets()) {
+        RouteMapData::PlanetMark mark;
+        mark.letter = QString(QChar('A' + p.variant));
+        mark.address = p.gateAddress();
+        mark.nickname = p.nickname;
+        mark.classification = p.classificationName();
+        mark.explored = m_route->hasCollected(p.variant);
+        mark.team = s.teamPlanet == p.variant;
+        // Planet colour: its ground, blended toward blue with its water
+        const PlanetLook look = lookOf(p);
+        const float w = std::clamp(p.conditions.water, 0.0f, 1.0f) * 0.6f;
+        const QVector3D c = look.groundAlt * 1.6f * (1.0f - w) + QVector3D(0.25f, 0.45f, 0.85f) * w;
+        mark.tint = QColor::fromRgbF(std::min(c.x(), 1.0f), std::min(c.y(), 1.0f), std::min(c.z(), 1.0f));
+        data.planets << mark;
+    }
+    m_map->setData(data);
 }
 
 GameMenu::~GameMenu()

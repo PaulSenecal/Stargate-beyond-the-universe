@@ -66,6 +66,7 @@ public:
     float hull() const { return m_hull; }
     float shieldStrength() const { return m_shieldStrength; }
     bool shieldActive() const { return m_shieldOrdered; }
+    int hostileCount() const { return int(aliveIds().size()); }
     void restoreDefenses(float hull, float shield, bool shieldOn);
 
     // --- Navigation

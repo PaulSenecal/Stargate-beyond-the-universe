@@ -9,6 +9,7 @@
 
 class CommandConsole;
 class CommandManager;
+class RouteMapWidget;
 class QTimer;
 
 // ================================================================
@@ -16,7 +17,7 @@ class QTimer;
 //  Main in-game screen, shown when the game starts:
 //   - left:   navigation / ship status screens
 //   - center: real-time 3D battle view (BattleView)
-//   - right:  map (with legend) / weapon status screens
+//   - right:  live route map / weapon status screen
 //   - bottom: command console on the full width, resizable
 //  Commands typed in the console are validated by CommandManager
 //  and then dispatched to the battle view or the Destiny route
@@ -55,11 +56,13 @@ private:
     void saveGame(bool announce);
     void updateNavigation();
     void updatePlanetView();
+    void updateMap();
     QString systemReport() const;
     QString routeReport() const;
 
     BattleView *m_battle = nullptr;
     CommandConsole *m_console = nullptr;
+    RouteMapWidget *m_map = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;
     DestinyRoute *m_route = nullptr;

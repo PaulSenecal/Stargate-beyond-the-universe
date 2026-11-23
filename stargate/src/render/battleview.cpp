@@ -549,6 +549,10 @@ void BattleView::step(float dt)
 
     updateProjectiles(dt);
 
+    m_hits.erase(std::remove_if(m_hits.begin(), m_hits.end(),
+                                [this](const auto &h) { return m_time - h.second.first > 1.5f; }),
+                 m_hits.end());
+
     for (Effect &fx : m_effects)
         fx.age += dt;
     m_effects.erase(std::remove_if(m_effects.begin(), m_effects.end(),
@@ -752,6 +756,7 @@ void BattleView::hitShield(const Projectile &p)
     m_shieldFlash = 1.0f;
     m_lastShieldHit = m_time;
     m_effects.push_back({p.pos, kShieldColor, 0.0f, 0.3f, 0.9f});
+    m_hits.push_back({m_destinyInverse.map(p.pos), {m_time, true}});
 
     if (m_shieldStrength <= 0.0f && !m_shieldCollapsed) {
         m_shieldCollapsed = true;
@@ -764,7 +769,8 @@ void BattleView::hitHull(const Projectile &p)
     const float before = m_hull;
     m_hull = std::max(0.0f, m_hull - p.damage);
     m_effects.push_back({p.pos, kExplosion, 0.0f, 0.45f, 0.9f});
-    damageRandomSubsystem(p.damage * 1.6f);
+    damageSubsystemNear(p.aimLocal, p.damage * 1.6f);
+    m_hits.push_back({p.aimLocal, {m_time, false}});
     if (m_fires.size() < kMaxFires && randRange(0, 1) < 0.35f)
         m_fires.push_back(p.aimLocal);
 
@@ -779,9 +785,72 @@ void BattleView::hitHull(const Projectile &p)
     }
 }
 
-void BattleView::damageRandomSubsystem(float amount)
+QList<HitMark> BattleView::recentHits() const
 {
-    Subsystem &s = m_subsystems[QRandomGenerator::global()->bounded(int(m_subsystems.size()))];
+    QList<HitMark> hits;
+    for (const auto &[local, info] : m_hits)
+        hits.append({local, m_time - info.first, info.second});
+    return hits;
+}
+
+QList<BattleView::RadarBlip> BattleView::radarContacts() const
+{
+    QList<RadarBlip> blips;
+    const std::vector<int> ids = aliveIds();
+    for (size_t i = 0; i < ids.size(); ++i) {
+        const Enemy *e = findEnemy(ids[i]);
+        blips.append({m_destinyInverse.map(e->pos), int(i), e->cls == EnemyClass::Mothership,
+                      e->id == m_lockedId, 100.0f * e->hp / e->maxHp});
+    }
+    return blips;
+}
+
+QList<BattleView::RadarShot> BattleView::radarShots() const
+{
+    QList<RadarShot> shots;
+    for (const Projectile &p : m_projectiles)
+        if (p.delay <= 0.0f)
+            shots.append({m_destinyInverse.map(p.pos), p.fromDestiny});
+    return shots;
+}
+
+WeaponReadiness BattleView::weaponReadiness() const
+{
+    WeaponReadiness w;
+    w.mainCooldown = m_mainCooldown;
+    w.mainMax = kMainCooldown;
+    w.pulseCooldown = m_pulseCooldown;
+    w.pulseMax = kPulseCooldown;
+    w.burstCooldown = m_secondaryCooldown;
+    w.burstMax = kSecondaryCooldown;
+    w.efficiency = subsystemHealth("weapons");
+    w.hostiles = int(aliveIds().size());
+    w.kills = m_kills;
+    if (const Enemy *e = findEnemy(m_lockedId); e && e->alive) {
+        w.hasTarget = true;
+        w.targetIndex = indexOfId(e->id);
+        w.targetClass = className(e->cls);
+        w.targetHealth = 100.0f * e->hp / e->maxHp;
+    }
+    return w;
+}
+
+float BattleView::secondsSinceHit(const QString &key) const
+{
+    for (const Subsystem &s : m_subsystems)
+        if (s.key == key)
+            return m_time - s.lastHit;
+    return 1000.0f;
+}
+
+void BattleView::damageSubsystemNear(const QVector3D &local, float amount)
+{
+    Subsystem *closest = &m_subsystems.front();
+    for (Subsystem &candidate : m_subsystems)
+        if ((candidate.localPos - local).lengthSquared() < (closest->localPos - local).lengthSquared())
+            closest = &candidate;
+    Subsystem &s = *closest;
+    s.lastHit = m_time;
     const float before = s.health;
     s.health = std::max(0.0f, s.health - amount);
     emit subsystemChanged(s.key, s.health);

@@ -230,6 +230,15 @@ QStringList DestinyState::componentNames(const QString &key) const
     return names;
 }
 
+QString DestinyState::systemKeyOf(const QString &componentName) const
+{
+    for (const QString &key : {QStringLiteral("engines"), QStringLiteral("shields"),
+                               QStringLiteral("weapons"), QStringLiteral("lifesupport")})
+        if (componentNames(key).contains(componentName))
+            return key;
+    return QString();
+}
+
 int DestinyState::stockOf(const QString &resourceName) const
 {
     for (const ResourceStock &r : stock())

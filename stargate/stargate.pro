@@ -16,7 +16,10 @@ SOURCES += \
     src/Menu/gamemenu/commandconsole.cpp \
     src/Menu/gamemenu/gamemenu.cpp \
     src/Menu/gamemenu/hudimagepanel.cpp \
+    src/Menu/gamemenu/radarwidget.cpp \
     src/Menu/gamemenu/routemapwidget.cpp \
+    src/Menu/gamemenu/shipstatuswidget.cpp \
+    src/Menu/gamemenu/weaponstatuswidget.cpp \
     src/core/commandmanager.cpp \
     src/core/destinystate.cpp \
     src/core/questsystem.cpp \
@@ -45,7 +48,10 @@ HEADERS += \
     src/Menu/gamemenu/commandconsole.h \
     src/Menu/gamemenu/gamemenu.h \
     src/Menu/gamemenu/hudimagepanel.h \
+    src/Menu/gamemenu/radarwidget.h \
     src/Menu/gamemenu/routemapwidget.h \
+    src/Menu/gamemenu/shipstatuswidget.h \
+    src/Menu/gamemenu/weaponstatuswidget.h \
     src/core/commandmanager.h \
     src/core/destinystate.h \
     src/core/questsystem.h \

@@ -60,6 +60,8 @@ public:
 
     // Names of the components behind a system key ("engines" -> Sublight Engine)
     QStringList componentNames(const QString &key) const;
+    // Inverse: system key of a component ("Sublight Engine" -> "engines"), empty if none
+    QString systemKeyOf(const QString &componentName) const;
     // Called for every resource added to the stock (quests count them)
     void setGainListener(std::function<void(const QString &, int)> listener) { m_onGain = std::move(listener); }
 

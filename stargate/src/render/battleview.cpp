@@ -371,6 +371,22 @@ void BattleView::setSubsystemHealth(const QString &key, float health)
         s->health = std::clamp(health, 0.0f, 100.0f);
 }
 
+void BattleView::clearBattlefield(float calmSeconds)
+{
+    for (Enemy &e : m_enemies)
+        e.alive = false;
+    m_enemies.clear();
+    m_projectiles.clear();
+    m_effects.clear();
+    m_lockedId = -1;
+    m_waveTimer = calmSeconds;
+}
+
+void BattleView::setNavigationLines(const QStringList &lines)
+{
+    m_navigationLines = lines;
+}
+
 float BattleView::systemHealth(const QString &key) const
 {
     return key == "hull" ? m_hull : subsystemHealth(key);
@@ -528,6 +544,7 @@ void BattleView::spawnWave(bool announce)
                                    [](const Enemy &e) { return !e.alive; }),
                     m_enemies.end());
 
+    m_waveTimer = -1.0f;
     const int motherships = 2 + QRandomGenerator::global()->bounded(2);
     const int fighters = 4 + QRandomGenerator::global()->bounded(3);
 
@@ -1256,6 +1273,20 @@ void BattleView::drawOverlay()
     p.setPen(ids.empty() ? QColor(70, 230, 100) : red);
     p.drawText(QRectF(0, 14, width() - 14, 18), Qt::AlignRight,
                ids.empty() ? tr("NO CONTACT") : tr("HOSTILES: %1").arg(ids.size()));
+    // --- Navigation block (bottom right)
+    if (!m_navigationLines.isEmpty()) {
+        const qreal lineHeight = 16;
+        const QRectF nav(width() - 300, height() - 14 - lineHeight * m_navigationLines.size() - 10,
+                         288, lineHeight * m_navigationLines.size() + 10);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(0, 0, 0, 150));
+        p.drawRoundedRect(nav, 4, 4);
+        p.setPen(QColor(150, 210, 255));
+        for (int i = 0; i < m_navigationLines.size(); ++i)
+            p.drawText(QRectF(nav.left() + 10, nav.top() + 5 + i * lineHeight, nav.width() - 20, lineHeight),
+                       Qt::AlignLeft | Qt::AlignVCenter, m_navigationLines.at(i));
+    }
+
     p.setPen(QColor(150, 150, 150));
     font.setBold(false);
     font.setPixelSize(11);

@@ -5,10 +5,12 @@
 #include <QList>
 #include <QString>
 #include <QStringList>
+#include <utility>
 
 #include "src/db/repositories/componentrepository.h"
 #include "src/db/repositories/resourcerepository.h"
 #include "src/db/repositories/shiprepository.h"
+#include "src/world/planet.h"
 
 // ================================================================
 //  DestinyState
@@ -44,14 +46,28 @@ public:
     // Adds salvage after a kill; returns a text like "+3 naquadah, +1 trinium"
     QString collectSalvage(bool mothership);
 
+    // Adds resources by name; returns a text like "+40 water, +2 naquadah"
+    QString addResources(const QList<std::pair<QString, int>> &resources);
+
+    // Team collection on a planet, from its surface conditions
+    QString collectFromPlanet(const Planet &planet);
+
+    // Crew consumption of water and food over `hours`.
+    // Returns false when the stock could not cover the needs.
+    bool consumeSupplies(int crew, double hours);
+    int stockOf(const QString &resourceName) const;
+
     QList<ResourceStock> stock() const;
     QList<ShipComponent> components() const { return m_components; }
 
 private:
     QList<int> componentIndexes(const QString &key) const;
+    void migrateSupplies();
 
     int m_shipId = -1;
     QList<ShipComponent> m_components;
+    double m_waterNeed = 0;     // fractional consumption not yet removed
+    double m_foodNeed = 0;
 };
 
 #endif // DESTINYSTATE_H

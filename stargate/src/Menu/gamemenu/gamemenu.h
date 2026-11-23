@@ -5,18 +5,22 @@
 
 #include "src/core/destinystate.h"
 #include "src/render/battleview.h"
+#include "src/world/destinyroute.h"
 
 class CommandConsole;
 class CommandManager;
+class QTimer;
 
 // ================================================================
 //  GameMenu
 //  Main in-game screen, shown when the game starts:
-//   - left:   map (with legend) / navigation / ship status screens
+//   - left:   navigation / ship status screens
 //   - center: real-time 3D battle view (BattleView)
-//   - bottom: command console + weapon status screen
+//   - right:  map (with legend) / weapon status screens
+//   - bottom: command console on the full width, resizable
 //  Commands typed in the console are validated by CommandManager
-//  and then dispatched to the battle view. The Destiny state (system
+//  and then dispatched to the battle view or the Destiny route
+//  (FTL jumps, gate window, exploration, crew supplies). The Destiny state (system
 //  health, resources) is loaded from and saved to the database.
 // ================================================================
 
@@ -30,6 +34,8 @@ public:
 private slots:
     void onCommandEntered(const QString &command);
     void onBattleLog(const QString &text, BattleView::LogLevel level);
+    void onRouteNotice(const QString &text, DestinyRoute::Severity severity);
+    void simulate();
 
 private:
     void dispatch(const QString &name, const QStringList &args);
@@ -39,10 +45,25 @@ private:
     void repair(const QString &system);
     void showResources();
 
+    // Exploration (DestinyRoute)
+    void jumpFtl();
+    void dialGate(const QString &address);
+    void explore();
+    void recordCurrentSystem();
+    void updateNavigation();
+    QString systemReport() const;
+    QString routeReport() const;
+
     BattleView *m_battle = nullptr;
     CommandConsole *m_console = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;
+    DestinyRoute *m_route = nullptr;
+    QTimer *m_simTimer = nullptr;
+    bool m_starving = false;
+    double m_starvingHours = 0;
+    bool m_lowWaterWarned = false;
+    bool m_lowFoodWarned = false;
 };
 
 #endif // GAMEMENU_H

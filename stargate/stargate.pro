@@ -23,12 +23,16 @@ SOURCES += \
     src/db/repositories/componentrepository.cpp \
     src/db/repositories/resourcerepository.cpp \
     src/db/repositories/shiprepository.cpp \
+    src/db/repositories/worldrepository.cpp \
     src/db/repositories/zonerepository.cpp \
     src/entities/entity.cpp \
     src/entities/vessel.cpp \
     src/render/battleview.cpp \
     src/render/meshbuilder.cpp \
-    src/utils/logger.cpp
+    src/utils/logger.cpp \
+    src/world/destinyroute.cpp \
+    src/world/eventsystem.cpp \
+    src/world/planetgenerator.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -43,12 +47,17 @@ HEADERS += \
     src/db/repositories/componentrepository.h \
     src/db/repositories/resourcerepository.h \
     src/db/repositories/shiprepository.h \
+    src/db/repositories/worldrepository.h \
     src/db/repositories/zonerepository.h \
     src/entities/entity.h \
     src/entities/vessel.h \
     src/render/battleview.h \
     src/render/meshbuilder.h \
-    src/utils/logger.h
+    src/utils/logger.h \
+    src/world/destinyroute.h \
+    src/world/eventsystem.h \
+    src/world/planet.h \
+    src/world/planetgenerator.h
 
 FORMS += \
     mainwindow.ui \

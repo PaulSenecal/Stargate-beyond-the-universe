@@ -55,7 +55,7 @@ int createDestiny(int player)
     }
 
     const std::pair<const char *, int> startingStock[] = {
-        {"water", 40}, {"naquadah", 20}, {"minerals", 15},
+        {"water", 250}, {"food", 150}, {"naquadah", 20}, {"minerals", 15},
         {"trinium", 6}, {"crystal", 4}, {"ancient_alloy", 2},
     };
     for (const auto &[name, quantity] : startingStock)

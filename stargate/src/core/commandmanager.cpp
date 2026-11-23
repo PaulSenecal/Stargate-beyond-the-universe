@@ -266,6 +266,45 @@ QStringList CommandManager::usages(const QString &category) const
     return list;
 }
 
+QStringList CommandManager::completions(const QString &input,
+                                        const QHash<QString, QStringList> &dynamicValues) const
+{
+    QStringList result;
+    const QString typed = input.trimmed().isEmpty() ? QString() : input.mid(input.indexOf(QRegularExpression("\\S")));
+    const QString lower = typed.toLower();
+
+    for (const CommandDefinition &def : m_definitions) {
+        const QString name = def.name.toLower();
+
+        // 1. The command name itself (also multi-word: "close d" -> "close door")
+        if (name.startsWith(lower) && name != lower)
+            result << name;
+
+        // 2. A parameter value, after the full or compact name
+        for (const QString &form : {name, compact(def.name)}) {
+            if (!lower.startsWith(form + ' '))
+                continue;
+            const QString rest = typed.mid(form.size() + 1);
+            const QStringList args = rest.split(' ');        // last item = word being typed
+            const int index = int(args.size()) - 1;
+            if (index >= def.params.size())
+                continue;
+
+            QStringList values = def.params.at(index).values;
+            if (index == 0)
+                values += dynamicValues.value(compact(def.name));
+            const QString partial = args.last();
+            const QString base = typed.left(typed.size() - partial.size());
+            for (const QString &value : values)
+                if (value.startsWith(partial, Qt::CaseInsensitive))
+                    result << base + value;
+        }
+    }
+    result.removeDuplicates();
+    result.sort(Qt::CaseInsensitive);
+    return result;
+}
+
 QStringList CommandManager::categories() const
 {
     QStringList list;

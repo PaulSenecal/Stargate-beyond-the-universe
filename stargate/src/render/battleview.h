@@ -35,6 +35,20 @@ class QTimer;
 //  Mouse: drag = orbit the camera, wheel = zoom.
 // ================================================================
 
+// Weapons state for the weapon panel
+struct WeaponReadiness {
+    float mainCooldown = 0, mainMax = 1;
+    float pulseCooldown = 0, pulseMax = 1;
+    float burstCooldown = 0, burstMax = 1;
+    float efficiency = 100;     // weapons system health (auto-fire)
+    bool hasTarget = false;
+    int targetIndex = -1;       // 0-based, shown as T1…
+    QString targetClass;
+    float targetHealth = 0;     // percent
+    int hostiles = 0;
+    int kills = 0;
+};
+
 // A recent impact on the Destiny, in ship-local coordinates
 struct HitMark {
     QVector3D local;
@@ -79,6 +93,13 @@ public:
     QList<HitMark> recentHits() const;
     QList<QVector3D> fireSpots() const { return QList<QVector3D>(m_fires.begin(), m_fires.end()); }
     float secondsSinceHit(const QString &key) const;     // system key, large if never hit
+    WeaponReadiness weaponReadiness() const;
+
+    // Radar feed, in ship-local coordinates (x forward, z starboard)
+    struct RadarBlip { QVector3D local; int index; bool mothership; bool locked; float health; };
+    struct RadarShot { QVector3D local; bool fromDestiny; };
+    QList<RadarBlip> radarContacts() const;
+    QList<RadarShot> radarShots() const;
     void restoreDefenses(float hull, float shield, bool shieldOn);
 
     // --- Navigation

@@ -12,14 +12,16 @@ class CommandManager;
 class QuestSystem;
 class RouteMapWidget;
 class ShipStatusWidget;
+class RadarWidget;
+class WeaponStatusWidget;
 class QTimer;
 
 // ================================================================
 //  GameMenu
 //  Main in-game screen, shown when the game starts:
-//   - left:   navigation screen / live ship damage panel
+//   - left:   tactical radar / live ship damage panel
 //   - center: real-time 3D battle view (BattleView)
-//   - right:  live route map / weapon status screen
+//   - right:  live route map / live weapon panel
 //   - bottom: command console on the full width, resizable
 //  Commands typed in the console are validated by CommandManager
 //  and then dispatched to the battle view or the Destiny route
@@ -68,6 +70,8 @@ private:
     CommandConsole *m_console = nullptr;
     RouteMapWidget *m_map = nullptr;
     ShipStatusWidget *m_shipStatus = nullptr;
+    RadarWidget *m_radar = nullptr;
+    WeaponStatusWidget *m_weapons = nullptr;
     QuestSystem *m_quests = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;

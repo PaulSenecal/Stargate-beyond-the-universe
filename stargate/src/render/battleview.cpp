@@ -793,6 +793,48 @@ QList<HitMark> BattleView::recentHits() const
     return hits;
 }
 
+QList<BattleView::RadarBlip> BattleView::radarContacts() const
+{
+    QList<RadarBlip> blips;
+    const std::vector<int> ids = aliveIds();
+    for (size_t i = 0; i < ids.size(); ++i) {
+        const Enemy *e = findEnemy(ids[i]);
+        blips.append({m_destinyInverse.map(e->pos), int(i), e->cls == EnemyClass::Mothership,
+                      e->id == m_lockedId, 100.0f * e->hp / e->maxHp});
+    }
+    return blips;
+}
+
+QList<BattleView::RadarShot> BattleView::radarShots() const
+{
+    QList<RadarShot> shots;
+    for (const Projectile &p : m_projectiles)
+        if (p.delay <= 0.0f)
+            shots.append({m_destinyInverse.map(p.pos), p.fromDestiny});
+    return shots;
+}
+
+WeaponReadiness BattleView::weaponReadiness() const
+{
+    WeaponReadiness w;
+    w.mainCooldown = m_mainCooldown;
+    w.mainMax = kMainCooldown;
+    w.pulseCooldown = m_pulseCooldown;
+    w.pulseMax = kPulseCooldown;
+    w.burstCooldown = m_secondaryCooldown;
+    w.burstMax = kSecondaryCooldown;
+    w.efficiency = subsystemHealth("weapons");
+    w.hostiles = int(aliveIds().size());
+    w.kills = m_kills;
+    if (const Enemy *e = findEnemy(m_lockedId); e && e->alive) {
+        w.hasTarget = true;
+        w.targetIndex = indexOfId(e->id);
+        w.targetClass = className(e->cls);
+        w.targetHealth = 100.0f * e->hp / e->maxHp;
+    }
+    return w;
+}
+
 float BattleView::secondsSinceHit(const QString &key) const
 {
     for (const Subsystem &s : m_subsystems)

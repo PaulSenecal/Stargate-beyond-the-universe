@@ -10,7 +10,9 @@
 #include "commandconsole.h"
 #include "hudimagepanel.h"
 #include "routemapwidget.h"
+#include "radarwidget.h"
 #include "shipstatuswidget.h"
+#include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
@@ -52,7 +54,8 @@ GameMenu::GameMenu(QWidget *parent)
     auto *topArea = new QWidget(this);
     auto *left = new QVBoxLayout;
     left->setSpacing(8);
-    left->addWidget(new HudImagePanel(":/hud/navigation.png", topArea), 1);
+    m_radar = new RadarWidget(topArea);
+    left->addWidget(m_radar, 1);
     m_shipStatus = new ShipStatusWidget(topArea);
     left->addWidget(m_shipStatus, 1);
 
@@ -60,7 +63,8 @@ GameMenu::GameMenu(QWidget *parent)
     right->setSpacing(8);
     m_map = new RouteMapWidget(topArea);
     right->addWidget(m_map, 1);
-    right->addWidget(new HudImagePanel(":/hud/weaponStatus.png", topArea), 1);
+    m_weapons = new WeaponStatusWidget(topArea);
+    right->addWidget(m_weapons, 1);
 
     auto *top = new QHBoxLayout(topArea);
     top->setContentsMargins(0, 0, 0, 0);
@@ -151,6 +155,26 @@ GameMenu::GameMenu(QWidget *parent)
             data.fires << QPointF(f.x(), f.z());
         for (const HitMark &h : m_battle->recentHits())
             data.hits.append({QPointF(h.local.x(), h.local.z()), h.age, h.shield});
+        return data;
+    });
+
+    m_radar->setProvider([this] {
+        RadarPicture picture;
+        picture.shieldUp = m_battle->shieldActive() && m_battle->shieldStrength() > 0.0f;
+        for (const BattleView::RadarBlip &b : m_battle->radarContacts())
+            picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health});
+        for (const BattleView::RadarShot &s : m_battle->radarShots())
+            picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny});
+        return picture;
+    });
+
+    m_weapons->setProvider([this] {
+        WeaponStatusData data;
+        data.readiness = m_battle->weaponReadiness();
+        const bool hit = m_battle->secondsSinceHit("weapons") < 1.5f;
+        for (const ShipComponent &c : m_destiny.components())
+            if (c.category == "WEAPON")
+                data.weapons.append({c.name, c.currentHp, c.maxHp, hit});
         return data;
     });
 

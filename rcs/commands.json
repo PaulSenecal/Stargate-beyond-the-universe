@@ -1,15 +1,16 @@
 {
+    "_comment": "params: a plain string is a free text parameter. An object can set: name, type (text | int | number), values (allowed words), pattern (regex), min, max, optional.",
     "commands": {
       "combat": {
         "name": "Combat",
         "subcommands": {
           "scan": {
             "name": "Scan",
-            "params": ["target"]
+            "params": [{ "name": "target", "type": "int", "min": 1 }]
           },
           "attack": {
             "name": "Attack",
-            "params": ["x"]
+            "params": [{ "name": "target", "type": "int", "min": 1 }]
           },
           "disable_weapon": {
             "name": "disable",
@@ -29,7 +30,7 @@
           },
           "pulse_weapon": {
             "name": "pulseweapon",
-            "defaultValue": "all"
+            "params": [{ "name": "group", "values": ["all"], "optional": true }]
           },
           "secondary_tower": {
             "name": "secondarytower",
@@ -53,7 +54,7 @@
           },
           "shield": {
             "name": "shield",
-            "params": ["status"]
+            "params": [{ "name": "status", "values": ["on", "off", "up", "down", "activate", "desactivate", "deactivate"] }]
           },
           "patrol": {
             "name": "patrol",
@@ -70,11 +71,11 @@
         "subcommands": {
           "move_to": {
             "name": "Moveto",
-            "params": ["x", "y"]
+            "params": [{ "name": "x", "type": "number" }, { "name": "y", "type": "number" }]
           },
           "scan_position": {
             "name": "Scan",
-            "params": ["x"]
+            "params": [{ "name": "x", "type": "int", "min": 1 }]
           },
           "scan_sector": {
             "name": "Scansector",
@@ -82,7 +83,7 @@
           },
           "engine": {
             "name": "Engine",
-            "modes": ["FTL", "Conventional"]
+            "params": [{ "name": "mode", "values": ["ftl", "conventional"] }]
           },
           "deploy_shuttle": {
             "name": "deployeshuttle",
@@ -103,11 +104,11 @@
         "subcommands": {
           "close_door": {
             "name": "Close door",
-            "params": ["x"]
+            "params": [{ "name": "door", "pattern": "^[A-Za-z]\\d{1,3}$" }]
           },
           "repair": {
             "name": "Repair",
-            "params": ["x"]
+            "params": [{ "name": "system", "values": ["engines", "engine", "shields", "shield", "weapons", "weapon", "lifesupport", "life", "hull"] }]
           },
           "sector_derivate_energy": {
             "name": "Sectordereivateenegy",
@@ -127,7 +128,7 @@
           },
           "stargate": {
             "name": "Stargate",
-            "params": ["xxxxxxx"]
+            "params": [{ "name": "address", "pattern": "^[A-Za-z0-9]{7,9}$" }]
           },
           "send_vessel": {
             "name": "Sendvessel",

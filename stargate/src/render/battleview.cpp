@@ -371,6 +371,14 @@ void BattleView::setSubsystemHealth(const QString &key, float health)
         s->health = std::clamp(health, 0.0f, 100.0f);
 }
 
+void BattleView::restoreDefenses(float hull, float shield, bool shieldOn)
+{
+    m_hull = hull > 0.0f ? std::min(hull, 100.0f) : 35.0f;
+    m_shieldStrength = std::clamp(shield, 0.0f, 100.0f);
+    m_shieldOrdered = shieldOn;
+    m_shieldCollapsed = m_shieldStrength <= 0.0f;
+}
+
 void BattleView::clearBattlefield(float calmSeconds)
 {
     for (Enemy &e : m_enemies)

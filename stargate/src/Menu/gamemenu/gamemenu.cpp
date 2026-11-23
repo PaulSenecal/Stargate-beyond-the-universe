@@ -11,11 +11,13 @@
 #include "hudimagepanel.h"
 #include "src/core/commandmanager.h"
 #include "src/db/databasemanager.h"
+#include "src/db/repositories/saverepository.h"
 #include "src/db/repositories/worldrepository.h"
 #include "src/world/planetgenerator.h"
 
 namespace {
 constexpr double kHoursPerTick = 0.25;     // 1 real second = 15 game minutes
+constexpr int kAutosaveMs = 30000;
 constexpr int kLowWater = 40;
 constexpr int kLowFood = 25;
 
@@ -32,6 +34,7 @@ GameMenu::GameMenu(QWidget *parent)
     , m_commands(new CommandManager(this))
     , m_route(new DestinyRoute(this))
     , m_simTimer(new QTimer(this))
+    , m_autosaveTimer(new QTimer(this))
 {
     setAutoFillBackground(true);
     QPalette pal = palette();
@@ -87,12 +90,13 @@ GameMenu::GameMenu(QWidget *parent)
     connect(m_battle, &BattleView::logMessage, this, &GameMenu::onBattleLog);
     connect(m_route, &DestinyRoute::notice, this, &GameMenu::onRouteNotice);
     connect(m_simTimer, &QTimer::timeout, this, &GameMenu::simulate);
+    connect(m_autosaveTimer, &QTimer::timeout, this, [this] { saveGame(false); });
 
     if (m_commands->loadCommandsFromFile(":/commandList/commands.json")) {
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear";
+        words << "help" << "clear" << "save";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -101,7 +105,7 @@ GameMenu::GameMenu(QWidget *parent)
             for (const Planet &p : m_route->currentPlanets())
                 addresses << p.gateAddress();
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
-            for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear")})
+            for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -113,6 +117,7 @@ GameMenu::GameMenu(QWidget *parent)
 
     m_console->appendLine(tr("Destiny tactical console online"), CommandConsole::Tone::Success);
     loadSave();
+    restoreGame();
     recordCurrentSystem();
     m_console->appendLine(tr("Dropped out of FTL in %1 - %2 planet(s), gate window %3 h - type 'scansector'")
                               .arg(m_route->galaxyName(m_route->currentStop().galaxy))
@@ -123,6 +128,8 @@ GameMenu::GameMenu(QWidget *parent)
 
     updateNavigation();
     m_simTimer->start(1000);
+    if (m_sessionId >= 0)
+        m_autosaveTimer->start(kAutosaveMs);
 
     QTimer::singleShot(0, m_console, &CommandConsole::focusInput);
 }
@@ -150,6 +157,10 @@ void GameMenu::onCommandEntered(const QString &command)
     }
     if (first == "clear") {
         m_console->clearLog();
+        return;
+    }
+    if (first == "save") {
+        saveGame(true);
         return;
     }
 
@@ -215,6 +226,7 @@ void GameMenu::showHelp()
                                                           m_commands->usages(category).join(", ")));
     m_console->appendLine(tr("Combat: attack 1, scan 2, shield off, pulseweapon - Repair: repair engines"));
     m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
+    m_console->appendLine(tr("Game: save (also automatic every 30 s, after each jump and on exit), clear"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -369,6 +381,79 @@ void GameMenu::updateNavigation()
     m_battle->setNavigationLines(lines);
 }
 
+GameMenu::~GameMenu()
+{
+    saveGame(false);
+}
+
+void GameMenu::restoreGame()
+{
+    if (!m_destiny.isLoaded() || !SaveRepository::ensureSchema())
+        return;
+    m_sessionId = SaveRepository::autosaveSession(m_destiny.shipId());
+    if (m_sessionId < 0) {
+        m_console->appendLine(tr("Progress cannot be saved (no session)"), CommandConsole::Tone::Warning);
+        return;
+    }
+
+    const std::optional<GameSave> save = SaveRepository::load(m_sessionId);
+    if (!save) {
+        m_console->appendLine(tr("New journey - progress is saved automatically ('save' to force it)"));
+        return;
+    }
+
+    RouteState state;
+    state.ftlCharge = save->ftlCharge;
+    state.power = save->power;
+    state.crew = save->crew;
+    state.hours = save->hours;
+    state.gateOpen = save->gateOpen;
+    state.gateRemaining = save->gateRemaining;
+    state.gateTotal = save->gateTotal;
+    state.teamPlanet = save->teamPlanet;
+    m_route->restore(save->routeIndex, state, save->collected);
+    m_battle->restoreDefenses(save->hull, save->shield, save->shieldOn);
+
+    const RouteStop &stop = m_route->currentStop();
+    m_console->appendLine(tr("Game restored: day %1, G%2 %3 system %4, crew %5")
+                              .arg(int(save->hours) / 24 + 1)
+                              .arg(stop.galaxy, 2, 10, QChar('0'))
+                              .arg(m_route->galaxyName(stop.galaxy))
+                              .arg(stop.sequence, 4, 10, QChar('0'))
+                              .arg(m_route->state().crew),
+                          CommandConsole::Tone::Success);
+}
+
+void GameMenu::saveGame(bool announce)
+{
+    if (m_sessionId < 0) {
+        if (announce)
+            m_console->appendLine(tr("No save database - cannot save"), CommandConsole::Tone::Warning);
+        return;
+    }
+
+    const RouteState &state = m_route->state();
+    GameSave save;
+    save.routeIndex = m_route->currentIndex();
+    save.hours = state.hours;
+    save.crew = state.crew;
+    save.power = state.power;
+    save.ftlCharge = state.ftlCharge;
+    save.gateOpen = state.gateOpen;
+    save.gateRemaining = state.gateRemaining;
+    save.gateTotal = state.gateTotal;
+    save.teamPlanet = state.teamPlanet;
+    save.collected = m_route->collectedPlanets();
+    save.hull = m_battle->hull();
+    save.shield = m_battle->shieldStrength();
+    save.shieldOn = m_battle->shieldActive();
+
+    const bool ok = SaveRepository::save(m_sessionId, save, m_route->galaxyName(m_route->currentStop().galaxy));
+    if (announce)
+        m_console->appendLine(ok ? tr("Game saved (day %1)").arg(int(state.hours) / 24 + 1) : tr("Save failed"),
+                              ok ? CommandConsole::Tone::Success : CommandConsole::Tone::Critical);
+}
+
 void GameMenu::recordCurrentSystem()
 {
     if (m_destiny.isLoaded())
@@ -416,6 +501,7 @@ void GameMenu::jumpFtl()
         m_battle->spawnWave(true);
 
     recordCurrentSystem();
+    saveGame(false);
     const RouteStop &stop = m_route->currentStop();
     m_console->appendLine(tr("Dropped out of FTL: G%1 %2, system %3 - %4 planet(s), gate window %5 h")
                               .arg(stop.galaxy, 2, 10, QChar('0'))

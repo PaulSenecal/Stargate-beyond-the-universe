@@ -47,10 +47,6 @@ GameMenu::GameMenu(QWidget *parent)
     // --- Wiring
     connect(m_console, &CommandConsole::commandEntered, this, &GameMenu::onCommandEntered);
     connect(m_battle, &BattleView::logMessage, this, &GameMenu::onBattleLog);
-    connect(m_commands, &CommandManager::commandValidated, this, [this](bool valid, const QString &message) {
-        if (!valid)
-            m_console->appendLine(message, CommandConsole::Tone::Critical);
-    });
 
     if (m_commands->loadCommandsFromFile(":/commandList/commands.json")) {
         QStringList words;
@@ -88,37 +84,30 @@ void GameMenu::onCommandEntered(const QString &command)
 {
     m_console->appendLine(command, CommandConsole::Tone::Echo);
 
-    const QStringList parts = command.split(' ', Qt::SkipEmptyParts);
-    const QString name = parts.first().toLower();
-
-    if (name == "help" || name == "?") {
+    const QString first = command.section(' ', 0, 0, QString::SectionSkipEmpty).toLower();
+    if (first == "help" || first == "?") {
         showHelp();
         return;
     }
-    if (name == "clear") {
+    if (first == "clear") {
         m_console->clearLog();
         return;
     }
-    if (!m_commands->validateCommand(command))
-        return;   // error already printed through commandValidated
 
-    dispatch(name, parts.mid(1));
+    const ParsedCommand parsed = m_commands->parse(command);
+    if (!parsed.valid) {
+        m_console->appendLine(parsed.error, CommandConsole::Tone::Critical);
+        return;
+    }
+    dispatch(parsed.name, parsed.args);
 }
 
 void GameMenu::dispatch(const QString &name, const QStringList &args)
 {
-    auto targetIndex = [&args]() {
-        bool ok = false;
-        const int n = args.value(0).toInt(&ok);
-        return ok ? n - 1 : -1;
-    };
-
+    // Arguments were already validated by CommandManager (see commands.json):
+    // target numbers are integers >= 1, allowed words are lower case.
     if (name == "attack") {
-        const int index = targetIndex();
-        if (index < 0)
-            m_console->appendLine(tr("Usage: attack <target number>, e.g. attack 1"), CommandConsole::Tone::Warning);
-        else
-            m_battle->fireMainWeapon(index);
+        m_battle->fireMainWeapon(args.value(0).toInt() - 1);
     } else if (name == "maintower") {
         m_battle->fireMainWeapon();
     } else if (name == "pulseweapon") {
@@ -126,19 +115,10 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
     } else if (name == "secondarytower") {
         m_battle->fireSecondaryBurst();
     } else if (name == "shield") {
-        const QString state = args.value(0).toLower();
-        if (state == "on" || state == "up" || state == "activate" || state == "1")
-            m_battle->setShieldActive(true);
-        else if (state == "off" || state == "down" || state == "desactivate" || state == "deactivate" || state == "0")
-            m_battle->setShieldActive(false);
-        else
-            m_console->appendLine(tr("Usage: shield on | shield off"), CommandConsole::Tone::Warning);
+        const QString state = args.value(0);
+        m_battle->setShieldActive(state == "on" || state == "up" || state == "activate");
     } else if (name == "scan") {
-        const int index = targetIndex();
-        if (index < 0)
-            logReport(m_battle->sectorReport());
-        else
-            m_battle->lockTarget(index);
+        m_battle->lockTarget(args.value(0).toInt() - 1);
     } else if (name == "scansector") {
         logReport(m_battle->sectorReport());
     } else if (name == "destinystatus") {
@@ -149,6 +129,9 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
         repair(args.value(0));
     } else if (name == "showressource") {
         showResources();
+    } else if (name == "closedoor") {
+        m_console->appendLine(tr("Door %1 closed: success").arg(args.value(0).toUpper()),
+                              CommandConsole::Tone::Success);
     } else {
         m_console->appendLine(tr("Order acknowledged: %1 (not simulated yet)").arg(name),
                               CommandConsole::Tone::Info);
@@ -157,14 +140,11 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
 
 void GameMenu::showHelp()
 {
-    QStringList names;
-    for (const QString &cmd : m_commands->getAvailableCommands())
-        names << cmd.toLower();
-    names.removeDuplicates();
-    m_console->appendLine(tr("Commands: %1").arg(names.join(", ")));
-    m_console->appendLine(tr("Combat: attack <n>, scan <n>, maintower, secondarytower, pulseweapon, shield on|off"));
-    m_console->appendLine(tr("Status: destinystatus, weaponstatus, scansector, showressource"));
-    m_console->appendLine(tr("Repair (uses resources): repair <engines|shields|weapons|lifesupport|hull>"));
+    for (const QString &category : m_commands->categories())
+        m_console->appendLine(QStringLiteral("%1: %2").arg(category.toUpper(),
+                                                          m_commands->usages(category).join(", ")));
+    m_console->appendLine(tr("Examples: attack 1, scan 2, shield off, close door a20, repair engines"));
+    m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
 void GameMenu::loadSave()

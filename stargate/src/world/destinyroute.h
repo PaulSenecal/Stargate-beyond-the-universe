@@ -59,6 +59,7 @@ public:
     const RouteStop &currentStop() const { return m_route.at(m_index); }
     int currentIndex() const { return m_index; }
     int totalStops() const { return int(m_route.size()); }
+    QList<int> stopsInGalaxy(int galaxy) const;     // sequence numbers
     QString galaxyName(int galaxy) const;
     QList<Planet> currentPlanets() const;
     int variantForAddress(const QString &address) const;   // -1 if not in this system

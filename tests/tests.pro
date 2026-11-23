@@ -19,8 +19,10 @@ SOURCES += \
     tst_game.cpp \
     $$GAME/src/core/commandmanager.cpp \
     $$GAME/src/core/destinystate.cpp \
+    $$GAME/src/core/questsystem.cpp \
     $$GAME/src/db/databasemanager.cpp \
     $$GAME/src/db/repositories/componentrepository.cpp \
+    $$GAME/src/db/repositories/questrepository.cpp \
     $$GAME/src/db/repositories/resourcerepository.cpp \
     $$GAME/src/db/repositories/saverepository.cpp \
     $$GAME/src/db/repositories/shiprepository.cpp \
@@ -31,4 +33,5 @@ SOURCES += \
 
 HEADERS += \
     $$GAME/src/core/commandmanager.h \
+    $$GAME/src/core/questsystem.h \
     $$GAME/src/world/destinyroute.h

@@ -9,8 +9,11 @@
 
 #include "commandconsole.h"
 #include "hudimagepanel.h"
+#include "routemapwidget.h"
 #include "src/core/commandmanager.h"
+#include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
+#include "src/db/repositories/questrepository.h"
 #include "src/db/repositories/saverepository.h"
 #include "src/db/repositories/worldrepository.h"
 #include "src/render/planetlook.h"
@@ -38,6 +41,7 @@ GameMenu::GameMenu(QWidget *parent)
     , m_simTimer(new QTimer(this))
     , m_autosaveTimer(new QTimer(this))
 {
+    m_quests = new QuestSystem(this);
     setAutoFillBackground(true);
     QPalette pal = palette();
     pal.setColor(QPalette::Window, QColor(6, 6, 8));
@@ -52,7 +56,8 @@ GameMenu::GameMenu(QWidget *parent)
 
     auto *right = new QVBoxLayout;
     right->setSpacing(8);
-    right->addWidget(new HudImagePanel(":/hud/maps.png", topArea), 1);
+    m_map = new RouteMapWidget(topArea);
+    right->addWidget(m_map, 1);
     right->addWidget(new HudImagePanel(":/hud/weaponStatus.png", topArea), 1);
 
     auto *top = new QHBoxLayout(topArea);
@@ -98,7 +103,7 @@ GameMenu::GameMenu(QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save";
+        words << "help" << "clear" << "save" << "quests" << "hint";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -107,7 +112,8 @@ GameMenu::GameMenu(QWidget *parent)
             for (const Planet &p : m_route->currentPlanets())
                 addresses << p.gateAddress();
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
-            for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save")})
+            for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
+                                         QStringLiteral("quests"), QStringLiteral("hint")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -121,6 +127,7 @@ GameMenu::GameMenu(QWidget *parent)
     loadSave();
     restoreGame();
     recordCurrentSystem();
+    loadQuests();
     m_console->appendLine(tr("Dropped out of FTL in %1 - %2 planet(s), gate window %3 h - type 'scansector'")
                               .arg(m_route->galaxyName(m_route->currentStop().galaxy))
                               .arg(m_route->currentStop().numVariants)
@@ -166,6 +173,18 @@ void GameMenu::onCommandEntered(const QString &command)
         saveGame(true);
         return;
     }
+    if (first == "quests") {
+        if (!m_quests->isLoaded())
+            m_console->appendLine(tr("No quest available (no save database)"), CommandConsole::Tone::Warning);
+        for (const QString &line : m_quests->journal())
+            m_console->appendLine(line);
+        return;
+    }
+    if (first == "hint") {
+        const QString hint = m_quests->hint();
+        m_console->appendLine(hint.isEmpty() ? tr("No hint right now") : tr("Hint: %1").arg(hint));
+        return;
+    }
 
     const ParsedCommand parsed = m_commands->parse(command);
     if (!parsed.valid) {
@@ -207,6 +226,7 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
     } else if (name == "destinystatus") {
         logReport(routeReport());
         logReport(m_battle->destinyReport());
+        m_quests->notify("STATUS");
     } else if (name == "weaponstatus") {
         logReport(m_battle->weaponReport());
     } else if (name == "repair") {
@@ -229,7 +249,7 @@ void GameMenu::showHelp()
                                                           m_commands->usages(category).join(", ")));
     m_console->appendLine(tr("Combat: attack 1, scan 2, shield off, pulseweapon - Repair: repair engines"));
     m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
-    m_console->appendLine(tr("Game: save (also automatic every 30 s, after each jump and on exit), clear"));
+    m_console->appendLine(tr("Game: quests, hint, save (also automatic every 30 s, after each jump and on exit), clear"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -281,7 +301,9 @@ void GameMenu::repair(const QString &system)
             used << QStringLiteral("%1 %2").arg(c.quantity).arg(c.resourceName);
         m_console->appendLine(tr("Resources used: %1").arg(used.join(", ")));
     }
-    m_battle->repairSubsystem(key);
+    if (m_battle->repairSubsystem(key))
+        for (const QString &component : m_destiny.componentNames(key))
+            m_quests->notify("REPAIR", component);
 }
 
 void GameMenu::showResources()
@@ -386,6 +408,39 @@ void GameMenu::updateNavigation()
                  .arg(int((s.hours - hours) * 60), 2, 10, QChar('0'));
 
     m_battle->setNavigationLines(lines);
+    updateMap();
+}
+
+void GameMenu::updateMap()
+{
+    const RouteState &s = m_route->state();
+    const RouteStop &stop = m_route->currentStop();
+
+    RouteMapData data;
+    data.galaxyCode = QStringLiteral("G%1").arg(stop.galaxy, 2, 10, QChar('0'));
+    data.galaxyName = m_route->galaxyName(stop.galaxy);
+    data.stops = m_route->stopsInGalaxy(stop.galaxy);
+    data.currentSequence = stop.sequence;
+    data.gateOpen = s.gateOpen;
+    data.gateRemaining = s.gateRemaining;
+    data.hostiles = m_battle->hostileCount();
+
+    for (const Planet &p : m_route->currentPlanets()) {
+        RouteMapData::PlanetMark mark;
+        mark.letter = QString(QChar('A' + p.variant));
+        mark.address = p.gateAddress();
+        mark.nickname = p.nickname;
+        mark.classification = p.classificationName();
+        mark.explored = m_route->hasCollected(p.variant);
+        mark.team = s.teamPlanet == p.variant;
+        // Planet colour: its ground, blended toward blue with its water
+        const PlanetLook look = lookOf(p);
+        const float w = std::clamp(p.conditions.water, 0.0f, 1.0f) * 0.6f;
+        const QVector3D c = look.groundAlt * 1.6f * (1.0f - w) + QVector3D(0.25f, 0.45f, 0.85f) * w;
+        mark.tint = QColor::fromRgbF(std::min(c.x(), 1.0f), std::min(c.y(), 1.0f), std::min(c.z(), 1.0f));
+        data.planets << mark;
+    }
+    m_map->setData(data);
 }
 
 GameMenu::~GameMenu()
@@ -469,6 +524,65 @@ void GameMenu::updatePlanetView()
     m_battle->setPlanetLook(lookOf(PlanetGenerator::generate(stop.galaxy, stop.sequence, variant)));
 }
 
+void GameMenu::loadQuests()
+{
+    if (!m_destiny.isLoaded() || !QuestRepository::migrate())
+        return;
+    const int playerId = QuestRepository::playerIdOfShip(m_destiny.shipId());
+    if (playerId < 0)
+        return;
+
+    m_quests->setClock([this] { return m_route->state().hours; });
+    m_destiny.setGainListener([this](const QString &resource, int amount) {
+        m_quests->notify("COLLECT", resource, amount);
+    });
+
+    connect(m_quests, &QuestSystem::questStarted, this,
+            [this](const QString &title, const QString &description, bool firstQuest) {
+        if (firstQuest) {
+            // Tutorial: the emergency drop damaged the systems to repair
+            for (const QString &key : {QStringLiteral("lifesupport"), QStringLiteral("engines")}) {
+                if (m_battle->systemHealth(key) > 50.0f) {
+                    m_battle->setSubsystemHealth(key, 35.0f);
+                    m_destiny.setSystemHealth(key, 35.0f);
+                }
+            }
+            m_console->appendLine(tr("Emergency drop: life support and sublight engines damaged"),
+                                  CommandConsole::Tone::Critical);
+        }
+        m_console->appendLine(tr("New quest: %1 - %2").arg(title, description), CommandConsole::Tone::Warning);
+        updateObjectives();
+    });
+    connect(m_quests, &QuestSystem::objectiveCompleted, this, [this](const QString &description) {
+        m_console->appendLine(tr("Objective complete: %1").arg(description), CommandConsole::Tone::Success);
+        updateObjectives();
+    });
+    connect(m_quests, &QuestSystem::questCompleted, this,
+            [this](const QString &title, const QList<std::pair<QString, int>> &rewards) {
+        m_console->appendLine(tr("Quest complete: %1").arg(title), CommandConsole::Tone::Success);
+        const QString gained = m_destiny.addResources(rewards);
+        if (!gained.isEmpty())
+            m_console->appendLine(tr("Reward: %1").arg(gained), CommandConsole::Tone::Success);
+        updateObjectives();
+    });
+    connect(m_quests, &QuestSystem::campaignCompleted, this, [this] {
+        m_console->appendLine(tr("Tutorial campaign complete - the Destiny is yours to command"),
+                              CommandConsole::Tone::Success);
+        updateObjectives();
+    });
+
+    m_quests->load(playerId);
+    updateObjectives();
+    const QString hint = m_quests->hint();
+    if (!hint.isEmpty() && m_quests->activeQuest())
+        m_console->appendLine(tr("Hint: %1  ('quests' for the journal)").arg(hint));
+}
+
+void GameMenu::updateObjectives()
+{
+    m_battle->setObjectiveLines(m_quests->objectiveLines());
+}
+
 void GameMenu::recordCurrentSystem()
 {
     if (m_destiny.isLoaded())
@@ -533,10 +647,11 @@ void GameMenu::dialGate(const QString &address)
 {
     QString error;
     if (address.compare("destiny", Qt::CaseInsensitive) == 0) {
-        if (m_route->recallTeam(&error))
+        if (m_route->recallTeam(&error)) {
             m_console->appendLine(tr("Gate dialed home - the team is back aboard the Destiny"),
                                   CommandConsole::Tone::Success);
-        else
+            m_quests->notify("SURVIVE");
+        } else
             m_console->appendLine(tr("Recall impossible: %1").arg(error), CommandConsole::Tone::Warning);
         updateNavigation();
         updatePlanetView();
@@ -555,6 +670,7 @@ void GameMenu::dialGate(const QString &address)
         return;
     }
 
+    m_quests->notify("EXPLORE");
     const Planet p = PlanetGenerator::generate(m_route->currentStop().galaxy, m_route->currentStop().sequence, variant);
     m_console->appendLine(tr("Chevron 7 locked - team deployed on %1 \"%2\" (%3)")
                               .arg(p.code, p.nickname, p.classificationName()),

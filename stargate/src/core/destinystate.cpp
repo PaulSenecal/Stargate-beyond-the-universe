@@ -159,9 +159,13 @@ QString DestinyState::addResources(const QList<std::pair<QString, int>> &resourc
     if (!isLoaded())
         return QString();
     QStringList gained;
-    for (const auto &[name, quantity] : resources)
-        if (quantity > 0 && ResourceRepository::addByName(m_shipId, name, quantity))
+    for (const auto &[name, quantity] : resources) {
+        if (quantity > 0 && ResourceRepository::addByName(m_shipId, name, quantity)) {
             gained << QStringLiteral("+%1 %2").arg(quantity).arg(name);
+            if (m_onGain)
+                m_onGain(name, quantity);
+        }
+    }
     return gained.join(", ");
 }
 
@@ -216,6 +220,14 @@ bool DestinyState::consumeSupplies(int crew, double hours)
     take("water", m_waterNeed);
     take("food", m_foodNeed);
     return enough;
+}
+
+QStringList DestinyState::componentNames(const QString &key) const
+{
+    QStringList names;
+    for (int i : componentIndexes(key))
+        names << m_components.at(i).name;
+    return names;
 }
 
 int DestinyState::stockOf(const QString &resourceName) const

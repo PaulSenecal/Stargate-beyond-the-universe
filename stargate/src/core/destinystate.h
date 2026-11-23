@@ -5,6 +5,7 @@
 #include <QList>
 #include <QString>
 #include <QStringList>
+#include <functional>
 #include <utility>
 
 #include "src/db/repositories/componentrepository.h"
@@ -57,6 +58,11 @@ public:
     bool consumeSupplies(int crew, double hours);
     int stockOf(const QString &resourceName) const;
 
+    // Names of the components behind a system key ("engines" -> Sublight Engine)
+    QStringList componentNames(const QString &key) const;
+    // Called for every resource added to the stock (quests count them)
+    void setGainListener(std::function<void(const QString &, int)> listener) { m_onGain = std::move(listener); }
+
     QList<ResourceStock> stock() const;
     QList<ShipComponent> components() const { return m_components; }
 
@@ -68,6 +74,7 @@ private:
     QList<ShipComponent> m_components;
     double m_waterNeed = 0;     // fractional consumption not yet removed
     double m_foodNeed = 0;
+    std::function<void(const QString &, int)> m_onGain;
 };
 
 #endif // DESTINYSTATE_H

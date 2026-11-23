@@ -66,6 +66,7 @@ public:
     float hull() const { return m_hull; }
     float shieldStrength() const { return m_shieldStrength; }
     bool shieldActive() const { return m_shieldOrdered; }
+    int hostileCount() const { return int(aliveIds().size()); }
     void restoreDefenses(float hull, float shield, bool shieldOn);
 
     // --- Navigation
@@ -76,6 +77,8 @@ public:
     // Lines drawn in the bottom-right corner of the view
     void setNavigationLines(const QStringList &lines);
     void setPlanetLook(const PlanetLook &look);
+    // Current quest objectives, drawn at the top of the view
+    void setObjectiveLines(const QStringList &lines);
 
     // --- Reports for the console
     QString destinyReport() const;
@@ -211,6 +214,7 @@ private:
     float m_waveTimer = -1;
     QStringList m_navigationLines;
     PlanetLook m_planetLook;
+    QStringList m_objectiveLines;
 
     float m_hull = 100;
     float m_shieldStrength = 100;

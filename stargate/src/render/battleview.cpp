@@ -403,6 +403,12 @@ void BattleView::clearBattlefield(float calmSeconds)
     m_waveTimer = calmSeconds;
 }
 
+void BattleView::setObjectiveLines(const QStringList &lines)
+{
+    m_objectiveLines = lines;
+    update();
+}
+
 void BattleView::setPlanetLook(const PlanetLook &look)
 {
     m_planetLook = look;
@@ -1307,6 +1313,26 @@ void BattleView::drawOverlay()
     p.setPen(ids.empty() ? QColor(70, 230, 100) : red);
     p.drawText(QRectF(0, 14, width() - 14, 18), Qt::AlignRight,
                ids.empty() ? tr("NO CONTACT") : tr("HOSTILES: %1").arg(ids.size()));
+    // --- Quest objectives (top center)
+    if (!m_objectiveLines.isEmpty()) {
+        const qreal lineHeight = 16;
+        const qreal boxWidth = std::min(460.0, width() - 600.0 > 300.0 ? 460.0 : width() * 0.5);
+        const QRectF box((width() - boxWidth) / 2, 12, boxWidth, lineHeight * m_objectiveLines.size() + 10);
+        p.setPen(QPen(QColor(240, 200, 60, 160), 1));
+        p.setBrush(QColor(0, 0, 0, 160));
+        p.drawRoundedRect(box, 4, 4);
+        for (int i = 0; i < m_objectiveLines.size(); ++i) {
+            const QString &text = m_objectiveLines.at(i);
+            const bool done = text.startsWith("[x]");
+            p.setPen(i == 0 ? QColor(240, 200, 60)
+                     : text.startsWith('>') ? QColor(150, 210, 255)
+                     : done ? QColor(120, 200, 120) : QColor(225, 225, 215));
+            p.drawText(QRectF(box.left() + 10, box.top() + 5 + i * lineHeight, box.width() - 20, lineHeight),
+                       Qt::AlignLeft | Qt::AlignVCenter,
+                       p.fontMetrics().elidedText(text, Qt::ElideRight, int(box.width() - 20)));
+        }
+    }
+
     // --- Navigation block (bottom right)
     if (!m_navigationLines.isEmpty()) {
         const qreal lineHeight = 16;

@@ -48,6 +48,15 @@ void DestinyRoute::generateRoute(int galaxies)
     }
 }
 
+QList<int> DestinyRoute::stopsInGalaxy(int galaxy) const
+{
+    QList<int> stops;
+    for (const RouteStop &stop : m_route)
+        if (stop.galaxy == galaxy)
+            stops << stop.sequence;
+    return stops;
+}
+
 QString DestinyRoute::galaxyName(int galaxy) const
 {
     return galaxy < kGalaxyNames.size() ? kGalaxyNames.at(galaxy)

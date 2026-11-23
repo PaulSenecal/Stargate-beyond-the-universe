@@ -1,0 +1,378 @@
+// ================================================================
+//  Game logic tests (Qt Test)
+//  - CommandParserTest: command parsing, validation, Tab completion
+//  - WorldTest:         planet generation, Destiny route, gate window
+//  - DatabaseTest:      ship creation, resources, repairs, supplies,
+//                       world records, save/restore, old-save migration
+//  The database tests run on a temporary copy of the template
+//  database, never on the player's save.
+// ================================================================
+
+#include <QTemporaryDir>
+#include <QtTest>
+
+#include "src/core/commandmanager.h"
+#include "src/core/destinystate.h"
+#include "src/db/databasemanager.h"
+#include "src/db/repositories/saverepository.h"
+#include "src/db/repositories/worldrepository.h"
+#include "src/world/destinyroute.h"
+#include "src/world/planetgenerator.h"
+
+// ================================================================
+//  Command parser
+// ================================================================
+
+class CommandParserTest : public QObject
+{
+    Q_OBJECT
+
+private:
+    CommandManager m_commands;
+
+private slots:
+    void initTestCase()
+    {
+        QVERIFY2(m_commands.loadCommandsFromFile(COMMANDS_JSON), COMMANDS_JSON);
+    }
+
+    void parse_data()
+    {
+        QTest::addColumn<QString>("input");
+        QTest::addColumn<bool>("valid");
+        QTest::addColumn<QString>("name");
+        QTest::addColumn<QStringList>("args");
+
+        QTest::newRow("simple") << "attack 2" << true << "attack" << QStringList{"2"};
+        QTest::newRow("case") << "ATTACK 2" << true << "attack" << QStringList{"2"};
+        QTest::newRow("spaces") << "  repair    shields  " << true << "repair" << QStringList{"shields"};
+        QTest::newRow("multi-word") << "close door a20" << true << "closedoor" << QStringList{"a20"};
+        QTest::newRow("multi-word case") << "Close Door B5" << true << "closedoor" << QStringList{"B5"};
+        QTest::newRow("compact name") << "closedoor a20" << true << "closedoor" << QStringList{"a20"};
+        QTest::newRow("value lower-cased") << "engine FTL" << true << "engine" << QStringList{"ftl"};
+        QTest::newRow("optional absent") << "pulseweapon" << true << "pulseweapon" << QStringList{};
+        QTest::newRow("optional present") << "pulseweapon all" << true << "pulseweapon" << QStringList{"all"};
+        QTest::newRow("duplicate 0 param") << "activate" << true << "activate" << QStringList{};
+        QTest::newRow("duplicate 1 param") << "activate railgun" << true << "activate" << QStringList{"railgun"};
+        QTest::newRow("numbers") << "moveto 1.5 -3" << true << "moveto" << QStringList{"1.5", "-3"};
+        QTest::newRow("gate address") << "stargate G000003A" << true << "stargate" << QStringList{"G000003A"};
+
+        QTest::newRow("missing param") << "attack" << false << "" << QStringList{};
+        QTest::newRow("not a number") << "attack abc" << false << "" << QStringList{};
+        QTest::newRow("below min") << "attack 0" << false << "" << QStringList{};
+        QTest::newRow("bad value") << "shield maybe" << false << "" << QStringList{};
+        QTest::newRow("bad pattern") << "close door 20" << false << "" << QStringList{};
+        QTest::newRow("too many") << "maintower now" << false << "" << QStringList{};
+        QTest::newRow("unknown") << "xyz" << false << "" << QStringList{};
+    }
+
+    void parse()
+    {
+        QFETCH(QString, input);
+        QFETCH(bool, valid);
+        QFETCH(QString, name);
+        QFETCH(QStringList, args);
+
+        const ParsedCommand cmd = m_commands.parse(input);
+        QCOMPARE(cmd.valid, valid);
+        if (valid) {
+            QCOMPARE(cmd.name, name);
+            QCOMPARE(cmd.args, args);
+        } else {
+            QVERIFY(!cmd.error.isEmpty());
+        }
+    }
+
+    void errorMessages()
+    {
+        QVERIFY(m_commands.parse("atack 1").error.contains("did you mean 'attack'"));
+        QVERIFY(m_commands.parse("close").error.contains("did you mean 'close door'"));
+        QVERIFY(m_commands.parse("attack").error.contains("usage: attack <target>"));
+        QVERIFY(m_commands.parse("attack abc").error.contains("must be a whole number"));
+    }
+
+    void completions_data()
+    {
+        QTest::addColumn<QString>("input");
+        QTest::addColumn<QStringList>("expected");
+
+        QTest::newRow("name prefix") << "sca" << QStringList{"scan", "scansector"};
+        QTest::newRow("multi-word") << "close d" << QStringList{"close door"};
+        QTest::newRow("value") << "engine f" << QStringList{"engine ftl"};
+        QTest::newRow("values") << "shield o" << QStringList{"shield off", "shield on"};
+        QTest::newRow("keeps casing") << "Shield OF" << QStringList{"Shield off"};
+        QTest::newRow("dynamic") << "stargate d" << QStringList{"stargate destiny"};
+        QTest::newRow("dynamic all") << "stargate " << QStringList{"stargate destiny", "stargate G000003A"};
+        QTest::newRow("free text") << "closedoor " << QStringList{};
+        QTest::newRow("complete name") << "scansector" << QStringList{};
+    }
+
+    void completions()
+    {
+        QFETCH(QString, input);
+        QFETCH(QStringList, expected);
+        const QHash<QString, QStringList> dynamic{{"stargate", {"destiny", "G000003A"}}};
+        QCOMPARE(m_commands.completions(input, dynamic), expected);
+    }
+};
+
+// ================================================================
+//  World: planets and route
+// ================================================================
+
+class WorldTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void planetCodeAndAddress()
+    {
+        const Planet p = PlanetGenerator::generate(4, 17, 1);
+        QCOMPARE(p.code, QStringLiteral("G04-0017-B"));
+        QCOMPARE(p.gateAddress(), QStringLiteral("G040017B"));
+    }
+
+    void planetsAreDeterministic()
+    {
+        const Planet a = PlanetGenerator::generate(7, 42, 2);
+        const Planet b = PlanetGenerator::generate(7, 42, 2);
+        QCOMPARE(a.nickname, b.nickname);
+        QCOMPARE(a.conditions.water, b.conditions.water);
+        QCOMPARE(a.conditions.toxicity, b.conditions.toxicity);
+        QCOMPARE(int(a.classification), int(b.classification));
+    }
+
+    void ancientSitesAreRare()
+    {
+        int ancient = 0;
+        for (int s = 0; s < 2000; ++s)
+            ancient += PlanetGenerator::generate(0, s, 0).isAncientSite();
+        QVERIFY2(ancient > 50 && ancient < 160, qPrintable(QString::number(ancient)));
+    }
+
+    void conditionsInRange()
+    {
+        for (int s = 0; s < 200; ++s) {
+            const PlanetConditions c = PlanetGenerator::generate(3, s, s % 3).conditions;
+            for (float v : {c.water, c.oxygen, c.minerals, c.energy, c.organics, c.toxicity, c.radiation})
+                QVERIFY(v >= 0.0f && v <= 1.0f);
+        }
+    }
+
+    void gateDialAndRecall()
+    {
+        DestinyRoute route;
+        QString error;
+        const Planet first = route.currentPlanets().first();
+        QCOMPARE(route.variantForAddress(first.gateAddress().toLower()), 0);
+        QCOMPARE(route.variantForAddress("NOPE1234"), -1);
+        QVERIFY(route.dial(0, &error));
+        QVERIFY(!route.dial(0, &error));                 // already there
+        GameEvent event;
+        QVERIFY(!route.jump(&event, &error));            // team still down
+        QVERIFY(error.contains("stargate destiny"));
+        QVERIFY(route.recallTeam(&error));
+        QVERIFY(!route.recallTeam(&error));
+    }
+
+    void strandedTeamCostsCrew()
+    {
+        DestinyRoute route;
+        QString error;
+        QVERIFY(route.dial(0, &error));
+        const int crew = route.state().crew;
+        for (int i = 0; i < 200 && route.state().gateOpen; ++i)
+            route.tick(0.25);
+        QVERIFY(!route.state().gateOpen);
+        QCOMPARE(route.state().crew, crew - 3);
+        QCOMPARE(route.state().teamPlanet, -1);
+    }
+
+    void jumpAndRecharge()
+    {
+        DestinyRoute route;
+        GameEvent event;
+        QString reason;
+        QVERIFY(route.canJump());
+        QVERIFY(route.jump(&event, &reason));
+        QVERIFY(!event.title.isEmpty());
+        QCOMPARE(route.currentIndex(), 1);
+        QVERIFY(route.state().gateOpen);
+        QVERIFY(!route.canJump(&reason));
+        for (int i = 0; i < 2000 && !route.canJump(); ++i)
+            route.tick(0.25);
+        QVERIFY(route.canJump());
+    }
+
+    void restoreClampsValues()
+    {
+        DestinyRoute route;
+        RouteState state;
+        state.crew = -5;
+        state.power = 3.0;
+        state.teamPlanet = 9;
+        route.restore(999999, state, {0});
+        QCOMPARE(route.currentIndex(), route.totalStops() - 1);
+        QCOMPARE(route.state().crew, 1);
+        QCOMPARE(route.state().power, 1.0);
+        QCOMPARE(route.state().teamPlanet, -1);
+        QVERIFY(route.hasCollected(0));
+    }
+};
+
+// ================================================================
+//  Database (temporary copy of the template)
+// ================================================================
+
+class DatabaseTest : public QObject
+{
+    Q_OBJECT
+
+private:
+    QTemporaryDir m_dir;
+    DestinyState m_destiny;
+
+private slots:
+    void initTestCase()
+    {
+        QVERIFY(m_dir.isValid());
+        const QString path = m_dir.filePath("test.db");
+        QVERIFY(QFile::copy(TEMPLATE_DB, path));
+        QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner);
+        QVERIFY(DatabaseManager::instance().init(path));
+        // Simulate a save created before "food" existed
+        QVERIFY(DatabaseManager::instance().exec("DELETE FROM Resource WHERE name = 'food'"));
+    }
+
+    void createsTheDestiny()
+    {
+        QVERIFY(m_destiny.load("Tester"));
+        QCOMPARE(m_destiny.components().size(), 12);
+        QCOMPARE(m_destiny.stockOf("water"), 250);
+        QCOMPARE(m_destiny.stockOf("food"), 150);          // migration re-created the resource
+        QCOMPARE(m_destiny.stockOf("naquadah"), 20);
+
+        DestinyState again;
+        QVERIFY(again.load("Tester"));
+        QCOMPARE(again.shipId(), m_destiny.shipId());       // same ship, no second delivery
+        QCOMPARE(again.stockOf("food"), 150);
+    }
+
+    void damageIsStored()
+    {
+        m_destiny.setSystemHealth("engines", 40.0f);
+        DestinyState reloaded;
+        QVERIFY(reloaded.load("Tester"));
+        QCOMPARE(qRound(reloaded.systemHealth("engines")), 40);
+        m_destiny.setSystemHealth("engines", 100.0f);
+    }
+
+    void repairCostsResources()
+    {
+        const QList<RepairCost> cost = m_destiny.repairCost("engines");   // Sublight Engine
+        QCOMPARE(cost.size(), 2);
+        const int naquadah = m_destiny.stockOf("naquadah");
+        QString missing;
+        QVERIFY(m_destiny.consume(cost, &missing));
+        QCOMPARE(m_destiny.stockOf("naquadah"), naquadah - 4);
+
+        QList<RepairCost> tooMuch{{0, "crystal", 999}};
+        QVERIFY(!m_destiny.consume(tooMuch, &missing));
+        QVERIFY(missing.contains("crystal"));
+    }
+
+    void crewConsumesSupplies()
+    {
+        const int water = m_destiny.stockOf("water");
+        const int food = m_destiny.stockOf("food");
+        for (int i = 0; i < 40; ++i)
+            QVERIFY(m_destiny.consumeSupplies(80, 0.25));   // 10 hours
+        QCOMPARE(water - m_destiny.stockOf("water"), 16);   // 0.02 / person / hour
+        QCOMPARE(food - m_destiny.stockOf("food"), 12);     // 0.015 / person / hour
+    }
+
+    void planetCollection()
+    {
+        Planet rich = PlanetGenerator::generate(0, 0, 0);
+        rich.conditions = PlanetConditions{1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, true};
+        const int water = m_destiny.stockOf("water");
+        const QString loot = m_destiny.collectFromPlanet(rich);
+        QVERIFY(loot.contains("+60 water"));
+        QCOMPARE(m_destiny.stockOf("water"), water + 60);
+    }
+
+    void worldRecordsAreIdempotent()
+    {
+        const int before = WorldRepository::discoveredPlanetCount();
+        const QList<Planet> planets{PlanetGenerator::generate(1, 2, 0), PlanetGenerator::generate(1, 2, 1)};
+        QVERIFY(WorldRepository::recordSystem("Othala", planets));
+        QVERIFY(WorldRepository::recordSystem("Othala", planets));
+        QCOMPARE(WorldRepository::discoveredPlanetCount(), before + 2);
+    }
+
+    void saveRoundTrip()
+    {
+        QVERIFY(SaveRepository::ensureSchema());
+        const int session = SaveRepository::autosaveSession(m_destiny.shipId());
+        QVERIFY(session > 0);
+        QCOMPARE(SaveRepository::autosaveSession(m_destiny.shipId()), session);
+        QVERIFY(!SaveRepository::load(session).has_value());
+
+        GameSave empty;      // empty explored list must not be stored as NULL
+        QVERIFY(SaveRepository::save(session, empty, "Haeble"));
+        QVERIFY(SaveRepository::load(session)->collected.isEmpty());
+
+        GameSave s;
+        s.routeIndex = 7;
+        s.hours = 51.25;
+        s.crew = 71;
+        s.power = 0.42;
+        s.ftlCharge = 0.3;
+        s.gateOpen = true;
+        s.gateRemaining = 3.5;
+        s.gateTotal = 9.0;
+        s.teamPlanet = 1;
+        s.collected = {0, 2};
+        s.hull = 55.5f;
+        s.shield = 0.0f;
+        s.shieldOn = false;
+        QVERIFY(SaveRepository::save(session, s, "Othala"));
+
+        const std::optional<GameSave> l = SaveRepository::load(session);
+        QVERIFY(l.has_value());
+        QCOMPARE(l->routeIndex, 7);
+        QCOMPARE(l->hours, 51.25);
+        QCOMPARE(l->crew, 71);
+        QCOMPARE(l->power, 0.42);
+        QCOMPARE(l->teamPlanet, 1);
+        QCOMPARE(l->collected, (QList<int>{0, 2}));
+        QCOMPARE(l->hull, 55.5f);
+        QCOMPARE(l->shieldOn, false);
+
+        QVERIFY(SaveRepository::reset(session));
+        QVERIFY(!SaveRepository::load(session).has_value());
+    }
+};
+
+// ================================================================
+
+int main(int argc, char *argv[])
+{
+    QCoreApplication app(argc, argv);
+    int failures = 0;
+    {
+        CommandParserTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        WorldTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        DatabaseTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    return failures;
+}
+
+#include "tst_game.moc"

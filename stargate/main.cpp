@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "src/db/databasemanager.h"
 
 #include <QApplication>
 #include <QLocale>
@@ -27,6 +28,11 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    // Player save database (copied from the template on first launch).
+    // The game still runs without it, with default values.
+    if (!DatabaseManager::instance().openRuntimeCopy(":/db/stargate.db", "stargate.db"))
+        qWarning() << "[DB] Database unavailable, running without persistence";
+
     MainWindow w;
     w.showMaximized();
     return a.exec();

@@ -1,6 +1,8 @@
 #include "databasemanager.h"
 
+#include <QDir>
 #include <QFile>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -60,6 +62,51 @@ bool DatabaseManager::init(const QString &dbPath)
 
     qDebug() << "[DB] Connected to" << dbPath;
     return true;
+}
+
+// ================================================================
+//  openRuntimeCopy
+// ================================================================
+
+bool DatabaseManager::openRuntimeCopy(const QString &templatePath, const QString &fileName)
+{
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (dir.isEmpty() || !QDir().mkpath(dir)) {
+        qCritical() << "[DB] No writable data folder:" << dir;
+        return false;
+    }
+
+    const QString path = QDir(dir).filePath(fileName);
+    if (!QFile::exists(path)) {
+        if (!QFile::copy(templatePath, path)) {
+            qCritical() << "[DB] Cannot copy" << templatePath << "to" << path;
+            return false;
+        }
+        // Files copied from Qt resources are read-only
+        QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner);
+        qDebug() << "[DB] New save database created:" << path;
+    }
+    return init(path);
+}
+
+QString DatabaseManager::databasePath() const
+{
+    return m_db.databaseName();
+}
+
+bool DatabaseManager::beginTransaction()
+{
+    return m_db.transaction();
+}
+
+bool DatabaseManager::commit()
+{
+    return m_db.commit();
+}
+
+bool DatabaseManager::rollback()
+{
+    return m_db.rollback();
 }
 
 // ================================================================

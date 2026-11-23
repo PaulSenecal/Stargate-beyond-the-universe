@@ -7,6 +7,7 @@
 #include "commandconsole.h"
 #include "hudimagepanel.h"
 #include "src/core/commandmanager.h"
+#include "src/db/databasemanager.h"
 
 GameMenu::GameMenu(QWidget *parent)
     : QWidget(parent)
@@ -64,6 +65,7 @@ GameMenu::GameMenu(QWidget *parent)
     }
 
     m_console->appendLine(tr("Destiny tactical console online"), CommandConsole::Tone::Success);
+    loadSave();
     m_console->appendLine(tr("Hostile ships detected - shields up"), CommandConsole::Tone::Warning);
     m_console->appendLine(tr("Type 'help' for the command list"));
 
@@ -144,7 +146,9 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
     } else if (name == "weaponstatus") {
         logReport(m_battle->weaponReport());
     } else if (name == "repair") {
-        m_battle->repairSubsystem(args.value(0));
+        repair(args.value(0));
+    } else if (name == "showressource") {
+        showResources();
     } else {
         m_console->appendLine(tr("Order acknowledged: %1 (not simulated yet)").arg(name),
                               CommandConsole::Tone::Info);
@@ -159,7 +163,72 @@ void GameMenu::showHelp()
     names.removeDuplicates();
     m_console->appendLine(tr("Commands: %1").arg(names.join(", ")));
     m_console->appendLine(tr("Combat: attack <n>, scan <n>, maintower, secondarytower, pulseweapon, shield on|off"));
-    m_console->appendLine(tr("Status: destinystatus, weaponstatus, scansector — repair <engines|shields|weapons|lifesupport|hull>"));
+    m_console->appendLine(tr("Status: destinystatus, weaponstatus, scansector, showressource"));
+    m_console->appendLine(tr("Repair (uses resources): repair <engines|shields|weapons|lifesupport|hull>"));
+}
+
+void GameMenu::loadSave()
+{
+    if (!DatabaseManager::instance().isOpen() || !m_destiny.load(QStringLiteral("Commander"))) {
+        m_console->appendLine(tr("No save database - progress will not be kept"), CommandConsole::Tone::Warning);
+        return;
+    }
+
+    for (const QString &key : BattleView::systemKeys())
+        m_battle->setSubsystemHealth(key, m_destiny.systemHealth(key));
+
+    connect(m_battle, &BattleView::subsystemChanged, this, [this](const QString &key, float health) {
+        m_destiny.setSystemHealth(key, health);
+    });
+    connect(m_battle, &BattleView::enemyDestroyed, this, [this](bool mothership) {
+        const QString salvage = m_destiny.collectSalvage(mothership);
+        if (!salvage.isEmpty())
+            m_console->appendLine(tr("Salvage recovered: %1").arg(salvage), CommandConsole::Tone::Success);
+    });
+
+    m_console->appendLine(tr("Ship data loaded: %1 components aboard").arg(m_destiny.components().size()),
+                          CommandConsole::Tone::Success);
+}
+
+void GameMenu::repair(const QString &system)
+{
+    const QString key = BattleView::systemKey(system);
+    if (key.isEmpty()) {
+        m_battle->repairSubsystem(system);      // prints the list of valid systems
+        return;
+    }
+    if (m_battle->systemHealth(key) >= 99.5f) {
+        m_console->appendLine(tr("%1 already at 100%").arg(key));
+        return;
+    }
+
+    const QList<RepairCost> cost = m_destiny.repairCost(key);
+    QString missing;
+    if (!m_destiny.consume(cost, &missing)) {
+        m_console->appendLine(tr("Cannot repair %1 - missing: %2").arg(key, missing),
+                              CommandConsole::Tone::Warning);
+        return;
+    }
+    if (m_destiny.isLoaded() && !cost.isEmpty()) {
+        QStringList used;
+        for (const RepairCost &c : cost)
+            used << QStringLiteral("%1 %2").arg(c.quantity).arg(c.resourceName);
+        m_console->appendLine(tr("Resources used: %1").arg(used.join(", ")));
+    }
+    m_battle->repairSubsystem(key);
+}
+
+void GameMenu::showResources()
+{
+    if (!m_destiny.isLoaded()) {
+        m_console->appendLine(tr("No save database"), CommandConsole::Tone::Warning);
+        return;
+    }
+    for (const ResourceStock &r : m_destiny.stock())
+        m_console->appendLine(QStringLiteral("%1 %2 (%3)")
+                                  .arg(r.name.leftJustified(14, ' '))
+                                  .arg(r.quantity, 4)
+                                  .arg(r.rarity.toLower()));
 }
 
 void GameMenu::logReport(const QString &report)

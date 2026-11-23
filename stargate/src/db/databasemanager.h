@@ -24,6 +24,17 @@ public:
     // Open the DB and run schema if needed
     bool init(const QString &dbPath);
 
+    // Open the player's save database, stored in the user data folder
+    // (macOS: ~/Library/Application Support/<app>/). On first launch it
+    // is created as a copy of templatePath (the database shipped in the
+    // resources), so the template itself is never modified.
+    bool openRuntimeCopy(const QString &templatePath, const QString &fileName);
+    QString databasePath() const;
+
+    bool beginTransaction();
+    bool commit();
+    bool rollback();
+
     // Execute a raw SQL string (DDL, INSERT, UPDATE, DELETE)
     // Returns true on success
     bool exec(const QString &sql);

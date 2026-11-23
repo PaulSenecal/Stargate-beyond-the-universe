@@ -8,6 +8,9 @@
         <file alias="shipStatus.png">images/shipStatus.png</file>
         <file alias="weaponStatus.png">images/weaponStatus.png</file>
     </qresource>
+    <qresource prefix="/db">
+        <file alias="stargate.db">../stargate/src/db/stagateDataBase.db</file>
+    </qresource>
     <qresource prefix="/commandList">
         <file>commands.json</file>
     </qresource>

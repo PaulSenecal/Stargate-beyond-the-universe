@@ -349,13 +349,36 @@ void BattleView::setShieldActive(bool active)
         emit logMessage(tr("Shields lowered"), LogLevel::Warning);
 }
 
+QString BattleView::systemKey(const QString &name)
+{
+    const QString key = name.toLower().remove(' ').remove('_');
+    if (key == "engine" || key == "engines") return QStringLiteral("engines");
+    if (key == "shield" || key == "shields") return QStringLiteral("shields");
+    if (key == "weapon" || key == "weapons") return QStringLiteral("weapons");
+    if (key == "life" || key == "lifesupport") return QStringLiteral("lifesupport");
+    if (key == "hull") return QStringLiteral("hull");
+    return QString();
+}
+
+QStringList BattleView::systemKeys()
+{
+    return {"engines", "shields", "weapons", "lifesupport"};
+}
+
+void BattleView::setSubsystemHealth(const QString &key, float health)
+{
+    if (Subsystem *s = subsystem(key))
+        s->health = std::clamp(health, 0.0f, 100.0f);
+}
+
+float BattleView::systemHealth(const QString &key) const
+{
+    return key == "hull" ? m_hull : subsystemHealth(key);
+}
+
 bool BattleView::repairSubsystem(const QString &name)
 {
-    QString key = name.toLower().remove(' ');
-    if (key == "engine") key = "engines";
-    if (key == "shield") key = "shields";
-    if (key == "weapon") key = "weapons";
-    if (key == "life") key = "lifesupport";
+    const QString key = systemKey(name);
 
     auto removeFires = [this](int count) {
         for (int i = 0; i < count && !m_fires.empty(); ++i)
@@ -371,6 +394,7 @@ bool BattleView::repairSubsystem(const QString &name)
     if (Subsystem *s = subsystem(key)) {
         s->health = std::min(100.0f, s->health + 35.0f);
         removeFires(2);
+        emit subsystemChanged(s->key, s->health);
         emit logMessage(tr("%1 repaired: %2%").arg(s->name).arg(qRound(s->health)), LogLevel::Success);
         return true;
     }
@@ -669,6 +693,7 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     if (m_lockedId == e.id)
         m_lockedId = -1;
     emit logMessage(tr("T%1 %2 destroyed").arg(index + 1).arg(className(e.cls)), LogLevel::Success);
+    emit enemyDestroyed(big);
 }
 
 void BattleView::hitShield(const Projectile &p)
@@ -710,6 +735,7 @@ void BattleView::damageRandomSubsystem(float amount)
     Subsystem &s = m_subsystems[QRandomGenerator::global()->bounded(int(m_subsystems.size()))];
     const float before = s.health;
     s.health = std::max(0.0f, s.health - amount);
+    emit subsystemChanged(s.key, s.health);
     if (before >= 50.0f && s.health < 50.0f)
         emit logMessage(tr("%1 damaged (%2%)").arg(s.name).arg(qRound(s.health)), LogLevel::Warning);
     if (before > 0.0f && s.health <= 0.0f)

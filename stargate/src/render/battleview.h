@@ -10,6 +10,7 @@
 #include <QOpenGLWidget>
 #include <QPoint>
 #include <QPointF>
+#include <QStringList>
 #include <QVector3D>
 #include <vector>
 
@@ -51,6 +52,14 @@ public:
     bool lockTarget(int enemyIndex);
     bool repairSubsystem(const QString &name);
 
+    // --- Ship systems: engines, shields, weapons, lifesupport (+ hull)
+    // Normalizes a typed name ("engine", "Life Support"…) to a system
+    // key; returns an empty string if unknown.
+    static QString systemKey(const QString &name);
+    static QStringList systemKeys();
+    void setSubsystemHealth(const QString &key, float health);
+    float systemHealth(const QString &key) const;   // also accepts "hull"
+
     // --- Reports for the console
     QString destinyReport() const;
     QString weaponReport() const;
@@ -58,6 +67,8 @@ public:
 
 signals:
     void logMessage(const QString &text, BattleView::LogLevel level);
+    void subsystemChanged(const QString &key, float health);
+    void enemyDestroyed(bool mothership);
 
 protected:
     void initializeGL() override;

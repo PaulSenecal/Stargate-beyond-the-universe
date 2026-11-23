@@ -1,11 +1,18 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "src/Menu/gamemenu/gamemenu.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    setWindowTitle(tr("Stargate - Beyond the Universe"));
+
+    // The in-game menu (3D battle view + HUD + command console) is the
+    // first screen. The former title buttons stay in mainwindow.ui.
+    setCentralWidget(new GameMenu(this));
+    menuBar()->hide();
     //menuBackground();
 
 }

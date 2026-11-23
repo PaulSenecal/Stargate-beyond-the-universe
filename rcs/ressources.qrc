@@ -2,6 +2,12 @@
     <qresource prefix="/">
         <file>images/background/destinyPlan.jpg</file>
     </qresource>
+    <qresource prefix="/hud">
+        <file alias="maps.png">images/maps.png</file>
+        <file alias="navigation.png">images/navigation 1.png</file>
+        <file alias="shipStatus.png">images/shipStatus.png</file>
+        <file alias="weaponStatus.png">images/weaponStatus.png</file>
+    </qresource>
     <qresource prefix="/commandList">
         <file>commands.json</file>
     </qresource>

@@ -1,5 +1,5 @@
 QT       += core gui sql network
-QT += widgets
+QT += widgets opengl openglwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -13,24 +13,40 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     src/Menu/campaign/campaign.cpp \
+    src/Menu/gamemenu/commandconsole.cpp \
+    src/Menu/gamemenu/gamemenu.cpp \
+    src/Menu/gamemenu/hudimagepanel.cpp \
     src/core/commandmanager.cpp \
     src/db/databasemanager.cpp \
     src/db/repositories/characterrepository.cpp \
     src/db/repositories/componentrepository.cpp \
     src/db/repositories/resourcerepository.cpp \
     src/db/repositories/shiprepository.cpp \
-    src/db/repositories/zonerepository.cpp
+    src/db/repositories/zonerepository.cpp \
+    src/entities/entity.cpp \
+    src/entities/vessel.cpp \
+    src/render/battleview.cpp \
+    src/render/meshbuilder.cpp \
+    src/utils/logger.cpp
 
 HEADERS += \
     mainwindow.h \
     src/Menu/campaign/campaign.h \
+    src/Menu/gamemenu/commandconsole.h \
+    src/Menu/gamemenu/gamemenu.h \
+    src/Menu/gamemenu/hudimagepanel.h \
     src/core/commandmanager.h \
     src/db/databasemanager.h \
     src/db/repositories/characterrepository.h \
     src/db/repositories/componentrepository.h \
     src/db/repositories/resourcerepository.h \
     src/db/repositories/shiprepository.h \
-    src/db/repositories/zonerepository.h
+    src/db/repositories/zonerepository.h \
+    src/entities/entity.h \
+    src/entities/vessel.h \
+    src/render/battleview.h \
+    src/render/meshbuilder.h \
+    src/utils/logger.h
 
 FORMS += \
     mainwindow.ui \

@@ -1,4 +1,4 @@
-#include "DatabaseManager.h"
+#include "databasemanager.h"
 
 #include <QFile>
 #include <QTextStream>

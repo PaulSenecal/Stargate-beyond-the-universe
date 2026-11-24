@@ -1,4 +1,5 @@
 #include "battleview.h"
+#include "src/db/dbtext.h"
 
 #include <QDebug>
 #include <QFontDatabase>
@@ -843,7 +844,7 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
         shoot(false, e.pos, -1, randomHullPoint(), attack.damage, 90.0f, kBeamColor, 6.0f, 0.3f);
         m_projectiles.back().kind = Projectile::Kind::Beam;
         emit sound(SoundCue::EnemyBeam, sc.faction, 0.0f);
-        emit logMessage(tr("%1: %2 fired").arg(sc.name, attack.name), LogLevel::Warning);
+        emit logMessage(tr("%1: %2 fired").arg(sc.name, DbText::tr(attack.name)), LogLevel::Warning);
     } else if (attack.kind == "kamikaze") {
         e.diving = true;
         e.diveAim = randomHullPoint();

@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "src/core/assets.h"
+#include "src/db/dbtext.h"
 
 namespace {
 
@@ -142,8 +143,9 @@ protected:
         p.setFont(small);
         p.setPen(kText);
         const QRectF descRect(margin, y, headerWidth, 200);
-        const QRectF used = p.boundingRect(descRect, Qt::TextWordWrap, m_ship.description);
-        p.drawText(descRect, Qt::TextWordWrap, m_ship.description);
+        const QString description = DbText::tr(m_ship.description);
+        const QRectF used = p.boundingRect(descRect, Qt::TextWordWrap, description);
+        p.drawText(descRect, Qt::TextWordWrap, description);
         y = std::max(y + used.height(), pictureBottom) + 16;
 
         // Attacks
@@ -162,7 +164,7 @@ protected:
             // Name + kind
             p.setFont(font);
             p.setPen(a.special ? kSpecial : kText);
-            p.drawText(QPointF(margin + 10, y + 16), a.special ? QObject::tr("%1  [SPECIAL]").arg(a.name) : a.name);
+            p.drawText(QPointF(margin + 10, y + 16), a.special ? QObject::tr("%1  [SPECIAL]").arg(DbText::tr(a.name)) : DbText::tr(a.name));
             p.setFont(small);
             p.setPen(kDim);
             const QString right = QObject::tr("%1  -  %2").arg(kindLabel(a.kind), damageText(a));
@@ -197,9 +199,10 @@ protected:
             // Description
             if (!a.description.isEmpty()) {
                 const QRectF r(margin + 10, y, width - 20, 60);
-                const QRectF h = p.boundingRect(r, Qt::TextWordWrap, a.description);
+                const QString description = DbText::tr(a.description);
+                const QRectF h = p.boundingRect(r, Qt::TextWordWrap, description);
                 p.setPen(kText);
-                p.drawText(r, Qt::TextWordWrap, a.description);
+                p.drawText(r, Qt::TextWordWrap, description);
                 y += h.height();
             }
             y += 8;
@@ -313,7 +316,7 @@ int ShipLibraryDialog::find(const QList<ShipClass> &ships, const QString &name)
 QString ShipLibraryDialog::describe(const ShipAttack &a)
 {
     QString text = QObject::tr("%1%2: %3, %4, %5% every %6 s (~%7/min)")
-                       .arg(a.special ? QStringLiteral("* ") : QString(), a.name, kindLabel(a.kind), damageText(a))
+                       .arg(a.special ? QStringLiteral("* ") : QString(), DbText::tr(a.name), kindLabel(a.kind), damageText(a))
                        .arg(qRound(a.chance * 100))
                        .arg(QString::number(double(a.cooldown), 'g', 3))
                        .arg(QString::number(double(a.usesPerMinute()), 'f', 1));
@@ -331,7 +334,7 @@ QStringList ShipLibraryDialog::describe(const ShipClass &ship)
                  .arg(ship.name.toUpper(), ship.faction, roleLabel(ship.role).toLower())
                  .arg(ship.hull)
                  .arg(ship.hostile ? QObject::tr(", hostile") : QString());
-    lines << ship.description;
+    lines << DbText::tr(ship.description);
     for (const ShipAttack &a : ship.attacks)
         lines << QStringLiteral("  ") + describe(a);
     return lines;

@@ -1,4 +1,5 @@
 #include "shipstatuswidget.h"
+#include "src/db/dbtext.h"
 
 #include <QFontDatabase>
 #include <QHash>
@@ -234,7 +235,7 @@ void ShipStatusWidget::paintEvent(QPaintEvent *)
         const qreal nameWidth = columnWidth - barWidth - 40;
 
         p.setPen(c.underAttack ? kCritical : kText);
-        const QString name = c.underAttack ? tr("HIT ") + c.name : c.name;
+        const QString name = c.underAttack ? tr("HIT ") + DbText::tr(c.name) : DbText::tr(c.name);
         p.drawText(QRectF(cx, cy, nameWidth, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
                    QFontMetricsF(small).elidedText(name, Qt::ElideRight, nameWidth));
 

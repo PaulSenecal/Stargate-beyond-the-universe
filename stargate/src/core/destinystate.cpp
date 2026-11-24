@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "src/db/databasemanager.h"
+#include "src/db/dbtext.h"
 
 namespace {
 
@@ -123,7 +124,8 @@ bool DestinyState::consume(const QList<RepairCost> &cost, QString *missing)
         const int id = c.resourceId > 0 ? c.resourceId : resourceIdByName(c.resourceName);
         const int have = ResourceRepository::quantity(m_shipId, id);
         if (have < c.quantity)
-            lacking << QStringLiteral("%1 %2 (have %3)").arg(c.quantity).arg(c.resourceName).arg(have);
+            lacking << QCoreApplication::translate("DestinyState", "%1 %2 (have %3)")
+                           .arg(c.quantity).arg(DbText::tr(c.resourceName)).arg(have);
         toRemove.append({id, c.quantity});
     }
     if (!lacking.isEmpty()) {
@@ -165,7 +167,7 @@ QString DestinyState::addResources(const QList<std::pair<QString, int>> &resourc
     QStringList gained;
     for (const auto &[name, quantity] : resources) {
         if (quantity > 0 && ResourceRepository::addByName(m_shipId, name, quantity)) {
-            gained << QStringLiteral("+%1 %2").arg(quantity).arg(name);
+            gained << QStringLiteral("+%1 %2").arg(quantity).arg(DbText::tr(name));
             if (m_onGain)
                 m_onGain(name, quantity);
         }

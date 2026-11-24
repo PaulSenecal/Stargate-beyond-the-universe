@@ -29,6 +29,7 @@
 #include "src/db/repositories/worldrepository.h"
 #include "src/render/planetlook.h"
 #include "src/world/planetgenerator.h"
+#include "src/db/dbtext.h"
 
 namespace {
 constexpr double kHoursPerTick = 0.25;     // 1 real second = 15 game minutes
@@ -552,7 +553,7 @@ void GameMenu::repair(const QString &system)
     if (m_destiny.isLoaded() && !cost.isEmpty()) {
         QStringList used;
         for (const RepairCost &c : cost)
-            used << QStringLiteral("%1 %2").arg(c.quantity).arg(c.resourceName);
+            used << QStringLiteral("%1 %2").arg(c.quantity).arg(DbText::tr(c.resourceName));
         m_console->appendLine(tr("Resources used: %1").arg(used.join(", ")));
     }
     if (m_battle->repairSubsystem(key))
@@ -568,9 +569,9 @@ void GameMenu::showResources()
     }
     for (const ResourceStock &r : m_destiny.stock())
         m_console->appendLine(QStringLiteral("%1 %2 (%3)")
-                                  .arg(r.name.leftJustified(14, ' '))
+                                  .arg(DbText::tr(r.name).leftJustified(14, ' '))
                                   .arg(r.quantity, 4)
-                                  .arg(r.rarity.toLower()));
+                                  .arg(DbText::tr(r.rarity.toLower())));
 }
 
 // ================================================================

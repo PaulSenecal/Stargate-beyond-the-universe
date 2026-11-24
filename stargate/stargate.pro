@@ -82,6 +82,8 @@ HEADERS += \
     src/core/assets.h \
     src/core/shipclass.h \
     src/db/databasemanager.h \
+    src/db/dbtext.h \
+    src/db/dbtexts_i18n.h \
     src/db/repositories/characterrepository.h \
     src/db/repositories/componentrepository.h \
     src/db/repositories/questrepository.h \

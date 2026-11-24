@@ -1,4 +1,5 @@
 #include "weaponstatuswidget.h"
+#include "src/db/dbtext.h"
 
 #include <QFontDatabase>
 #include <QPainter>
@@ -162,7 +163,7 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         const bool blink = weapon.underAttack && (m_frame / 3) % 2 == 0;
         p.setPen(weapon.underAttack ? kCritical : kText);
         p.drawText(QRectF(left, y, labelWidth, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
-                   QFontMetricsF(small).elidedText(blink ? tr("HIT ") + weapon.name : weapon.name, Qt::ElideRight, labelWidth));
+                   QFontMetricsF(small).elidedText(blink ? tr("HIT ") + DbText::tr(weapon.name) : DbText::tr(weapon.name), Qt::ElideRight, labelWidth));
         const QRectF bar(barLeft, y + smallLine / 2 - 3, barWidth, 6);
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(60, 60, 60));

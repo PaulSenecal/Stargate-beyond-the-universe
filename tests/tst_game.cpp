@@ -716,6 +716,107 @@ private slots:
         QCOMPARE(game.fleetCount(1), 0);
     }
 
+    // The small galaxy with another enemy faction
+    static QJsonObject withEnemy(const QString &faction, const QList<std::array<int, 4>> &fleets = {})
+    {
+        QJsonObject json = withFleets(fleets);
+        QJsonArray factions = json["factions"].toArray();
+        QJsonObject enemy = factions[1].toObject();
+        enemy["id"] = faction;
+        factions[1] = enemy;
+        json["factions"] = factions;
+        return json;
+    }
+
+    static bool said(const QSignalSpy &spy, const QString &text)
+    {
+        for (const QList<QVariant> &args : spy)
+            if (args.value(0).toString().contains(text))
+                return true;
+        return false;
+    }
+
+    void wraithCulling()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withEnemy("Wraith", {{1, 3, 6, 1}})));
+        game.setSeed(1);
+        run(game, 15);
+        QCOMPARE(game.planets()[1].owner, 1);
+        QVERIFY(game.planets()[1].population < 2.0);    // 5 M, -25% battle, then halved
+    }
+
+    void goauldSlavery()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withEnemy("Goa'uld")));
+        // Same population (5 M): Chulak (Goa'uld) yields 1.6x Earth (Tau'ri)
+        QCOMPARE(qRound(game.naquadahRate(game.planets()[2]) * 1000),
+                 qRound(game.naquadahRate(game.planets()[0]) * 1600));
+
+        // A Goa'uld world without a fleet eventually rises
+        QJsonObject json = withEnemy("Goa'uld");
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["owner"] = 1;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        ConquestGame revolt;
+        QVERIFY(revolt.fromJson(json));
+        revolt.setSeed(8);
+        QSignalSpy messages(&revolt, &ConquestGame::message);
+        run(revolt, 1500);
+        QVERIFY(said(messages, "Jaffa revolt"));
+    }
+
+    void tauriTechnologyAndDiplomacy()
+    {
+        QJsonObject json = smallGalaxy();
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject earth = planets[0].toObject();
+        earth["bonus"] = int(Conquest::Bonus::AncientSite);
+        planets[0] = earth;
+        json["planets"] = planets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+        QCOMPARE(game.powerMultiplier(0), 1.08);
+        QCOMPARE(game.powerMultiplier(1), 1.0);
+
+        // The neutral neighbour of the Tau'ri joins them peacefully (no
+        // shipyard anywhere: only diplomacy can change its owner)
+        for (int i : {0, 2}) {
+            QJsonObject planet = planets[i].toObject();
+            planet["capital"] = false;
+            planets[i] = planet;
+        }
+        json["planets"] = planets;
+        // A Goa'uld fleet holding Chulak (no revolt, no AI move)
+        json["version"] = 2;
+        json["fleets"] = QJsonArray{QJsonObject{{"id", 1}, {"owner", 1}, {"motherships", 0}, {"fighters", 1},
+                                                {"at", 2}, {"ordered", true}}};
+        ConquestGame peace;
+        QVERIFY(peace.fromJson(json));
+        peace.setSeed(6);
+        QSignalSpy messages(&peace, &ConquestGame::message);
+        run(peace, 1800);
+        QVERIFY(said(messages, "through diplomacy"));
+        QCOMPARE(peace.planets()[1].owner, 0);
+    }
+
+    void lucianRaid()
+    {
+        ConquestGame game;
+        // A big Lucian fleet attacks Earth while the flagship is away
+        QJsonObject json = withEnemy("Lucian Alliance", {{1, 4, 10, 0}});
+        json["at"] = 1;
+        QVERIFY(game.fromJson(json));
+        game.setSeed(3);
+        QSignalSpy messages(&game, &ConquestGame::message);
+        run(game, 60);
+        QCOMPARE(game.planets()[0].owner, 1);
+        QVERIFY(said(messages, "Lucian raid"));
+    }
+
     void orderedFleet()
     {
         ConquestGame game;

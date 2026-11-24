@@ -328,6 +328,22 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les chantiers navals construisent des flottes qui agissent seules - les vôtres aussi. Les flottes ennemies vont attaquer.</translation>
     </message>
     <message>
+        <source>Culling: captured worlds lose half their population (it feeds the hives: naquadah) and never grow back; shipyards x1.6; fleets regrow fighters at home.</source>
+        <translation>Prélèvement : les mondes conquis perdent la moitié de leur population (elle nourrit les ruches : naquadah) et ne repeuplent plus ; chantiers x1,6 ; les flottes régénèrent leurs chasseurs chez elles.</translation>
+    </message>
+    <message>
+        <source>Slavery: naquadah x1.6 and shipyards x1.25, but worlds without a fleet in orbit may rise in Jaffa revolts.</source>
+        <translation>Esclavage : naquadah x1,6 et chantiers x1,25, mais les mondes sans flotte en orbite peuvent connaître des révoltes jaffa.</translation>
+    </message>
+    <message>
+        <source>Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral neighbours may join, the flagship rallies worlds twice as fast.</source>
+        <translation>Technologie des Anciens : +8 % de puissance des flottes par site des Anciens (max +40 %). Diplomatie : les voisins neutres peuvent vous rejoindre, le vaisseau amiral rallie les mondes deux fois plus vite.</translation>
+    </message>
+    <message>
+        <source>Smuggling: fighters built x1.4 faster. Raids: every world taken steals naquadah from its owner.</source>
+        <translation>Contrebande : chasseurs construits x1,4 plus vite. Raids : chaque monde pris vole du naquadah à son propriétaire.</translation>
+    </message>
+    <message>
         <source>Shipyard (fast repairs)</source>
         <translation>Chantier naval (réparations rapides)</translation>
     </message>
@@ -448,6 +464,18 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 est défendue par la flotte %2 : combat !</translation>
     </message>
     <message>
+        <source>The Wraith cull the population of %1</source>
+        <translation>Les Wraith prélèvent la population de %1</translation>
+    </message>
+    <message>
+        <source>Jaffa revolt on %1: the world breaks free from the Goa&apos;uld</source>
+        <translation>Révolte jaffa sur %1 : le monde se libère des Goa&apos;uld</translation>
+    </message>
+    <message>
+        <source>%1 joins the Tau&apos;ri through diplomacy</source>
+        <translation>%1 rejoint les Tau&apos;ri par la diplomatie</translation>
+    </message>
+    <message>
         <source>New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))</source>
         <translation>Nouvelle flotte %1 lancée depuis %2 (%3 vaisseau(x)-mère(s), %4 chasseur(s))</translation>
     </message>
@@ -490,6 +518,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>The %1 take %2 from the %3</source>
         <translation>%2 tombe aux mains des %1 (avant : %3)</translation>
+    </message>
+    <message>
+        <source>Lucian raid on %1: %2 naquadah stolen</source>
+        <translation>Raid lucien sur %1 : %2 naquadah volés</translation>
     </message>
     <message>
         <source>%1 holds against a %2 attack</source>
@@ -577,6 +609,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>No valid conquest save - a new galaxy is generated</source>
         <translation>Aucune sauvegarde de conquête valide - une nouvelle galaxie est générée</translation>
+    </message>
+    <message>
+        <source>Faction trait: %1</source>
+        <translation>Trait de faction : %1</translation>
     </message>
     <message>
         <source>Type &apos;help&apos; for the conquest commands - double click a planet to travel there</source>
@@ -689,6 +725,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>%1: %2 planet(s) of %3, naquadah %4, trinium %5, flagship hull %6% at %7</source>
         <translation>%1 : %2 planète(s) sur %3, naquadah %4, trinium %5, coque du vaisseau amiral %6% à %7</translation>
+    </message>
+    <message>
+        <source>Ancient technology: fleet power +%1%</source>
+        <translation>Technologie des Anciens : puissance des flottes +%1%</translation>
     </message>
     <message>
         <source>Cannot fortify: %1</source>
@@ -2435,10 +2475,6 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Smugglers and mercenaries: stolen Ha&apos;taks and Gliders.</source>
         <translation>Contrebandiers et mercenaires : Ha&apos;tak et planeurs volés.</translation>
-    </message>
-    <message>
-        <source>Faction traits (culling, slavery, technology) come in a later step.</source>
-        <translation>Les traits de faction (prélèvement, esclavage, technologie) arriveront dans une prochaine étape.</translation>
     </message>
     <message>
         <source>Settings</source>

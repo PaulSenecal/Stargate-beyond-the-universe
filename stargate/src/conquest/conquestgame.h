@@ -179,8 +179,20 @@ public:
     bool isOver() const { return m_over; }
 
     // Planet income per second for its owner
-    static double naquadahRate(const Conquest::Planet &p);
-    static double triniumRate(const Conquest::Planet &p);
+    double naquadahRate(const Conquest::Planet &p) const;
+    double triniumRate(const Conquest::Planet &p) const;
+
+    // --- Faction traits (phase 3)
+    //  Wraith: cull populations (captured worlds halved, no growth), fast
+    //          shipyards, fleets regrow fighters at home
+    //  Goa'uld: slavery (naquadah x1.6, faster shipyards), Jaffa revolts on
+//           worlds left without a fleet
+    //  Tau'ri: Ancient technology (+8% fleet power per Ancient site, max
+    //          +40%), diplomacy (neutral neighbours may join, faster rallying)
+    //  Lucian Alliance: smuggling (fast fighters), raids steal naquadah
+    double powerMultiplier(int faction) const;
+    static QString traitSummary(const QString &factionId);
+    bool hasTrait(int faction, const char *factionId) const;
     static QString bonusName(Conquest::Bonus bonus);
 
     QJsonObject toJson() const;
@@ -215,6 +227,7 @@ private:
     static void takeLosses(Conquest::Fleet &fleet, double fraction);
     bool involvesPlayer(int owner) const { return owner == m_player; }
     QString ownerName(int owner) const;
+    void factionEvents();
 
     QList<Conquest::Planet> m_planets;
     QList<Conquest::Faction> m_factions;
@@ -231,6 +244,7 @@ private:
     int m_battlePlanet = -1;
     int m_battleOwner = -1;         // faction fought by the flagship
     bool m_over = false;
+    double m_eventClock = 0;        // seconds toward the next faction events
     QRandomGenerator m_rng;
 };
 

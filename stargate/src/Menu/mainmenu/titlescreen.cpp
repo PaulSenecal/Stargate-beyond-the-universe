@@ -66,7 +66,7 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     m_factionText = new QLabel(conquestPage);
     m_factionText->setObjectName("note");
     m_factionText->setWordWrap(true);
-    m_factionText->setMinimumHeight(48);
+    m_factionText->setMinimumHeight(80);
     auto *sizeTitle = new QLabel(tr("Galaxy size"), conquestPage);
     sizeTitle->setObjectName("field");
     m_size = new QComboBox(conquestPage);
@@ -97,8 +97,7 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
                            : id == "Goa'uld"           ? tr("The System Lords: Ha'tak motherships, Al'kesh and Death Gliders.")
                            : id == "Wraith"            ? tr("Hive ships, cruisers and swarms of Darts.")
                                                        : tr("Smugglers and mercenaries: stolen Ha'taks and Gliders.");
-        m_factionText->setText(text + QStringLiteral("\n")
-                               + tr("Faction traits (culling, slavery, technology) come in a later step."));
+        m_factionText->setText(text + QStringLiteral("\n") + ConquestGame::traitSummary(id));
     };
     describeFaction();
     connect(m_faction, &QComboBox::currentIndexChanged, this, describeFaction);

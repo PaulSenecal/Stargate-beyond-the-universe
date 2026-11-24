@@ -83,6 +83,11 @@ inline float shipShieldShare(const QString &faction, bool mothership)
 // Les drones des Anciens traversent les boucliers : arme très forte, donc rare.
 constexpr int kMissileSalvos = 6;
 constexpr int kDroneSalvos = 3;
+// Drones de ton vaisseau amiral (Anciens / Aurora) : commande 'drones <n>'
+constexpr int kPlayerDroneSalvos = 4;           // salves en réserve
+constexpr int kPlayerDronesPerSalvo = 6;        // drones par salve
+constexpr float kPlayerDroneDamage = 35.0f;     // dégâts par drone (traversent les boucliers)
+constexpr float kPlayerDroneRefill = 30.0f;     // secondes pour recharger une salve, hors combat
 constexpr float kShipShieldRegen = 0.05f;       // part du bouclier rechargée par seconde…
 constexpr float kShipShieldDelay = 4.0f;        // …après tant de secondes sans être touché
 

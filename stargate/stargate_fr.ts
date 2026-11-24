@@ -39,6 +39,22 @@
         <translation>Tour principale : tir sur T%1</translation>
     </message>
     <message>
+        <source>No drone bay aboard</source>
+        <translation>Pas de baie à drones à bord</translation>
+    </message>
+    <message>
+        <source>Drone bay empty - salvos are rebuilt out of battle</source>
+        <translation>Baie à drones vide - les salves se rechargent hors combat</translation>
+    </message>
+    <message>
+        <source>Drones: no target</source>
+        <translation>Drones : aucune cible</translation>
+    </message>
+    <message>
+        <source>Drone salvo launched at T%1 (%2 left)</source>
+        <translation>Salve de drones lancée sur T%1 (%2 restantes)</translation>
+    </message>
+    <message>
         <source>Pulse weapons recharging (%1 s)</source>
         <translation>Armes à impulsion en recharge (%1 s)</translation>
     </message>
@@ -1194,6 +1210,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle</source>
         <translation>Hangar : launch [n] - vos chasseurs combattent à vos côtés ; vos flottes et vos alliés en orbite rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>Drones (Ancients): drones &lt;n&gt; - a salvo that goes through the shields, limited stock</source>
+        <translation>Drones (Anciens) : drones &lt;n&gt; - une salve qui traverse les boucliers, stock limité</translation>
     </message>
     <message>
         <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
@@ -3186,6 +3206,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>balanced</source>
         <translation>équilibrée</translation>
+    </message>
+    <message>
+        <source>DRONES</source>
+        <translation>DRONES</translation>
+    </message>
+    <message>
+        <source>drones &lt;n&gt; - salvo through the shields, rebuilt out of battle</source>
+        <translation>drones &lt;n&gt; - salve qui traverse les boucliers, rechargée hors combat</translation>
     </message>
     <message>
         <source>HANGAR</source>

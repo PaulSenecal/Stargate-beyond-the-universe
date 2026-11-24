@@ -1,4 +1,5 @@
 #include "conquestscreen.h"
+#include "src/core/balance.h"
 
 #include <QDir>
 #include <QEvent>
@@ -179,7 +180,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     // --- Console
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
                                "send", "build", "fighter", "mothership", "engage", "research", "ally", "break",
-                               "diplomacy", "launch", "turrets", "railguns", "power", "attack",
+                               "diplomacy", "launch", "drones", "turrets", "railguns", "power", "attack",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -253,6 +254,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_battle->restoreDefenses(float(m_game->flagshipHull()), 100.0f, true);
     m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), 4);
     m_battle->setFlagshipStyle(m_game->player().id);
+    m_battle->setDroneBay(m_game->player().id == "Ancients" ? Balance::kPlayerDroneSalvos : 0);
     m_wasTravelling = m_game->travelling();
     m_end = new ConquestEndScreen(this);
     connect(m_end, &ConquestEndScreen::titleRequested, this, &ConquestScreen::quitToTitleRequested);
@@ -597,6 +599,8 @@ void ConquestScreen::onCommand(const QString &command)
             m_battle->setPowerPriority(BattleView::PowerPriority::Balanced);
         else
             m_console->appendLine(m_battle->powerReport());
+    } else if (name == "drones") {
+        m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
     } else if (name == "launch") {
         m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
     } else if (name == "engage") {
@@ -664,6 +668,7 @@ void ConquestScreen::showHelp()
         tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
         tr("Battles between other factions last a while: watch them, or 'engage <faction>' to fight one side"),
         tr("Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle"),
+        tr("Drones (Ancients): drones <n> - a salvo that goes through the shields, limited stock"),
         tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"),
         tr("Research: research (tree), research <n> - weapons, defense and industry, 3 tiers each"),
         tr("Diplomacy: diplomacy (relations), ally <faction> (against a common enemy), break <faction>"),

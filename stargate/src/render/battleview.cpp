@@ -408,6 +408,48 @@ bool BattleView::fireMainWeapon(int enemyIndex)
     return true;
 }
 
+void BattleView::setDroneBay(int salvos)
+{
+    m_droneBay = std::max(0, salvos);
+    m_drones = m_droneBay;
+}
+
+bool BattleView::fireDrones(int enemyIndex)
+{
+    if (m_droneBay == 0) {
+        emit logMessage(tr("No drone bay aboard"), LogLevel::Warning);
+        return false;
+    }
+    if (enemyIndex >= 0 && !lockTarget(enemyIndex))
+        return false;
+    if (m_drones == 0) {
+        emit logMessage(tr("Drone bay empty - salvos are rebuilt out of battle"), LogLevel::Warning);
+        return false;
+    }
+    const Enemy *target = findEnemy(m_lockedId);
+    if (!target || !target->alive) {
+        target = pickTarget();
+        if (!target) {
+            emit logMessage(tr("Drones: no target"), LogLevel::Warning);
+            return false;
+        }
+        m_lockedId = target->id;
+    }
+    for (int i = 0; i < kPlayerDronesPerSalvo; ++i) {
+        const QVector3D from = destinyWorld({randRange(-2.0f, 3.0f), randRange(0.2f, 0.8f), randRange(-1.5f, 1.5f)});
+        shoot(true, from, target->id, {}, kPlayerDroneDamage, kMissileSpeed * 2.2f, kDroneColor, 0.5f, 0.14f,
+              i * 0.12f);
+        m_projectiles.back().kind = Projectile::Kind::Missile;
+        m_projectiles.back().drone = true;
+        m_projectiles.back().life = 10.0f;
+    }
+    --m_drones;
+    emit sound(SoundCue::EnemyMissile, QStringLiteral("Ancients"), 0.0f);
+    emit logMessage(tr("Drone salvo launched at T%1 (%2 left)").arg(indexOfId(target->id) + 1).arg(m_drones),
+                    LogLevel::Success);
+    return true;
+}
+
 bool BattleView::firePulseVolley()
 {
     if (m_pulseCooldown > 0.0f) {
@@ -707,6 +749,13 @@ void BattleView::step(float dt)
     m_allyLaunches.clear();
     m_allies.erase(std::remove_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return !a.alive; }),
                    m_allies.end());
+    if (aliveIds().empty() && m_drones < m_droneBay) {
+        m_droneRefill += dt;
+        if (m_droneRefill >= kPlayerDroneRefill) {
+            m_droneRefill = 0;
+            ++m_drones;                 // drones recovered and recharged
+        }
+    }
     if (aliveIds().empty() && m_hangarCapacity > 0) {
         const int out = int(std::count_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return a.group == -1; }));
         m_hangarRefill += dt;
@@ -1946,6 +1995,8 @@ WeaponReadiness BattleView::weaponReadiness() const
     w.interceptions = m_interceptions;
     w.hangar = m_hangar;
     w.hangarMax = m_hangarCapacity;
+    w.drones = m_drones;
+    w.dronesMax = m_droneBay;
     w.fightersOut = int(std::count_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return a.group == -1 && a.alive; }));
     w.allies = allyCount();
     w.turretsOn = m_turretsOn;

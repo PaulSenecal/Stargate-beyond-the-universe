@@ -1,6 +1,8 @@
 #ifndef BATTLEVIEW_H
 #define BATTLEVIEW_H
 
+#include <map>
+#include <memory>
 #include <QElapsedTimer>
 #include <QMatrix4x4>
 #include <QOpenGLBuffer>
@@ -314,6 +316,11 @@ private:
     void allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &target);
     void hitAlly(Enemy &a, const Projectile &p);
     void drawAllies();
+    // Ship models of the mod (local assets), loaded once on first use
+    Mesh *modMesh(const QString &key);
+    static QString meshKeyOf(const ShipClass &shipClass);
+    QString flagshipMeshKey() const;
+    bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash);
     const Enemy *findEnemy(int id) const;
     const Enemy *pickTarget();
     Subsystem *subsystem(const QString &key);
@@ -360,6 +367,7 @@ private:
     QMatrix4x4 m_destinyModel, m_destinyInverse;
     std::vector<Enemy> m_enemies;
     std::vector<Enemy> m_allies;
+    std::map<QString, std::unique_ptr<Mesh>> m_modMeshes;     // nullptr: no model for that key
     std::vector<std::pair<int, QVector3D>> m_allyLaunches;
     int m_nextAllyId = 100000;
     QString m_hangarClass;

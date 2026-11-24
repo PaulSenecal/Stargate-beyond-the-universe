@@ -427,7 +427,7 @@ private slots:
         QVERIFY(ShipLibraryRepository::migrate());          // idempotent
 
         const QList<ShipClass> ships = ShipLibraryRepository::all();
-        QCOMPARE(ships.size(), 11);
+        QCOMPARE(ships.size(), 20);
         QStringList hostileFactions;
         for (const ShipClass &c : ships) {
             QVERIFY2(!c.attacks.isEmpty(), qPrintable(c.name));
@@ -439,6 +439,7 @@ private slots:
                                          [&](const ShipClass &s) { return s.name == a.payload; }),
                              qPrintable(a.payload));
         }
+        hostileFactions.removeDuplicates();
         hostileFactions.sort();
         QCOMPARE(hostileFactions, (QStringList{"Drones", "Goa'uld", "Lucian Alliance", "Wraith"}));
 

@@ -15,7 +15,10 @@ class ShipStatusWidget;
 class RadarWidget;
 class WeaponStatusWidget;
 class ShipLibraryDialog;
+class SoundSystem;
 class QTimer;
+class QPushButton;
+class PauseMenu;
 
 // ================================================================
 //  GameMenu
@@ -35,8 +38,18 @@ class GameMenu : public QWidget
     Q_OBJECT
 
 public:
-    explicit GameMenu(QWidget *parent = nullptr);
+    // sound: owned by the main window (shared with the title screen)
+    explicit GameMenu(SoundSystem *sound, QWidget *parent = nullptr);
     ~GameMenu() override;     // saves the game
+
+    void openPauseMenu();
+
+signals:
+    void quitToTitleRequested();
+    void quitGameRequested();
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void onCommandEntered(const QString &command);
@@ -52,6 +65,7 @@ private:
     void repair(const QString &system);
     void showResources();
     void showLibrary(const QString &ship);
+    void soundCommand(const QString &arg);
 
     // Exploration (DestinyRoute)
     void jumpFtl();
@@ -59,7 +73,8 @@ private:
     void explore();
     void recordCurrentSystem();
     void restoreGame();
-    void saveGame(bool announce);
+    bool saveGame(bool announce);
+    void setPaused(bool paused);
     void updateNavigation();
     void updatePlanetView();
     void updateMap();
@@ -77,6 +92,9 @@ private:
     QuestSystem *m_quests = nullptr;
     QList<ShipClass> m_library = ShipClass::fallbackRoster();
     ShipLibraryDialog *m_libraryDialog = nullptr;
+    SoundSystem *m_sound = nullptr;
+    PauseMenu *m_pauseMenu = nullptr;
+    QPushButton *m_menuButton = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;
     DestinyRoute *m_route = nullptr;

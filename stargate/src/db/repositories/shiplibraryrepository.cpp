@@ -58,6 +58,27 @@ const ClassSeed kClasses[] = {
      "BC-304 battlecruiser of the Tau'ri, upgraded with Asgard shields and the Asgard plasma beam."},
     {"F-302", "Fighter", "Tau'ri", 70, false, "#9aa2aa",
      "Tau'ri interceptor carried by the BC-304s. Railguns and air-to-air missiles."},
+
+    // Added from the Stargate Reborn mod data (tools/reborn/extract_units.py):
+    // hull = (hull + armor + shield) and fire rate scaled on the Ha'tak
+    {"Wraith Cruiser", "MotherShip", "Wraith", 406, true, "#55436a",
+     "Wraith battlecruiser escorting the hives. Fills its hangar with Darts ready to sacrifice themselves."},
+    {"Al'kesh", "Fighter", "Goa'uld", 88, true, "#86704c",
+     "Goa'uld mid-range bomber. Slow, but its plasma bombs hit hard."},
+    {"Aurora", "MotherShip", "Ancients", 772, false, "#8f97a0",
+     "Ancient warship of the Lantean fleet, armed with drone weapons and an energy-absorptive shield."},
+    {"Puddle Jumper", "Fighter", "Ancients", 40, false, "#9a9488",
+     "Small Ancient gateship able to cloak and fire drones."},
+    {"O'Neill", "MotherShip", "Asgard", 854, false, "#b8c4cc",
+     "Most advanced Asgard warship, built to fight the Replicators. Huge shields, fragile hull."},
+    {"Beliskner", "MotherShip", "Asgard", 711, false, "#a8b4bc",
+     "Asgard Beliskner-class vessel, Thor's ship. Asgard beams and laser barrages."},
+    {"Apophis Flagship", "MotherShip", "Goa'uld", 1192, false, "#b08a3e",
+     "Ha'tak of the System Lord Apophis, reinforced and heavily armed. A boss for later."},
+    {"Anubis Mothership", "MotherShip", "Goa'uld", 1287, false, "#4a4038",
+     "Flagship of Anubis with Ancient-derived shields and a superweapon able to destroy a planet."},
+    {"Wraith Superhive", "MotherShip", "Wraith", 1016, false, "#3e2f4d",
+     "Hive powered by a ZPM: grows, regenerates and launches endless swarms of Darts."},
 };
 
 const AttackSeed kAttacks[] = {
@@ -113,6 +134,59 @@ const AttackSeed kAttacks[] = {
      "Two railgun slugs."},
     {"F-302", "AIM-120 missile", "missile", 8, 1, 9, 0.5, "always", "", false,
      "Light air-to-air missile."},
+
+    {"Wraith Cruiser", "Energy batteries", "bolt", 1.6, 2, 2.0, 1.0, "always", "", false,
+     "Pair of energy bolts."},
+    {"Wraith Cruiser", "Kamikaze Darts", "launch", 0, 2, 25, 0.5, "always", "Wraith Dart", true,
+     "Releases two Darts, ready to dive into the Destiny once damaged."},
+    {"Al'kesh", "Plasma bombs", "bolt", 3.0, 1, 8, 1.0, "always", "", false,
+     "Slow, heavy plasma bomb."},
+    {"Aurora", "Drone weapons", "missile", 6, 4, 7, 1.0, "always", "", false,
+     "Four homing Ancient drones."},
+    {"Aurora", "Drone swarm", "missile", 5, 8, 30, 0.5, "always", "", true,
+     "A cloud of eight drones to saturate the point defense."},
+    {"Puddle Jumper", "Drone launcher", "missile", 4, 2, 6, 1.0, "always", "", false,
+     "Two drones from the side pods."},
+    {"O'Neill", "Asgard plasma beam", "beam", 22, 1, 6, 1.0, "always", "", false,
+     "Asgard beam weapon: half of its energy goes through shields."},
+    {"O'Neill", "Ion burst", "bolt", 6, 5, 25, 0.5, "always", "", true,
+     "Five ion bolts in a row."},
+    {"Beliskner", "Asgard beam", "beam", 12, 1, 6, 1.0, "always", "", false,
+     "Asgard beam weapon: half of its energy goes through shields."},
+    {"Beliskner", "Laser barrage", "bolt", 2, 8, 20, 0.6, "always", "", true,
+     "Eight quick laser shots."},
+    {"Apophis Flagship", "Staff cannon barrage", "bolt", 3, 4, 2.2, 1.0, "always", "", false,
+     "Four heavy plasma bolts."},
+    {"Apophis Flagship", "Fleet bombardment", "missile", 18, 3, 30, 0.5, "always", "", true,
+     "Three heavy plasma torpedoes."},
+    {"Anubis Mothership", "Main batteries", "bolt", 4, 6, 2.0, 1.0, "always", "", false,
+     "Six heavy plasma bolts."},
+    {"Anubis Mothership", "Superweapon", "beam", 80, 1, 45, 0.5, "always", "", true,
+     "Ancient-derived beam weapon, the most powerful attack of the library."},
+    {"Wraith Superhive", "Plasma barrage", "bolt", 3, 8, 1.6, 1.0, "always", "", false,
+     "Eight energy bolts at once."},
+    {"Wraith Superhive", "Endless swarm", "launch", 0, 5, 20, 0.7, "always", "Wraith Dart", true,
+     "Releases five Darts."},
+};
+
+// Pictures of the Stargate Reborn mod (optional local assets)
+const std::pair<const char *, const char *> kPictures[] = {
+    {"Destiny", "ancients_destiny"},
+    {"Ha'tak", "goauld_cruiser_hatak"},
+    {"Death Glider", "goauld_interceptor_deathglider"},
+    {"Al'kesh", "goauld_corvette_alkesh"},
+    {"Lucian Ha'tak", "goauld_item_hatak_specialization_assault"},
+    {"Glider", "goauld_interceptor_deathglider"},
+    {"Wraith Hive Ship", "wraith_capital_hiveship"},
+    {"Wraith Cruiser", "wraith_cruiser_battlecruiser"},
+    {"Wraith Dart", "wraith_strikecraft_dart"},
+    {"Wraith Superhive", "wraith_titan_superhive"},
+    {"Aurora", "ancients_aurora"},
+    {"Puddle Jumper", "ancients_puddlejumper"},
+    {"O'Neill", "asgard_capital_oneill"},
+    {"Beliskner", "asgard_capital_beliskner"},
+    {"Apophis Flagship", "goauld_capital_apophis"},
+    {"Anubis Mothership", "goauld_titan_anubis"},
 };
 
 QSet<QString> columns(const QString &table)
@@ -136,7 +210,7 @@ bool ShipLibraryRepository::migrate()
     const QSet<QString> existing = columns("Ship_Type");
     const std::pair<const char *, const char *> added[] = {
         {"faction", "TEXT"}, {"description", "TEXT"}, {"hull", "INTEGER NOT NULL DEFAULT 100"},
-        {"hostile", "BOOLEAN NOT NULL DEFAULT 0"}, {"color", "TEXT"},
+        {"hostile", "BOOLEAN NOT NULL DEFAULT 0"}, {"color", "TEXT"}, {"picture", "TEXT"},
     };
     for (const auto &[name, type] : added)
         if (!existing.contains(name)
@@ -181,6 +255,15 @@ bool ShipLibraryRepository::migrate()
             return false;
         }
     }
+    for (const auto &[ship, picture] : kPictures) {
+        QSqlQuery q = db.query("UPDATE Ship_Type SET picture = :picture WHERE name = :name AND picture IS NULL");
+        q.bindValue(":picture", picture);
+        q.bindValue(":name", ship);
+        if (!q.exec()) {
+            db.rollback();
+            return false;
+        }
+    }
     for (const AttackSeed &a : kAttacks) {
         QSqlQuery q = db.query(
             "INSERT OR IGNORE INTO Ship_Attack "
@@ -214,7 +297,7 @@ QList<ShipClass> ShipLibraryRepository::all()
 
     QSqlQuery q = db.query(
         "SELECT id, name, COALESCE(type, ''), COALESCE(faction, 'Unknown'), COALESCE(description, ''), "
-        "hull, hostile, COALESCE(color, '#808080') FROM Ship_Type "
+        "hull, hostile, COALESCE(color, '#808080'), COALESCE(picture, '') FROM Ship_Type "
         "ORDER BY faction, CASE type WHEN 'MotherShip' THEN 0 ELSE 1 END, name");
     if (!q.exec()) {
         qWarning() << "[DB] ShipLibraryRepository::all:" << q.lastError().text();
@@ -231,6 +314,7 @@ QList<ShipClass> ShipLibraryRepository::all()
         c.hull = q.value(5).toInt();
         c.hostile = q.value(6).toBool();
         c.color = q.value(7).toString();
+        c.picture = q.value(8).toString();
         indexOf.insert(c.id, int(classes.size()));
         classes << c;
     }

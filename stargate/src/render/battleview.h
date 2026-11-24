@@ -17,6 +17,7 @@
 
 #include "meshbuilder.h"
 #include "planetlook.h"
+#include "src/audio/soundcue.h"
 #include "src/core/shipclass.h"
 
 class QPainter;
@@ -101,6 +102,8 @@ public:
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
     void simulate(float seconds);
+    // Stops the real-time battle (pause menu)
+    void setPaused(bool paused);
 
     // Destiny weapons from the database: "Railgun" (point defense,
     // anti-fighter) and "Energy Cannon" (tower auto-fire)
@@ -152,6 +155,8 @@ signals:
     void logMessage(const QString &text, BattleView::LogLevel level);
     void subsystemChanged(const QString &key, float health);
     void enemyDestroyed(bool mothership);
+    // delay: seconds before the sound starts (salvos)
+    void sound(SoundCue cue, const QString &faction, float delay);
 
 protected:
     void initializeGL() override;

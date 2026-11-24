@@ -1,5 +1,5 @@
 QT       += core gui sql network
-QT += widgets opengl openglwidgets
+QT += widgets opengl openglwidgets multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -21,6 +21,10 @@ SOURCES += \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
+    src/Menu/mainmenu/titlescreen.cpp \
+    src/Menu/pause/pausemenu.cpp \
+    src/Menu/setting/settingspanel.cpp \
+    src/audio/soundsystem.cpp \
     src/core/commandmanager.cpp \
     src/core/destinystate.cpp \
     src/core/questsystem.cpp \
@@ -55,9 +59,16 @@ HEADERS += \
     src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
+    src/Menu/mainmenu/titlescreen.h \
+    src/Menu/menustyle.h \
+    src/Menu/pause/pausemenu.h \
+    src/Menu/setting/settingspanel.h \
+    src/audio/soundcue.h \
+    src/audio/soundsystem.h \
     src/core/commandmanager.h \
     src/core/destinystate.h \
     src/core/questsystem.h \
+    src/core/assets.h \
     src/core/shipclass.h \
     src/db/databasemanager.h \
     src/db/repositories/characterrepository.h \
@@ -93,6 +104,11 @@ CONFIG += embed_translations
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+# Optional local assets of the Stargate Reborn mod (git-ignored, personal
+# use): pictures, sounds… The game works without them. Can be overridden
+# at run time with the STARGATE_ASSETS environment variable.
+DEFINES += STARGATE_ASSETS_DIR=\\\"$$PWD/src/autre\\\"
 
 RESOURCES += \
     ../rcs/ressources.qrc

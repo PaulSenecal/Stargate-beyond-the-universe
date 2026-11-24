@@ -1,8 +1,11 @@
 #include "gamemenu.h"
 
+#include <QEvent>
 #include <QHBoxLayout>
+#include <QPushButton>
 #include <QRandomGenerator>
 #include <QSettings>
+#include <QShortcut>
 #include <QSplitter>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -13,6 +16,8 @@
 #include "radarwidget.h"
 #include "shiplibrarydialog.h"
 #include "shipstatuswidget.h"
+#include "src/Menu/pause/pausemenu.h"
+#include "src/audio/soundsystem.h"
 #include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
 #include "src/core/questsystem.h"
@@ -37,7 +42,7 @@ QString percent(float value)
 
 } // namespace
 
-GameMenu::GameMenu(QWidget *parent)
+GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     : QWidget(parent)
     , m_battle(new BattleView(this))
     , m_console(new CommandConsole(this))
@@ -103,6 +108,38 @@ GameMenu::GameMenu(QWidget *parent)
     // --- Wiring
     connect(m_console, &CommandConsole::commandEntered, this, &GameMenu::onCommandEntered);
     connect(m_battle, &BattleView::logMessage, this, &GameMenu::onBattleLog);
+    m_sound = sound;
+    if (m_sound)
+        connect(m_battle, &BattleView::sound, m_sound, &SoundSystem::play);
+
+    // --- Pause menu: Escape, the MENU button or the 'menu' command
+    m_pauseMenu = new PauseMenu(m_sound, this);
+    connect(m_pauseMenu, &PauseMenu::resumeRequested, this, [this] { setPaused(false); });
+    connect(m_pauseMenu, &PauseMenu::saveRequested, this, [this] {
+        const bool ok = saveGame(true);
+        m_pauseMenu->showSaveResult(ok, ok ? tr("Game saved") : tr("Save failed (no save database)"));
+    });
+    connect(m_pauseMenu, &PauseMenu::quitToTitleRequested, this, &GameMenu::quitToTitleRequested);
+    connect(m_pauseMenu, &PauseMenu::quitGameRequested, this, &GameMenu::quitGameRequested);
+    auto *escape = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    escape->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(escape, &QShortcut::activated, this, [this] {
+        if (m_pauseMenu->isVisible())
+            m_pauseMenu->escape();
+        else
+            openPauseMenu();
+    });
+    m_menuButton = new QPushButton(tr("MENU"), m_battle);
+    m_menuButton->setFocusPolicy(Qt::NoFocus);
+    m_menuButton->setCursor(Qt::PointingHandCursor);
+    m_menuButton->setToolTip(tr("Pause, save, settings, quit (Esc)"));
+    m_menuButton->setStyleSheet(
+        "QPushButton { background: rgba(20, 19, 14, 200); color: #e8e2c8; border: 1px solid #8a8160;"
+        "              border-radius: 4px; padding: 4px 14px; font-weight: bold; letter-spacing: 1px; }"
+        "QPushButton:hover { color: #e2bf3e; border-color: #e2bf3e; }");
+    m_menuButton->adjustSize();
+    connect(m_menuButton, &QPushButton::clicked, this, &GameMenu::openPauseMenu);
+    m_battle->installEventFilter(this);
     connect(m_route, &DestinyRoute::notice, this, &GameMenu::onRouteNotice);
     connect(m_simTimer, &QTimer::timeout, this, &GameMenu::simulate);
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] { saveGame(false); });
@@ -111,7 +148,7 @@ GameMenu::GameMenu(QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint" << "library";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "menu";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -121,7 +158,8 @@ GameMenu::GameMenu(QWidget *parent)
                 addresses << p.gateAddress();
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
-                                         QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library")})
+                                         QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
+                                         QStringLiteral("sound"), QStringLiteral("menu")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -229,6 +267,14 @@ void GameMenu::onCommandEntered(const QString &command)
         showLibrary(command.section(' ', 1, -1, QString::SectionSkipEmpty));
         return;
     }
+    if (first == "menu" || first == "pause") {
+        openPauseMenu();
+        return;
+    }
+    if (first == "sound" || first == "volume") {
+        soundCommand(command.section(' ', 1, 1, QString::SectionSkipEmpty).toLower());
+        return;
+    }
     if (first == "hint") {
         const QString hint = m_quests->hint();
         m_console->appendLine(hint.isEmpty() ? tr("No hint right now") : tr("Hint: %1").arg(hint));
@@ -300,7 +346,66 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
     m_console->appendLine(tr("Game: quests, hint, save (also automatic every 30 s, after each jump and on exit), clear"));
     m_console->appendLine(tr("Library: library (all ships), library <ship> (e.g. library dart) - attacks and chances"));
+    m_console->appendLine(tr("Sound: sound (status), sound on, sound off, sound <0-100> (volume)"));
+    m_console->appendLine(tr("Menu: menu or Esc - pause, save, settings, quit"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
+}
+
+void GameMenu::openPauseMenu()
+{
+    if (m_pauseMenu->isVisible())
+        return;
+    setPaused(true);
+    m_pauseMenu->open();
+}
+
+void GameMenu::setPaused(bool paused)
+{
+    m_battle->setPaused(paused);
+    if (paused) {
+        m_simTimer->stop();
+        m_autosaveTimer->stop();
+        return;
+    }
+    m_pauseMenu->hide();
+    m_simTimer->start(1000);
+    if (m_sessionId >= 0)
+        m_autosaveTimer->start(kAutosaveMs);
+    m_console->focusInput();
+}
+
+// Keeps the MENU button in the top-right corner of the 3D view
+bool GameMenu::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_battle && event->type() == QEvent::Resize)
+        m_menuButton->move(m_battle->width() - m_menuButton->width() - 10, 10);
+    return QWidget::eventFilter(watched, event);
+}
+
+void GameMenu::soundCommand(const QString &arg)
+{
+    if (!m_sound) {
+        m_console->appendLine(tr("Sound: no audio output available"), CommandConsole::Tone::Warning);
+        return;
+    }
+    static int lastVolume = 70;
+    if (arg == "off" || arg == "mute") {
+        if (m_sound->volume() > 0)
+            lastVolume = m_sound->volume();
+        m_sound->setVolume(0);
+    } else if (arg == "on") {
+        m_sound->setVolume(m_sound->volume() > 0 ? m_sound->volume() : lastVolume);
+    } else if (!arg.isEmpty()) {
+        bool ok = false;
+        const int volume = arg.toInt(&ok);
+        if (!ok || volume < 0 || volume > 100) {
+            m_console->appendLine(tr("Usage: sound on | off | <0-100>"), CommandConsole::Tone::Warning);
+            return;
+        }
+        m_sound->setVolume(volume);
+    }
+    m_console->appendLine(m_sound->volume() == 0 ? tr("Sound: off") : m_sound->status(),
+                          m_sound->isActive() ? CommandConsole::Tone::Info : CommandConsole::Tone::Warning);
 }
 
 void GameMenu::showLibrary(const QString &ship)
@@ -579,12 +684,12 @@ void GameMenu::restoreGame()
                           CommandConsole::Tone::Success);
 }
 
-void GameMenu::saveGame(bool announce)
+bool GameMenu::saveGame(bool announce)
 {
     if (m_sessionId < 0) {
         if (announce)
             m_console->appendLine(tr("No save database - cannot save"), CommandConsole::Tone::Warning);
-        return;
+        return false;
     }
 
     const RouteState &state = m_route->state();
@@ -607,6 +712,7 @@ void GameMenu::saveGame(bool announce)
     if (announce)
         m_console->appendLine(ok ? tr("Game saved (day %1)").arg(int(state.hours) / 24 + 1) : tr("Save failed"),
                               ok ? CommandConsole::Tone::Success : CommandConsole::Tone::Critical);
+    return ok;
 }
 
 void GameMenu::updatePlanetView()

@@ -56,6 +56,7 @@ SOURCES += \
     src/entities/vessel.cpp \
     src/render/battleview.cpp \
     src/render/meshbuilder.cpp \
+    src/render/ddstexture.cpp \
     src/render/modmesh.cpp \
     src/render/planetlook.cpp \
     src/utils/logger.cpp \
@@ -108,7 +109,9 @@ HEADERS += \
     src/entities/vessel.h \
     src/render/battleview.h \
     src/render/meshbuilder.h \
+    src/render/ddstexture.h \
     src/render/modmesh.h \
+    src/thirdparty/bcdec.h \
     src/render/planetlook.h \
     src/utils/logger.h \
     src/world/destinyroute.h \

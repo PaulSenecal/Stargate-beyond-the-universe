@@ -1,4 +1,5 @@
 #include "battleview.h"
+#include "ddstexture.h"
 #include "modmesh.h"
 #include "src/core/assets.h"
 #include "src/db/dbtext.h"
@@ -7,6 +8,8 @@
 #include <QFontDatabase>
 #include <QLineF>
 #include <QMap>
+#include <QMutex>
+#include <QThreadPool>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QQuaternion>
@@ -29,13 +32,16 @@ const char *kLitVertexShader = R"(
 #version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUv;
 uniform mat4 uModel;
 uniform mat4 uViewProj;
 uniform mat3 uNormalMat;
 out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vObjPos;
+out vec2 vUv;
 void main() {
+    vUv = aUv;
     vec4 world = uModel * vec4(aPos, 1.0);
     vWorldPos = world.xyz;
     vNormal = normalize(uNormalMat * aNormal);
@@ -49,6 +55,9 @@ const char *kLitFragmentShader = R"(
 in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vObjPos;
+in vec2 vUv;
+uniform sampler2D uTexture;
+uniform int uTextured;      // hull with the color texture of a mod model
 uniform vec3 uColor;
 uniform float uEmissive;
 uniform float uAlpha;
@@ -119,6 +128,17 @@ void main() {
         float city = isLand ? step(0.8, noise(q * 70.0)) : 0.0;
         col += vec3(0.45, 0.75, 1.0) * city * night * uLights;
         fragColor = vec4(col, 1.0);
+        return;
+    }
+
+    // Textured hull (mod model): its own colors, same lighting
+    if (uTextured == 1) {
+        vec3 base = texture(uTexture, vUv).rgb;
+        float diff = max(dot(N, L), 0.0);
+        vec3 H = normalize(L + V);
+        float spec = pow(max(dot(N, H), 0.0), 32.0) * 0.25;
+        vec3 back = vec3(0.12, 0.18, 0.3) * max(dot(N, -L), 0.0) * 0.5;
+        fragColor = vec4(base * (0.45 + diff * 1.35) + back + vec3(spec) + uColor * uEmissive, uAlpha);
         return;
     }
 
@@ -296,10 +316,12 @@ BattleView::~BattleView()
         m->vao.destroy();
         m->vbo.destroy();
     }
-    for (auto &[key, mesh] : m_modMeshes)
-        if (mesh) {
-            mesh->vao.destroy();
-            mesh->vbo.destroy();
+    for (auto &[key, model] : m_modModels)
+        if (model) {
+            model->mesh.vao.destroy();
+            model->mesh.vbo.destroy();
+            if (model->texture)
+                glDeleteTextures(1, &model->texture);
         }
     m_starVao.destroy();
     m_starVbo.destroy();
@@ -2073,6 +2095,18 @@ void BattleView::paintGL()
 void BattleView::drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color,
                           float emissive, float alpha, ShaderMode mode)
 {
+    drawMesh(mesh, model, color, emissive, alpha, mode, 0);
+}
+
+void BattleView::drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color, float emissive, float alpha,
+                          ShaderMode mode, GLuint texture)
+{
+    m_lit.setUniformValue("uTextured", texture != 0 ? 1 : 0);
+    if (texture != 0) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        m_lit.setUniformValue("uTexture", 0);
+    }
     m_lit.setUniformValue("uModel", model);
     m_lit.setUniformValue("uNormalMat", model.normalMatrix());
     m_lit.setUniformValue("uColor", color);
@@ -2215,21 +2249,96 @@ void BattleView::drawDestiny()
 //  Ship models of the mod
 // ================================================================
 
-BattleView::Mesh *BattleView::modMesh(const QString &key)
+struct BattleView::TextureJob
+{
+    QMutex mutex;
+    QImage image;
+    bool done = false;
+};
+
+BattleView::ModModel *BattleView::modModel(const QString &key)
 {
     if (key.isEmpty())
         return nullptr;
-    auto it = m_modMeshes.find(key);
-    if (it == m_modMeshes.end()) {
-        const MeshBuilder::VertexData data = ModMesh::load(Assets::modFile(QStringLiteral("meshes/%1.mesh").arg(key)));
-        std::unique_ptr<Mesh> mesh;
-        if (!data.empty()) {
-            mesh = std::make_unique<Mesh>();
-            upload(*mesh, data);
+    auto it = m_modModels.find(key);
+    if (it == m_modModels.end()) {
+        const ModMesh::Model data = ModMesh::load(Assets::modFile(QStringLiteral("meshes/%1.mesh").arg(key)));
+        std::unique_ptr<ModModel> model;
+        if (!data.vertices.empty()) {
+            model = std::make_unique<ModModel>();
+            model->texturePath = data.texturePath;
+            // position, normal, uv
+            const int stride = ModMesh::kFloatsPerVertex * sizeof(float);
+            Mesh &mesh = model->mesh;
+            mesh.vao.create();
+            mesh.vao.bind();
+            mesh.vbo.create();
+            mesh.vbo.bind();
+            mesh.vbo.allocate(data.vertices.data(), int(data.vertices.size() * sizeof(float)));
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, nullptr);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(3 * sizeof(float)));
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(6 * sizeof(float)));
+            mesh.vao.release();
+            mesh.vbo.release();
+            mesh.vertexCount = int(data.vertices.size()) / ModMesh::kFloatsPerVertex;
         }
-        it = m_modMeshes.emplace(key, std::move(mesh)).first;
+        it = m_modModels.emplace(key, std::move(model)).first;
     }
+    if (it->second)
+        updateTexture(*it->second);
     return it->second.get();
+}
+
+// The color texture is decoded in the background at the chosen quality,
+// then sent to the GPU here (the GL context is current while painting)
+void BattleView::updateTexture(ModModel &model)
+{
+    if (model.texturePath.isEmpty())
+        return;
+    const int quality = DdsTexture::qualitySetting();
+    if (model.job) {
+        QImage image;
+        {
+            QMutexLocker lock(&model.job->mutex);
+            if (!model.job->done)
+                return;
+            image = std::move(model.job->image);
+        }
+        model.job.reset();
+        if (image.isNull()) {
+            model.texturePath.clear();          // unreadable: keep the plain color
+            return;
+        }
+        if (model.texture == 0)
+            glGenTextures(1, &model.texture);
+        glBindTexture(GL_TEXTURE_2D, model.texture);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                     image.constBits());
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return;
+    }
+    if (model.quality == quality)
+        return;
+    model.quality = quality;
+    auto job = std::make_shared<TextureJob>();
+    model.job = job;
+    const QString path = model.texturePath;
+    const int size = DdsTexture::maxSizeFor(quality);
+    QThreadPool::globalInstance()->start([job, path, size] {
+        QImage image = DdsTexture::load(path, size);
+        QMutexLocker lock(&job->mutex);
+        job->image = std::move(image);
+        job->done = true;
+    });
 }
 
 QString BattleView::meshKeyOf(const ShipClass &shipClass)
@@ -2257,12 +2366,12 @@ QString BattleView::flagshipMeshKey() const
 bool BattleView::drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color,
                              float flash)
 {
-    Mesh *mesh = modMesh(key);
-    if (!mesh)
+    ModModel *ship = modModel(key);
+    if (!ship)
         return false;
     QMatrix4x4 m = model;
     m.scale(length);
-    drawMesh(*mesh, m, color, flash, 1.0f, ModeHull);
+    drawMesh(ship->mesh, m, color, flash, 1.0f, ModeHull, ship->texture);
     return true;
 }
 

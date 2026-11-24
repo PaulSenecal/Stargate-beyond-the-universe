@@ -230,6 +230,16 @@ private:
         int vertexCount = 0;
     };
 
+    // A mod model and its color texture (decoded in the background)
+    struct TextureJob;
+    struct ModModel {
+        Mesh mesh;
+        QString texturePath;
+        GLuint texture = 0;
+        int quality = -1;                       // texture quality it was decoded for
+        std::shared_ptr<TextureJob> job;        // decoding in progress
+    };
+
     struct Enemy {
         int id = 0;
         EnemyClass cls = EnemyClass::Fighter;
@@ -317,7 +327,8 @@ private:
     void hitAlly(Enemy &a, const Projectile &p);
     void drawAllies();
     // Ship models of the mod (local assets), loaded once on first use
-    Mesh *modMesh(const QString &key);
+    ModModel *modModel(const QString &key);
+    void updateTexture(ModModel &model);
     static QString meshKeyOf(const ShipClass &shipClass);
     QString flagshipMeshKey() const;
     bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash);
@@ -332,6 +343,8 @@ private:
     // Rendering
     void upload(Mesh &mesh, const MeshBuilder::VertexData &data);
     void updateCamera();
+    void drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color, float emissive, float alpha,
+                  ShaderMode mode, GLuint texture);
     void drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color,
                   float emissive, float alpha, ShaderMode mode);
     void drawGlow(const QVector3D &pos, float radius, const QVector3D &color, float alpha);
@@ -367,7 +380,7 @@ private:
     QMatrix4x4 m_destinyModel, m_destinyInverse;
     std::vector<Enemy> m_enemies;
     std::vector<Enemy> m_allies;
-    std::map<QString, std::unique_ptr<Mesh>> m_modMeshes;     // nullptr: no model for that key
+    std::map<QString, std::unique_ptr<ModModel>> m_modModels;  // nullptr: no model for that key
     std::vector<std::pair<int, QVector3D>> m_allyLaunches;
     int m_nextAllyId = 100000;
     QString m_hangarClass;

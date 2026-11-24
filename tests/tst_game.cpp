@@ -17,6 +17,7 @@
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
 #include "src/db/repositories/saverepository.h"
+#include "src/db/repositories/shiplibraryrepository.h"
 #include "src/db/repositories/worldrepository.h"
 #include "src/world/destinyroute.h"
 #include "src/world/planetgenerator.h"
@@ -412,6 +413,42 @@ private slots:
         QCOMPARE(quests.completedCount(), 3);
         QVERIFY(quests.objectiveLines().isEmpty());
         QVERIFY(!quests.hint().isEmpty());
+    }
+
+    void shipLibrary()
+    {
+        // Simulate a save created before the library: no attacks, no
+        // faction data, only the 5 original ship types
+        DatabaseManager &db = DatabaseManager::instance();
+        QVERIFY(db.exec("DROP TABLE Ship_Attack"));
+        QVERIFY(db.exec("UPDATE Ship_Type SET faction = NULL, hostile = 0"));
+        QVERIFY(db.exec("DELETE FROM Ship_Type WHERE id > 5"));
+        QVERIFY(ShipLibraryRepository::migrate());
+        QVERIFY(ShipLibraryRepository::migrate());          // idempotent
+
+        const QList<ShipClass> ships = ShipLibraryRepository::all();
+        QCOMPARE(ships.size(), 11);
+        QStringList hostileFactions;
+        for (const ShipClass &c : ships) {
+            QVERIFY2(!c.attacks.isEmpty(), qPrintable(c.name));
+            if (c.hostile && c.isMothership())
+                hostileFactions << c.faction;
+            for (const ShipAttack &a : c.attacks)
+                if (a.kind == "launch")      // launched ships must exist
+                    QVERIFY2(std::any_of(ships.begin(), ships.end(),
+                                         [&](const ShipClass &s) { return s.name == a.payload; }),
+                             qPrintable(a.payload));
+        }
+        hostileFactions.sort();
+        QCOMPARE(hostileFactions, (QStringList{"Drones", "Goa'uld", "Lucian Alliance", "Wraith"}));
+
+        const auto dart = std::find_if(ships.begin(), ships.end(), [](const ShipClass &c) { return c.name == "Wraith Dart"; });
+        QVERIFY(dart != ships.end());
+        QCOMPARE(dart->attacks.size(), 2);
+        const ShipAttack &dive = dart->attacks.last();        // specials come last
+        QCOMPARE(dive.kind, QStringLiteral("kamikaze"));
+        QVERIFY(dive.special && dive.interceptable());
+        QCOMPARE(dive.trigger, QStringLiteral("damaged"));
     }
 };
 

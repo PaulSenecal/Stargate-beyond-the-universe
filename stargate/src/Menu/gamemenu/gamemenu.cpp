@@ -11,6 +11,7 @@
 #include "hudimagepanel.h"
 #include "routemapwidget.h"
 #include "radarwidget.h"
+#include "shiplibrarydialog.h"
 #include "shipstatuswidget.h"
 #include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
@@ -18,6 +19,7 @@
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
 #include "src/db/repositories/saverepository.h"
+#include "src/db/repositories/shiplibraryrepository.h"
 #include "src/db/repositories/worldrepository.h"
 #include "src/render/planetlook.h"
 #include "src/world/planetgenerator.h"
@@ -109,7 +111,7 @@ GameMenu::GameMenu(QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -119,7 +121,7 @@ GameMenu::GameMenu(QWidget *parent)
                 addresses << p.gateAddress();
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
-                                         QStringLiteral("quests"), QStringLiteral("hint")})
+                                         QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -223,6 +225,10 @@ void GameMenu::onCommandEntered(const QString &command)
             m_console->appendLine(line);
         return;
     }
+    if (first == "library" || first == "ships") {
+        showLibrary(command.section(' ', 1, -1, QString::SectionSkipEmpty));
+        return;
+    }
     if (first == "hint") {
         const QString hint = m_quests->hint();
         m_console->appendLine(hint.isEmpty() ? tr("No hint right now") : tr("Hint: %1").arg(hint));
@@ -293,7 +299,35 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Combat: attack 1, scan 2, shield off, pulseweapon - Repair: repair engines"));
     m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
     m_console->appendLine(tr("Game: quests, hint, save (also automatic every 30 s, after each jump and on exit), clear"));
+    m_console->appendLine(tr("Library: library (all ships), library <ship> (e.g. library dart) - attacks and chances"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
+}
+
+void GameMenu::showLibrary(const QString &ship)
+{
+    if (!m_libraryDialog) {
+        m_libraryDialog = new ShipLibraryDialog(this);
+        m_libraryDialog->setShips(m_library);
+    }
+
+    if (ship.isEmpty()) {
+        QStringList names;
+        for (const ShipClass &c : std::as_const(m_library))
+            names << QStringLiteral("%1 (%2)").arg(c.name, c.faction);
+        m_console->appendLine(tr("Ship library: %1").arg(names.join(", ")));
+    } else {
+        const int index = ShipLibraryDialog::find(m_library, ship);
+        if (index < 0) {
+            m_console->appendLine(tr("Unknown ship '%1' - type 'library' for the list").arg(ship),
+                                  CommandConsole::Tone::Warning);
+            return;
+        }
+        for (const QString &line : ShipLibraryDialog::describe(m_library[index]))
+            m_console->appendLine(line);
+        m_libraryDialog->showShip(ship);
+    }
+    m_libraryDialog->show();
+    m_libraryDialog->raise();
 }
 
 void GameMenu::loadSave()
@@ -311,6 +345,16 @@ void GameMenu::loadSave()
         if (c.category == "WEAPON")
             weapons.append({c.name, c.munitionType, float(c.damage), float(c.penetration), float(c.reach)});
     m_battle->setWeaponProfiles(weapons);
+
+    if (ShipLibraryRepository::migrate()) {
+        const QList<ShipClass> library = ShipLibraryRepository::all();
+        if (!library.isEmpty()) {
+            m_library = library;
+            m_battle->setShipClasses(m_library);
+        }
+    } else {
+        m_console->appendLine(tr("Ship library unavailable - built-in enemies only"), CommandConsole::Tone::Warning);
+    }
 
     connect(m_battle, &BattleView::subsystemChanged, this, [this](const QString &key, float health) {
         m_destiny.setSystemHealth(key, health);

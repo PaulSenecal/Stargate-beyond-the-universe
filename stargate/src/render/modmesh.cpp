@@ -1,12 +1,17 @@
 #include "modmesh.h"
 
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QVector2D>
 #include <QVector3D>
 #include <QtEndian>
 
 #include <algorithm>
 #include <cstring>
 #include <limits>
+
+#include "src/core/assets.h"
 
 namespace {
 
@@ -29,9 +34,35 @@ QVector3D toView(const QVector3D &v)
     return QVector3D(v.z(), v.y(), -v.x());
 }
 
+// First material of the model: a length-prefixed name in the trailing
+// block that has a .mesh_material file; returns its color texture
+QString colorTexture(const char *data, qsizetype from, qsizetype size)
+{
+    for (qsizetype i = from; i + 4 < size; ++i) {
+        const quint32 length = qFromLittleEndian<quint32>(data + i);
+        if (length < 3 || length > 96 || i + 4 + qsizetype(length) > size)
+            continue;
+        const QByteArray name(data + i + 4, qsizetype(length));
+        if (!std::all_of(name.cbegin(), name.cend(), [](char c) {
+                return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+            }))
+            continue;
+        const QString material = Assets::modFile(QStringLiteral("mesh_materials/%1.mesh_material")
+                                                     .arg(QString::fromLatin1(name)));
+        if (material.isEmpty())
+            continue;
+        QFile file(material);
+        if (!file.open(QIODevice::ReadOnly))
+            return {};
+        const QString texture = QJsonDocument::fromJson(file.readAll()).object().value("base_color_texture").toString();
+        return texture.isEmpty() ? QString() : Assets::modFile(QStringLiteral("textures/%1.dds").arg(texture));
+    }
+    return {};
+}
+
 } // namespace
 
-MeshBuilder::VertexData ModMesh::load(const QString &path)
+ModMesh::Model ModMesh::load(const QString &path)
 {
     QFile file(path);
     if (path.isEmpty() || !file.open(QIODevice::ReadOnly))
@@ -47,11 +78,13 @@ MeshBuilder::VertexData ModMesh::load(const QString &path)
     if (vertexCount == 0 || vertexCount > kMaxVertices || indexOffset + 4 > size)
         return {};
     const quint32 indexCount = qFromLittleEndian<quint32>(data + indexOffset);
-    if (indexCount == 0 || indexCount % 3 != 0 || indexOffset + 4 + qsizetype(indexCount) * 4 > size)
+    const qsizetype tailOffset = indexOffset + 4 + qsizetype(indexCount) * 4;
+    if (indexCount == 0 || indexCount % 3 != 0 || tailOffset > size)
         return {};
 
-    // Vertices: position and normal, in view axes
+    // Vertices: position, normal and uv, in view axes
     std::vector<QVector3D> positions(vertexCount), normals(vertexCount);
+    std::vector<QVector2D> uvs(vertexCount);
     QVector3D low(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
                   std::numeric_limits<float>::max());
     QVector3D high = -low;
@@ -59,6 +92,7 @@ MeshBuilder::VertexData ModMesh::load(const QString &path)
         const char *v = data + kVertexOffset + qsizetype(i) * kVertexSize;
         positions[i] = toView({readFloat(v), readFloat(v + 4), readFloat(v + 8)});
         normals[i] = toView({readFloat(v + 12), readFloat(v + 16), readFloat(v + 20)}).normalized();
+        uvs[i] = QVector2D(readFloat(v + 40), readFloat(v + 44));
         for (int a = 0; a < 3; ++a) {
             low[a] = std::min(low[a], positions[i][a]);
             high[a] = std::max(high[a], positions[i][a]);
@@ -70,8 +104,8 @@ MeshBuilder::VertexData ModMesh::load(const QString &path)
     const QVector3D center = (low + high) / 2.0f;
 
     // Triangles unrolled (the battle view draws non-indexed vertices)
-    MeshBuilder::VertexData out;
-    out.reserve(size_t(indexCount) * MeshBuilder::kFloatsPerVertex);
+    Model model;
+    model.vertices.reserve(size_t(indexCount) * kFloatsPerVertex);
     const char *indices = data + indexOffset + 4;
     for (quint32 i = 0; i < indexCount; ++i) {
         const quint32 index = qFromLittleEndian<quint32>(indices + qsizetype(i) * 4);
@@ -79,7 +113,9 @@ MeshBuilder::VertexData ModMesh::load(const QString &path)
             return {};
         const QVector3D p = (positions[index] - center) / length;
         const QVector3D &n = normals[index];
-        out.insert(out.end(), {p.x(), p.y(), p.z(), n.x(), n.y(), n.z()});
+        const QVector2D &t = uvs[index];
+        model.vertices.insert(model.vertices.end(), {p.x(), p.y(), p.z(), n.x(), n.y(), n.z(), t.x(), t.y()});
     }
-    return out;
+    model.texturePath = colorTexture(data, tailOffset, size);
+    return model;
 }

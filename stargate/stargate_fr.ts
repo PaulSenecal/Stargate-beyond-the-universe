@@ -2823,6 +2823,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Langue</translation>
     </message>
     <message>
+        <source>Ship textures</source>
+        <translation>Textures des vaisseaux</translation>
+    </message>
+    <message>
+        <source>Normal (1024)</source>
+        <translation>Normale (1024)</translation>
+    </message>
+    <message>
+        <source>High (2048)</source>
+        <translation>Haute (2048)</translation>
+    </message>
+    <message>
+        <source>Ultra (4096)</source>
+        <translation>Ultra (4096)</translation>
+    </message>
+    <message>
+        <source>Textures of the mod ship models (if the mod folder is installed)</source>
+        <translation>Textures des modèles de vaisseaux du mod (si le dossier du mod est installé)</translation>
+    </message>
+    <message>
         <source>Back</source>
         <translation>Retour</translation>
     </message>

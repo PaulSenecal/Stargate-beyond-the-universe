@@ -8,6 +8,7 @@
 
 class BattleView;
 class CommandConsole;
+class CommandPanel;
 class ConquestEndScreen;
 class GalaxyMapWidget;
 class PauseMenu;
@@ -83,6 +84,8 @@ private:
     PauseMenu *m_pauseMenu = nullptr;
     QPushButton *m_menuButton = nullptr;
     QPushButton *m_hudButton = nullptr;
+    QPushButton *m_techButton = nullptr;
+    CommandPanel *m_command = nullptr;
     QWidget *m_hud = nullptr;
     RadarWidget *m_radar = nullptr;
     ShipStatusWidget *m_shipStatus = nullptr;

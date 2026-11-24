@@ -338,6 +338,69 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
 </context>
 <context>
+    <name>CommandPanel</name>
+    <message>
+        <source>RESEARCH</source>
+        <translation>RECHERCHE</translation>
+    </message>
+    <message>
+        <source>DIPLOMACY</source>
+        <translation>DIPLOMATIE</translation>
+    </message>
+    <message>
+        <source>Close (Esc)</source>
+        <translation>Fermer (Échap)</translation>
+    </message>
+    <message>
+        <source>Naquadah %1  -  Trinium %2</source>
+        <translation>Naquadah %1  -  Trinium %2</translation>
+    </message>
+    <message>
+        <source>eliminated</source>
+        <translation>éliminés</translation>
+    </message>
+    <message>
+        <source>ALLY</source>
+        <translation>ALLIÉ</translation>
+    </message>
+    <message>
+        <source>AT WAR</source>
+        <translation>EN GUERRE</translation>
+    </message>
+    <message>
+        <source>%1 world(s) - %2 fleet(s) - %3 technolog(ies)</source>
+        <translation>%1 monde(s) - %2 flotte(s) - %3 technologie(s)</translation>
+    </message>
+    <message>
+        <source>No one to talk to</source>
+        <translation>Plus personne à qui parler</translation>
+    </message>
+    <message>
+        <source>Break the alliance</source>
+        <translation>Rompre l&apos;alliance</translation>
+    </message>
+    <message>
+        <source>They will listen again in %1 s</source>
+        <translation>Ils vous écouteront dans %1 s</translation>
+    </message>
+    <message>
+        <source>Propose an alliance</source>
+        <translation>Proposer une alliance</translation>
+    </message>
+    <message>
+        <source>Alliance with the %1 broken</source>
+        <translation>Alliance avec les %1 rompue</translation>
+    </message>
+    <message>
+        <source>Alliance sealed with the %1</source>
+        <translation>Alliance scellée avec les %1</translation>
+    </message>
+    <message>
+        <source>A faction accepts an alliance against a common enemy at least as strong as itself, if you do not hold 40% of the galaxy. Above 45%, allies break away.</source>
+        <translation>Une faction accepte une alliance contre un ennemi commun au moins aussi fort qu&apos;elle, si vous ne tenez pas 40 % de la galaxie. Au-delà de 45 %, les alliés vous quittent.</translation>
+    </message>
+</context>
+<context>
     <name>ConquestEndScreen</name>
     <message>
         <source>Back to the title screen</source>
@@ -788,6 +851,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Show or hide the radar, ship and weapon panels (&apos;hud on|off&apos;)</source>
         <translation>Afficher ou masquer le radar et les panneaux du vaisseau et des armes (&apos;hud on|off&apos;)</translation>
+    </message>
+    <message>
+        <source>TECH</source>
+        <translation>TECH</translation>
+    </message>
+    <message>
+        <source>Research tree and diplomacy (&apos;research&apos;, &apos;diplomacy&apos;)</source>
+        <translation>Arbre de recherche et diplomatie (&apos;research&apos;, &apos;diplomacy&apos;)</translation>
     </message>
     <message>
         <source>Conquest restored: %1 - %2 planet(s) of %3</source>
@@ -2687,6 +2758,49 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source> - %1 weapon clips from the mod</source>
         <translation> - %1 sons d&apos;armes du mod</translation>
+    </message>
+</context>
+<context>
+    <name>TechTreeWidget</name>
+    <message>
+        <source>Research started: %1</source>
+        <translation>Recherche lancée : %1</translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <translation>%1 : %2</translation>
+    </message>
+    <message>
+        <source>WEAPONS</source>
+        <translation>ARMES</translation>
+    </message>
+    <message>
+        <source>DEFENSE</source>
+        <translation>DÉFENSE</translation>
+    </message>
+    <message>
+        <source>INDUSTRY</source>
+        <translation>INDUSTRIE</translation>
+    </message>
+    <message>
+        <source>needs %1</source>
+        <translation>nécessite %1</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>RESEARCHED</source>
+        <translation>RECHERCHÉE</translation>
+    </message>
+    <message>
+        <source>%1 naquadah - %2 s</source>
+        <translation>%1 naquadah - %2 s</translation>
+    </message>
+    <message>
+        <source>%1 - click to research</source>
+        <translation>%1 - cliquez pour rechercher</translation>
     </message>
 </context>
 <context>

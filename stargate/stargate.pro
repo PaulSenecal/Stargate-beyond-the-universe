@@ -5,6 +5,13 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
+# Game version: the last vX.Y.Z tag (set by the release workflow on
+# master), plus the commits since then; "dev" outside a git checkout.
+# Re-run qmake to refresh it.
+APP_VERSION = $$system(git -C $$shell_quote($$PWD) describe --tags --always --match "v*" 2>/dev/null)
+isEmpty(APP_VERSION): APP_VERSION = dev
+DEFINES += APP_VERSION=\\\"$$APP_VERSION\\\"
+
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0

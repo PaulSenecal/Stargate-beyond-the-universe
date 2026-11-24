@@ -1,0 +1,62 @@
+# Versioning: every push to master (develop merged into master) gets a
+# new version computed from the commit messages since the last tag
+# (.github/scripts/next-version.sh), is built and tested, then tagged
+# vX.Y.Z and published as a GitHub release with the macOS .dmg.
+name: Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write                 # push the tag, create the release
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # whole history and tags
+
+      - name: Compute the next version
+        id: version
+        run: |
+          version=$(.github/scripts/next-version.sh release-notes.md)
+          if [ -z "$version" ]; then
+            echo "No new commit since the last tag: nothing to release"
+          else
+            echo "Next version: v$version"
+            # Local tag first, so the build embeds this version
+            git tag "v$version"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/build
+        if: steps.version.outputs.version != ''
+
+      - name: Package the app (.dmg)
+        if: steps.version.outputs.version != ''
+        run: |
+          cd build
+          macdeployqt stargate.app -dmg
+          mv stargate.dmg "Stargate-v${{ steps.version.outputs.version }}-macOS.dmg"
+
+      - name: Publish the tag and the release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${{ steps.version.outputs.version }}"
+          git push origin "$tag"
+          {
+            cat release-notes.md
+            echo
+            echo "_macOS build not signed: right-click the app, then Open, the first time._"
+          } > notes.md
+          gh release create "$tag" build/Stargate-*.dmg --title "Stargate $tag" --notes-file notes.md

@@ -1,4 +1,5 @@
 #include "conquestgame.h"
+#include "src/core/balance.h"
 
 #include <QJsonArray>
 #include <QLineF>
@@ -12,31 +13,8 @@ using namespace Conquest;
 
 namespace {
 
-constexpr double kFlagshipSpeed = 70.0;         // map units per second
-constexpr double kFleetSpeed = 28.0;
-constexpr double kCaptureBase = 4.0;            // seconds in orbit, + kCapturePerDefense per level
-constexpr double kCapturePerDefense = 3.0;
-constexpr double kHullRegen = 0.3;              // % per second at an owned planet
-constexpr double kShipyardRegen = 1.5;
-constexpr double kTriniumPerHull = 0.5;         // repair cost
-constexpr double kFighterBuild = 40.0;          // seconds per ship at a shipyard (average population)
-constexpr double kMothershipBuild = 120.0;
-constexpr int kDockFighters = 8;                // shipyard capacity
-constexpr int kDockMotherships = 3;
-constexpr double kThinkDelay = 4.0;             // seconds between two AI decisions of a fleet
-constexpr double kAttackRatio = 1.6;            // AI attacks only with that much more power
-constexpr double kDefenseRebuild = 60.0;        // seconds per defense level rebuilt (up to 3, 5 for capitals)
-constexpr int kFlagshipPower = 12;              // AI estimate of the flagship strength
-constexpr double kBattleRate = 0.04;            // damage per second per point of power
-constexpr double kEventPeriod = 30.0;           // seconds between two faction events (revolts…)
-constexpr double kRevoltChance = 0.04;          // per weak Goa'uld world and period
-constexpr double kDiplomacyChance = 0.06;       // per neutral neighbour of the Tau'ri and period
-constexpr double kConversionChance = 0.03;      // per neutral neighbour of the Ori and period
-constexpr double kPactChance = 0.06;            // two AI factions ally against a strong enemy (per period)
-constexpr double kPactEndChance = 0.25;         // the threat is gone: the pact ends
-constexpr double kBetrayalChance = 0.04;        // the much stronger ally betrays the other
-constexpr int kMaxBattleMotherships = 4;        // 3D battle limits (12 contacts)
-constexpr int kMaxBattleFighters = 8;
+using namespace Balance;               // all the tunable values: src/core/balance.h
+constexpr double kBattleRate = kAutoBattleRate;
 
 const QStringList kNamedWorlds{"Abydos", "Dakara", "Tollana", "Langara", "Cimmeria", "Hebridan", "Kheb",
                                "Hala", "Vis Uban", "Delmak", "Netu", "Hasara", "Juna", "Orban", "Edora",

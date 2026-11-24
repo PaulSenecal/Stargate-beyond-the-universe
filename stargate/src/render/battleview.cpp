@@ -2,6 +2,7 @@
 #include "ddstexture.h"
 #include "modmesh.h"
 #include "src/core/assets.h"
+#include "src/core/balance.h"
 #include "src/db/dbtext.h"
 
 #include <QDebug>
@@ -27,6 +28,8 @@
 // ================================================================
 
 namespace {
+
+using namespace Balance;               // all the tunable values: src/core/balance.h
 
 const char *kLitVertexShader = R"(
 #version 330 core
@@ -237,28 +240,7 @@ const QVector3D kShieldRadii(6.9f, 2.4f, 5.8f);
 const QVector2D kFanCenter(1.5f, 0.0f);
 const float kFanRadius = 5.6f;
 
-constexpr float kMainCooldown = 4.0f;
-constexpr float kPulseCooldown = 8.0f;
-constexpr float kSecondaryCooldown = 2.0f;
 constexpr size_t kMaxFires = 14;
-constexpr float kWaveDelay = 15.0f;            // seconds between cleared sector and next wave
-constexpr float kDiveSpeed = 9.0f;
-constexpr int kMaxContacts = 12;               // launches stop above this
-constexpr int kMaxAllies = 12;                  // friendly ships at once
-constexpr int kCorePower = 100;                 // energy of the power core
-constexpr int kMainTowerPower = 20;
-constexpr int kEnginePower = 15;
-constexpr int kTurretPower = 15;
-constexpr int kRailgunPower = 15;
-constexpr int kShieldPower = 25;
-constexpr float kFireOnAllies = 0.45f;          // share of enemy fire aimed at friendly ships
-constexpr float kHangarRefill = 20.0f;          // seconds per fighter rebuilt out of battle
-constexpr float kAllyFighterSpeed = 15.0f;
-constexpr float kAllyMothershipSpeed = 5.0f;
-constexpr float kMissileSpeed = 8.0f;
-constexpr float kSlugSpeed = 70.0f;
-constexpr float kSlugVsFighter = 2.5f;         // railguns shred small ships…
-constexpr float kSlugVsMothership = 0.3f;      // …but barely scratch motherships
 
 float randRange(float a, float b)
 {
@@ -733,7 +715,7 @@ void BattleView::step(float dt)
     m_autoFireTimer -= dt;
     if (m_autoFireTimer <= 0.0f && m_turretsOn) {
         const float efficiency = std::max(0.25f, subsystemHealth("weapons") / 100.0f);
-        m_autoFireTimer = 0.45f / efficiency;
+        m_autoFireTimer = kAutoFireDelay / efficiency;
         if (const Enemy *t = pickTarget()) {
             const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
             shoot(true, destinyWorld(turret), t->id, {}, m_cannon.damage / 17.0f * efficiency, 38.0f,
@@ -753,7 +735,7 @@ void BattleView::step(float dt)
 
     // Shield regeneration (slower while under fire)
     if (m_shieldOrdered) {
-        const float base = m_time - m_lastShieldHit > 1.5f ? 6.0f : 3.0f;
+        const float base = m_time - m_lastShieldHit > 1.5f ? kPlayerShieldRegen : kPlayerShieldRegenUnderFire;
         const float rate = base * m_shieldRegenBonus * shieldPowerBoost()
                          * std::max(0.2f, subsystemHealth("shields") / 100.0f);
         m_shieldStrength = std::min(100.0f, m_shieldStrength + rate * dt);
@@ -944,6 +926,7 @@ BattleView::Enemy &BattleView::spawnAlly(int classIndex, const QVector3D &from, 
     a.cls = sc.isMothership() ? EnemyClass::Mothership : EnemyClass::Fighter;
     a.phase = randRange(0.0f, 2.0f * float(M_PI));
     a.hp = a.maxHp = float(sc.hull);
+    setupShip(a);
     for (const ShipAttack &attack : sc.attacks)
         a.attackTimers.push_back(attack.cooldown * randRange(0.3f, 1.0f));
     a.radius = a.cls == EnemyClass::Mothership ? 3.6f : 1.0f;
@@ -1052,6 +1035,7 @@ void BattleView::clearAllies()
 void BattleView::updateAlly(Enemy &a, float dt)
 {
     a.hitFlash = std::max(0.0f, a.hitFlash - dt * 4.0f);
+    regenShield(a, dt);
     Enemy *target = findEnemy(a.targetId);
     if (!target || !target->alive) {
         target = nearestEnemy(a.pos, a.cls == EnemyClass::Fighter);
@@ -1168,7 +1152,10 @@ void BattleView::allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &tar
 
 void BattleView::hitAlly(Enemy &a, const Projectile &p)
 {
-    a.hp -= p.damage;
+    const float damage = absorbByShield(a, p, p.damage);
+    if (damage <= 0.0f)
+        return;
+    a.hp -= damage;
     a.hitFlash = 1.0f;
     m_effects.push_back({p.pos, kExplosion, 0.0f, 0.3f, 0.5f + p.width * 2.0f});
     if (a.hp > 0.0f)
@@ -1305,6 +1292,7 @@ BattleView::Enemy &BattleView::spawnEnemy(int classIndex, bool fromHyperspace)
     e.cls = sc.isMothership() ? EnemyClass::Mothership : EnemyClass::Fighter;
     e.phase = randRange(0.0f, 2.0f * float(M_PI));
     e.hp = e.maxHp = float(sc.hull);
+    setupShip(e);
     for (const ShipAttack &a : sc.attacks)
         e.attackTimers.push_back(a.cooldown * randRange(0.3f, 1.0f));
     if (e.cls == EnemyClass::Mothership) {
@@ -1335,6 +1323,7 @@ BattleView::Enemy &BattleView::spawnEnemy(int classIndex, bool fromHyperspace)
 void BattleView::updateEnemy(Enemy &e, float dt)
 {
     e.hitFlash = std::max(0.0f, e.hitFlash - dt * 4.0f);
+    regenShield(e, dt);
 
     // Kamikaze run: straight at the impact point, no more firing
     if (e.diving) {
@@ -1513,7 +1502,7 @@ void BattleView::fireRailguns(float dt)
     if (m_railgunTimer > 0.0f)
         return;
     const float efficiency = std::max(0.25f, subsystemHealth("weapons") / 100.0f);
-    m_railgunTimer = 0.3f / efficiency;
+    m_railgunTimer = kRailgunDelay / efficiency;
     const float damage = m_railgun.damage / 10.0f * efficiency;
     const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
     const QVector3D from = destinyWorld(turret);
@@ -1666,9 +1655,11 @@ void BattleView::updateProjectiles(float dt)
                 if (p.kind == Projectile::Kind::Beam) {
                     // Half of a beam goes through the shield
                     Projectile half = p;
-                    half.damage *= 0.5f;
+                    Projectile through = p;
+                    half.damage *= 1.0f - kBeamShieldPierce;
+                    through.damage *= kBeamShieldPierce;
                     hitShield(half);
-                    hitHull(half);
+                    hitHull(through);
                 } else {
                     hitShield(p);
                 }
@@ -1695,6 +1686,9 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     float damage = p.damage;
     if (p.kind == Projectile::Kind::Slug)
         damage *= e.cls == EnemyClass::Fighter ? kSlugVsFighter : kSlugVsMothership;
+    damage = absorbByShield(e, p, damage);
+    if (damage <= 0.0f)
+        return;
     e.hp -= damage;
     e.hitFlash = 1.0f;
     m_effects.push_back({p.pos, kExplosion, 0.0f, 0.35f, 0.5f + p.width * 2.0f});
@@ -1715,10 +1709,65 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     emit enemyDestroyed(big);
 }
 
+// Hull and shield of a ship that enters the battle (Balance: scales
+// and shield per faction)
+void BattleView::setupShip(Enemy &ship)
+{
+    const ShipClass &sc = m_classes[ship.classIndex];
+    ship.hp = ship.maxHp = std::max(1.0f, float(sc.hull) * kShipHullScale);
+    ship.shield = ship.maxShield
+        = float(sc.hull) * shipShieldShare(sc.faction, ship.cls == EnemyClass::Mothership) * kShipShieldScale;
+}
+
+// The shield takes the hit first; returns what is left for the hull.
+// Half of a beam goes through (kBeamShieldPierce), like on the Destiny.
+float BattleView::absorbByShield(Enemy &ship, const Projectile &p, float damage)
+{
+    ship.lastHit = m_time;
+    if (ship.shield <= 0.0f)
+        return damage;
+    float through = 0.0f;
+    if (p.kind == Projectile::Kind::Beam) {
+        through = damage * kBeamShieldPierce;
+        damage -= through;
+    }
+    const float absorbed = std::min(ship.shield, damage);
+    ship.shield -= absorbed;
+    ship.shieldFlash = 1.0f;
+    m_effects.push_back({p.pos, kShieldColor, 0.0f, 0.25f, 0.4f + p.width * 2.0f});
+    return damage - absorbed + through;
+}
+
+void BattleView::regenShield(Enemy &ship, float dt)
+{
+    ship.shieldFlash = std::max(0.0f, ship.shieldFlash - dt * 2.0f);
+    if (ship.maxShield > 0.0f && m_time - ship.lastHit > kShipShieldDelay)
+        ship.shield = std::min(ship.maxShield, ship.shield + ship.maxShield * kShipShieldRegen * dt);
+}
+
+// Bubble of a ship shield, visible while it takes hits: the shield model
+// of the mod when there is one, an ellipsoid otherwise
+void BattleView::drawShipShield(const Enemy &ship, const QMatrix4x4 &model)
+{
+    if (ship.shieldFlash <= 0.01f || ship.shield <= 0.0f)
+        return;
+    const float alpha = 0.22f * ship.shieldFlash * (0.4f + 0.6f * ship.shield / ship.maxShield);
+    const bool big = ship.cls == EnemyClass::Mothership;
+    const float length = big ? 9.0f : 2.6f;
+    QMatrix4x4 m = model;
+    if (ModModel *bubble = modModel(meshKeyOf(classOf(ship)) + QStringLiteral("_shield"))) {
+        m.scale(length * 1.08f);
+        drawMesh(bubble->mesh, m, kShieldColor, 0.0f, alpha, ModeShield);
+    } else {
+        m.scale(length * 0.62f, length * 0.32f, length * 0.42f);
+        drawMesh(m_sphere, m, kShieldColor, 0.0f, alpha, ModeShield);
+    }
+}
+
 void BattleView::hitShield(const Projectile &p)
 {
     const float absorb = 1.0f / std::max(0.4f, subsystemHealth("shields") / 100.0f);
-    m_shieldStrength = std::max(0.0f, m_shieldStrength - p.damage * absorb);
+    m_shieldStrength = std::max(0.0f, m_shieldStrength - p.damage * absorb * kDamageToPlayerScale);
     m_shieldFlash = 1.0f;
     m_lastShieldHit = m_time;
     m_effects.push_back({p.pos, kShieldColor, 0.0f, 0.3f, 0.9f});
@@ -1734,7 +1783,7 @@ void BattleView::hitShield(const Projectile &p)
 void BattleView::hitHull(const Projectile &p)
 {
     const float before = m_hull;
-    m_hull = std::max(0.0f, m_hull - p.damage);
+    m_hull = std::max(0.0f, m_hull - p.damage * kDamageToPlayerScale);
     const bool missile = p.kind == Projectile::Kind::Missile;
     m_effects.push_back({p.pos, kExplosion, 0.0f, missile ? 0.8f : 0.45f, missile ? 2.2f : 0.9f});
     emit sound(missile ? SoundCue::Explosion : SoundCue::HullHit, {}, 0.0f);
@@ -2113,7 +2162,17 @@ void BattleView::paintGL()
     glDepthMask(GL_FALSE);
     drawEffects();
 
-    // Shield bubble (alpha blended, on top of the hull)
+    // Shields of the other ships, then the Destiny's (alpha blended)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    for (const std::vector<Enemy> *ships : {&m_enemies, &m_allies})
+        for (const Enemy &ship : *ships) {
+            if (!ship.alive)
+                continue;
+            QMatrix4x4 m;
+            m.translate(ship.pos);
+            m.rotate(QQuaternion::rotationTo({1, 0, 0}, ship.facing));
+            drawShipShield(ship, m);
+        }
     const float shieldAlpha = shieldProtecting()
         ? (0.05f + 0.45f * m_shieldFlash) * (0.4f + 0.6f * m_shieldStrength / 100.0f)
         : 0.0f;
@@ -2630,6 +2689,14 @@ void BattleView::drawOverlay()
         p.drawRect(bar);
         p.setBrush(QColor(60, 230, 90));
         p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * e->hp / e->maxHp, bar.height()));
+        if (e->maxShield > 0.0f) {
+            const QRectF shieldBar = bar.translated(0, -7);
+            p.setBrush(QColor(90, 90, 90, 200));
+            p.drawRect(shieldBar);
+            p.setBrush(QColor(110, 200, 255));
+            p.drawRect(QRectF(shieldBar.left(), shieldBar.top(), shieldBar.width() * e->shield / e->maxShield,
+                              shieldBar.height()));
+        }
 
         p.setPen(red);
         p.drawText(QPointF(center.x() + r + 8, center.y() - r + 4),
@@ -2658,6 +2725,14 @@ void BattleView::drawOverlay()
         p.drawRect(bar);
         p.setBrush(blue);
         p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * a.hp / a.maxHp, bar.height()));
+        if (a.maxShield > 0.0f) {
+            const QRectF shieldBar = bar.translated(0, -6);
+            p.setBrush(QColor(90, 90, 90, 200));
+            p.drawRect(shieldBar);
+            p.setBrush(QColor(200, 240, 255));
+            p.drawRect(QRectF(shieldBar.left(), shieldBar.top(), shieldBar.width() * a.shield / a.maxShield,
+                              shieldBar.height()));
+        }
     }
 
     // --- Destiny subsystem callouts

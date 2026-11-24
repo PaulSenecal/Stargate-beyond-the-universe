@@ -252,6 +252,9 @@ private:
         float orbitRadius = 0, baseAngle = 0, angleAmp = 0, angleSpeed = 0;
         float height = 0, phase = 0;
         float fireCooldown = 0, hitFlash = 0;
+        float shield = 0, maxShield = 0;    // energy shield (0 = none, see Balance)
+        float shieldFlash = 0;      // bubble visible after a hit
+        float lastHit = -1000;      // m_time of the last hit (shield recharge delay)
         int classIndex = 0;         // in m_classes
         std::vector<float> attackTimers;    // one per attack of its class
         bool diving = false;        // kamikaze run on the Destiny
@@ -311,6 +314,10 @@ private:
     QStringList hostileFactions() const;
     Projectile *findShot(int id);
     void hitEnemy(Enemy &e, const Projectile &p);
+    float absorbByShield(Enemy &ship, const Projectile &p, float damage);
+    void setupShip(Enemy &ship);
+    void regenShield(Enemy &ship, float dt);
+    void drawShipShield(const Enemy &ship, const QMatrix4x4 &model);
     void hitShield(const Projectile &p);
     void hitHull(const Projectile &p);
     // Damages the system closest to the impact point (ship-local)

@@ -404,6 +404,130 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 naquadah nécessaires (%2 disponibles)</translation>
     </message>
     <message>
+        <source>unknown technology</source>
+        <translation>technologie inconnue</translation>
+    </message>
+    <message>
+        <source>already researched</source>
+        <translation>déjà recherchée</translation>
+    </message>
+    <message>
+        <source>%1 is being researched</source>
+        <translation>%1 est en cours de recherche</translation>
+    </message>
+    <message>
+        <source>needs %1 first</source>
+        <translation>nécessite d&apos;abord %1</translation>
+    </message>
+    <message>
+        <source>Research started: %1 (%2 s)</source>
+        <translation>Recherche lancée : %1 (%2 s)</translation>
+    </message>
+    <message>
+        <source>Naquadah-enhanced weapons</source>
+        <translation>Armes au naquadah</translation>
+    </message>
+    <message>
+        <source>Improved plasma</source>
+        <translation>Plasma amélioré</translation>
+    </message>
+    <message>
+        <source>Asgard beams</source>
+        <translation>Rayons asgard</translation>
+    </message>
+    <message>
+        <source>Reinforced garrisons</source>
+        <translation>Garnisons renforcées</translation>
+    </message>
+    <message>
+        <source>Shield generators</source>
+        <translation>Générateurs de bouclier</translation>
+    </message>
+    <message>
+        <source>Planetary shields</source>
+        <translation>Boucliers planétaires</translation>
+    </message>
+    <message>
+        <source>Improved shipyards</source>
+        <translation>Chantiers améliorés</translation>
+    </message>
+    <message>
+        <source>Hyperdrive</source>
+        <translation>Hyperpropulsion</translation>
+    </message>
+    <message>
+        <source>Naquadah refining</source>
+        <translation>Raffinage du naquadah</translation>
+    </message>
+    <message>
+        <source>fleets +10%, flagship damage +15%</source>
+        <translation>flottes +10 %, dégâts du vaisseau amiral +15 %</translation>
+    </message>
+    <message>
+        <source>fleets +15%, flagship damage +25%</source>
+        <translation>flottes +15 %, dégâts du vaisseau amiral +25 %</translation>
+    </message>
+    <message>
+        <source>garrisons 4 instead of 3 per defense level</source>
+        <translation>garnisons : 4 au lieu de 3 par niveau de défense</translation>
+    </message>
+    <message>
+        <source>flagship shield regenerates 50% faster</source>
+        <translation>le bouclier du vaisseau amiral se recharge 50 % plus vite</translation>
+    </message>
+    <message>
+        <source>defenses rebuilt twice as fast, up to 4</source>
+        <translation>défenses reconstruites deux fois plus vite, jusqu&apos;à 4</translation>
+    </message>
+    <message>
+        <source>shipyards +25%</source>
+        <translation>chantiers navals +25 %</translation>
+    </message>
+    <message>
+        <source>fleets and flagship 30% faster</source>
+        <translation>flottes et vaisseau amiral 30 % plus rapides</translation>
+    </message>
+    <message>
+        <source>naquadah +25%</source>
+        <translation>naquadah +25 %</translation>
+    </message>
+    <message>
+        <source>unknown faction</source>
+        <translation>faction inconnue</translation>
+    </message>
+    <message>
+        <source>the %1 are already your allies</source>
+        <translation>les %1 sont déjà vos alliés</translation>
+    </message>
+    <message>
+        <source>the %1 will not listen again before %2 s</source>
+        <translation>les %1 ne vous écouteront pas avant %2 s</translation>
+    </message>
+    <message>
+        <source>the %1 are no more</source>
+        <translation>les %1 n&apos;existent plus</translation>
+    </message>
+    <message>
+        <source>the %1 refuse: your power frightens them</source>
+        <translation>les %1 refusent : votre puissance les effraie</translation>
+    </message>
+    <message>
+        <source>the %1 refuse: they see no common enemy</source>
+        <translation>les %1 refusent : ils ne voient pas d&apos;ennemi commun</translation>
+    </message>
+    <message>
+        <source>Alliance sealed with the %1: they will not attack you</source>
+        <translation>Alliance scellée avec les %1 : ils ne vous attaqueront pas</translation>
+    </message>
+    <message>
+        <source>no alliance with that faction</source>
+        <translation>aucune alliance avec cette faction</translation>
+    </message>
+    <message>
+        <source>Alliance with the %1 broken</source>
+        <translation>Alliance avec les %1 rompue</translation>
+    </message>
+    <message>
         <source>%1 fortified: defense %2/5</source>
         <translation>%1 fortifiée : défense %2/5</translation>
     </message>
@@ -452,6 +576,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>La flotte %1 part vers %2</translation>
     </message>
     <message>
+        <source>Research complete: %1 - %2</source>
+        <translation>Recherche terminée : %1 - %2</translation>
+    </message>
+    <message>
         <source>%1 joins your faction</source>
         <translation>%1 rejoint votre faction</translation>
     </message>
@@ -468,12 +596,20 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les Wraith prélèvent la population de %1</translation>
     </message>
     <message>
+        <source>Allied victory: only you and your allies remain</source>
+        <translation>Victoire de l&apos;alliance : il ne reste que vous et vos alliés</translation>
+    </message>
+    <message>
         <source>Jaffa revolt on %1: the world breaks free from the Goa&apos;uld</source>
         <translation>Révolte jaffa sur %1 : le monde se libère des Goa&apos;uld</translation>
     </message>
     <message>
         <source>%1 joins the Tau&apos;ri through diplomacy</source>
         <translation>%1 rejoint les Tau&apos;ri par la diplomatie</translation>
+    </message>
+    <message>
+        <source>The %1 fear your power and break the alliance!</source>
+        <translation>Les %1 craignent votre puissance et rompent l&apos;alliance !</translation>
     </message>
     <message>
         <source>New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))</source>
@@ -635,6 +771,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Vous (%1)</translation>
     </message>
     <message>
+        <source>%1 (ally)</source>
+        <translation>%1 (allié)</translation>
+    </message>
+    <message>
         <source> — capital</source>
         <translation> — capitale</translation>
     </message>
@@ -685,6 +825,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; - naquadah %2 - trinium %3 - planets %4/%5 - hull %6%</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; - naquadah %2 - trinium %3 - planètes %4/%5 - coque %6%</translation>
+    </message>
+    <message>
+        <source>Research: %1 %2%</source>
+        <translation>Recherche : %1 %2%</translation>
     </message>
     <message>
         <source>BATTLE FOR %1</source>
@@ -743,6 +887,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Réparation impossible : %1</translation>
     </message>
     <message>
+        <source>Unknown technology &apos;%1&apos; - type &apos;research&apos; for the list</source>
+        <translation>Technologie inconnue &apos;%1&apos; - tapez &apos;research&apos; pour la liste</translation>
+    </message>
+    <message>
+        <source>Cannot research: %1</source>
+        <translation>Recherche impossible : %1</translation>
+    </message>
+    <message>
+        <source>No alliance: %1</source>
+        <translation>Pas d&apos;alliance : %1</translation>
+    </message>
+    <message>
+        <source>Cannot break: %1</source>
+        <translation>Rupture impossible : %1</translation>
+    </message>
+    <message>
+        <source>%1: %2 - %3 world(s), %4 fleet(s)</source>
+        <translation>%1 : %2 - %3 monde(s), %4 flotte(s)</translation>
+    </message>
+    <message>
+        <source>ally</source>
+        <translation>allié</translation>
+    </message>
+    <message>
+        <source>at war</source>
+        <translation>en guerre</translation>
+    </message>
+    <message>
         <source>Cannot engage: %1</source>
         <translation>Intervention impossible : %1</translation>
     </message>
@@ -795,6 +967,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
     </message>
     <message>
+        <source>Research: research (tree), research &lt;n&gt; - weapons, defense and industry, 3 tiers each</source>
+        <translation>Recherche : research (arbre), research &lt;n&gt; - armes, défense et industrie, 3 niveaux chacune</translation>
+    </message>
+    <message>
+        <source>Diplomacy: diplomacy (relations), ally &lt;faction&gt; (against a common enemy), break &lt;faction&gt;</source>
+        <translation>Diplomatie : diplomacy (relations), ally &lt;faction&gt; (contre un ennemi commun), break &lt;faction&gt;</translation>
+    </message>
+    <message>
         <source>Display: hud on|off (radar, ship and weapon panels), or the HUD button</source>
         <translation>Affichage : hud on|off (radar, panneaux du vaisseau et des armes), ou le bouton HUD</translation>
     </message>
@@ -805,6 +985,30 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Win by taking every planet of the enemy factions. Menu: Esc or &apos;menu&apos;.</source>
         <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
+    </message>
+    <message>
+        <source>Weapons</source>
+        <translation>Armes</translation>
+    </message>
+    <message>
+        <source>Defense</source>
+        <translation>Défense</translation>
+    </message>
+    <message>
+        <source>Industry</source>
+        <translation>Industrie</translation>
+    </message>
+    <message>
+        <source>done</source>
+        <translation>terminée</translation>
+    </message>
+    <message>
+        <source>in progress %1%</source>
+        <translation>en cours %1%</translation>
+    </message>
+    <message>
+        <source>%1 naquadah, %2 s</source>
+        <translation>%1 naquadah, %2 s</translation>
     </message>
     <message>
         <source>No fleet in the galaxy</source>

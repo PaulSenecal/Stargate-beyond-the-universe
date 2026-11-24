@@ -100,7 +100,25 @@ struct Faction
     bool player = false;
     double naquadah = 0;
     double trinium = 0;
+    // Phase 4
+    QStringList techs;              // researched technologies
+    QString research;               // technology being researched ("" = none)
+    double researchProgress = 0;    // 0..1
+    bool allied = false;            // allied with the player
+    double allyCooldown = 0;        // seconds before a new proposal
 };
+
+// Technology tree: 3 branches (weapons, defense, industry) of 3 tiers;
+// a tier needs the previous one of its branch
+struct TechInfo
+{
+    QString id;                     // "weapons1"…
+    int branch = 0;                 // 0 weapons, 1 defense, 2 industry
+    int tier = 1;
+    double cost = 0;                // naquadah
+    double seconds = 0;             // research time
+};
+const QList<TechInfo> &techInfos();
 
 constexpr double kMapWidth = 1000.0;
 constexpr double kMapHeight = 640.0;
@@ -141,7 +159,7 @@ public:
     static int planetCountFor(Conquest::Size size);
     QPointF fleetPos(const Conquest::Fleet &fleet) const;
     // Strength of a planet garrison (neutral militia is weaker)
-    static int garrisonPower(const Conquest::Planet &p);
+    int garrisonPower(const Conquest::Planet &p) const;
 
     // --- Flagship
     int flagshipPlanet() const { return m_at; }             // planet it orbits / leaves
@@ -191,6 +209,23 @@ public:
     //          +40%), diplomacy (neutral neighbours may join, faster rallying)
     //  Lucian Alliance: smuggling (fast fighters), raids steal naquadah
     double powerMultiplier(int faction) const;
+
+    // --- Technologies (phase 4)
+    bool hasTech(int faction, const QString &tech) const;
+    bool canResearch(int faction, const QString &tech, QString *why = nullptr) const;
+    bool startResearch(const QString &tech, QString *error = nullptr);     // for the player
+    int findTech(const QString &nameOrNumber) const;                       // index in techInfos(), -1
+    static QString techName(const QString &tech);
+    static QString techEffect(const QString &tech);
+    double flagshipDamageBonus() const;     // weapons techs of the player (3D battles)
+    double flagshipShieldBonus() const;     // shield generators
+
+    // --- Alliances with the player (phase 4)
+    bool hostile(int a, int b) const;       // can a attack b (-1 = neutral)
+    bool isAllied(int faction) const;
+    bool proposeAlliance(const QString &faction, QString *answer = nullptr);
+    bool breakAlliance(const QString &faction, QString *error = nullptr);
+    int findFaction(const QString &name) const;
     static QString traitSummary(const QString &factionId);
     bool hasTrait(int faction, const char *factionId) const;
     static QString bonusName(Conquest::Bonus bonus);

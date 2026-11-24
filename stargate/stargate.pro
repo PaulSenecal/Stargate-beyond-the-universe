@@ -32,6 +32,7 @@ SOURCES += \
     src/Menu/pause/pausemenu.cpp \
     src/Menu/setting/settingspanel.cpp \
     src/audio/musicplayer.cpp \
+    src/conquest/commandpanel.cpp \
     src/conquest/conquestendscreen.cpp \
     src/conquest/conquestgame.cpp \
     src/conquest/conquestscreen.cpp \
@@ -77,6 +78,7 @@ HEADERS += \
     src/Menu/pause/pausemenu.h \
     src/Menu/setting/settingspanel.h \
     src/audio/musicplayer.h \
+    src/conquest/commandpanel.h \
     src/conquest/conquestendscreen.h \
     src/conquest/conquestgame.h \
     src/conquest/conquestscreen.h \

@@ -15,6 +15,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "commandpanel.h"
 #include "conquestendscreen.h"
 #include "galaxymapwidget.h"
 #include "src/Menu/gamemenu/commandconsole.h"
@@ -194,7 +195,9 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     auto *escape = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     escape->setContext(Qt::WidgetWithChildrenShortcut);
     connect(escape, &QShortcut::activated, this, [this] {
-        if (m_pauseMenu->isVisible())
+        if (m_command->isVisible())
+            m_command->hide();
+        else if (m_pauseMenu->isVisible())
             m_pauseMenu->escape();
         else
             openPauseMenu();
@@ -216,6 +219,14 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_hudButton->setStyleSheet(m_menuButton->styleSheet());
     m_hudButton->adjustSize();
     connect(m_hudButton, &QPushButton::clicked, this, [this] { setHudVisible(!m_hud->isVisible()); });
+    m_techButton = new QPushButton(tr("TECH"), m_battle);
+    m_techButton->setFocusPolicy(Qt::NoFocus);
+    m_techButton->setCursor(Qt::PointingHandCursor);
+    m_techButton->setToolTip(tr("Research tree and diplomacy ('research', 'diplomacy')"));
+    m_techButton->setStyleSheet(m_menuButton->styleSheet());
+    m_techButton->adjustSize();
+    m_command = new CommandPanel(m_game, this);
+    connect(m_techButton, &QPushButton::clicked, this, [this] { m_command->open(CommandPanel::Page::Research); });
     m_battle->installEventFilter(this);
     setupHud();
     setHudVisible(QSettings("Stargate", "stargate").value("conquest/hud", true).toBool());
@@ -299,6 +310,7 @@ void ConquestScreen::tick()
     }
     m_game->tick(dt);
     m_playSeconds += dt;
+    m_command->refresh();
     if (m_game->inBattle())
         joinFriendlyFleets();           // reinforcements arriving during the battle
     if (m_game->travelling() != m_wasTravelling) {
@@ -541,6 +553,7 @@ void ConquestScreen::onCommand(const QString &command)
     } else if (name == "research" || name == "tech") {
         if (arg.isEmpty()) {
             listTechs();
+            m_command->open(CommandPanel::Page::Research);
         } else {
             const int index = m_game->findTech(arg);
             QString error;
@@ -558,6 +571,7 @@ void ConquestScreen::onCommand(const QString &command)
         if (!m_game->breakAlliance(arg, &error))
             warn(tr("Cannot break: %1").arg(error));
     } else if (name == "diplomacy") {
+        m_command->open(CommandPanel::Page::Diplomacy);
         for (int f = 0; f < m_game->factions().size(); ++f) {
             if (f == m_game->playerIndex())
                 continue;
@@ -870,6 +884,7 @@ bool ConquestScreen::eventFilter(QObject *watched, QEvent *event)
     if (watched == m_battle && event->type() == QEvent::Resize) {
         m_menuButton->move(m_battle->width() - m_menuButton->width() - 10, 10);
         m_hudButton->move(m_menuButton->x() - m_hudButton->width() - 8, 10);
+        m_techButton->move(m_hudButton->x() - m_techButton->width() - 8, 10);
     }
     return QWidget::eventFilter(watched, event);
 }

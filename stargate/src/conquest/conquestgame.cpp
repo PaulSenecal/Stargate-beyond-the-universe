@@ -32,6 +32,9 @@ constexpr double kEventPeriod = 30.0;           // seconds between two faction e
 constexpr double kRevoltChance = 0.04;          // per weak Goa'uld world and period
 constexpr double kDiplomacyChance = 0.06;       // per neutral neighbour of the Tau'ri and period
 constexpr double kConversionChance = 0.03;      // per neutral neighbour of the Ori and period
+constexpr double kPactChance = 0.06;            // two AI factions ally against a strong enemy (per period)
+constexpr double kPactEndChance = 0.25;         // the threat is gone: the pact ends
+constexpr double kBetrayalChance = 0.04;        // the much stronger ally betrays the other
 constexpr int kMaxBattleMotherships = 4;        // 3D battle limits (12 contacts)
 constexpr int kMaxBattleFighters = 8;
 
@@ -500,7 +503,71 @@ bool ConquestGame::hostile(int a, int b) const
         return !isAllied(b);
     if (b == m_player)
         return !isAllied(a);
-    return true;
+    return !hasPact(a, b);
+}
+
+bool ConquestGame::hasPact(int a, int b) const
+{
+    return a >= 0 && b >= 0 && a < m_factions.size() && b < m_factions.size()
+        && m_factions[a].pacts.contains(m_factions[b].id);
+}
+
+// Battles in progress between two factions that just made peace stop
+void ConquestGame::stopFightsBetween(int a, int b)
+{
+    m_skirmishes.erase(std::remove_if(m_skirmishes.begin(), m_skirmishes.end(),
+                                      [this](const Skirmish &s) { return !hostile(s.attacker, s.defender); }),
+                       m_skirmishes.end());
+    for (Fleet &fleet : m_fleets)
+        if ((fleet.owner == a || fleet.owner == b) && fleet.target >= 0
+            && !hostile(fleet.owner, m_planets[fleet.target].owner)) {
+            fleet.route.clear();
+            fleet.target = -1;
+        }
+}
+
+// AI factions ally against a much stronger common enemy, part when the
+// threat is gone, and the stronger one may betray the weaker
+void ConquestGame::aiDiplomacy()
+{
+    auto alive = [this](int f) { return planetCount(f) > 0; };
+    for (int a = 0; a < m_factions.size(); ++a) {
+        for (int b = a + 1; b < m_factions.size(); ++b) {
+            if (a == m_player || b == m_player || !alive(a) || !alive(b))
+                continue;
+            const int pa = planetCount(a), pb = planetCount(b);
+            int strongest = -1, strength = 0;
+            for (int g = 0; g < m_factions.size(); ++g)
+                if (g != a && g != b && planetCount(g) > strength) {
+                    strength = planetCount(g);
+                    strongest = g;
+                }
+            const bool threat = strongest >= 0 && strength >= 4 && strength >= 1.3 * std::max(pa, pb);
+            Faction &fa = m_factions[a];
+            Faction &fb = m_factions[b];
+            if (!hasPact(a, b)) {
+                if (threat && m_rng.generateDouble() < kPactChance) {
+                    fa.pacts << fb.id;
+                    fb.pacts << fa.id;
+                    stopFightsBetween(a, b);
+                    emit message(tr("The %1 and the %2 ally against the %3").arg(fa.id, fb.id, m_factions[strongest].id),
+                                 strongest == m_player ? Tone::Warning : Tone::Info);
+                }
+                continue;
+            }
+            if (std::max(pa, pb) >= 2 * std::min(pa, pb) && m_rng.generateDouble() < kBetrayalChance) {
+                const QString traitor = pa > pb ? fa.id : fb.id;
+                const QString victim = pa > pb ? fb.id : fa.id;
+                fa.pacts.removeAll(fb.id);
+                fb.pacts.removeAll(fa.id);
+                emit message(tr("The %1 betray the %2!").arg(traitor, victim), Tone::Warning);
+            } else if (!threat && m_rng.generateDouble() < kPactEndChance) {
+                fa.pacts.removeAll(fb.id);
+                fb.pacts.removeAll(fa.id);
+                emit message(tr("The %1 and the %2 end their alliance").arg(fa.id, fb.id), Tone::Info);
+            }
+        }
+    }
 }
 
 int ConquestGame::findFaction(const QString &name) const
@@ -1252,6 +1319,8 @@ void ConquestGame::factionEvents()
             emit message(tr("The %1 fear your power and break the alliance!").arg(m_factions[f].id), Tone::Critical);
         }
 
+    aiDiplomacy();
+
     // Wraith fleets regrow fighters on their worlds
     for (Fleet &fleet : m_fleets)
         if (hasTrait(fleet.owner, "Wraith") && !fleet.moving() && m_planets[fleet.at].owner == fleet.owner
@@ -1683,7 +1752,8 @@ QJsonObject ConquestGame::toJson() const
         factions.append(QJsonObject{{"id", f.id}, {"player", f.player}, {"naquadah", f.naquadah},
                                     {"trinium", f.trinium}, {"techs", QJsonArray::fromStringList(f.techs)},
                                     {"research", f.research}, {"researchProgress", f.researchProgress},
-                                    {"allied", f.allied}, {"allyCooldown", f.allyCooldown}});
+                                    {"allied", f.allied}, {"allyCooldown", f.allyCooldown},
+                                    {"pacts", QJsonArray::fromStringList(f.pacts)}});
     QJsonArray planets;
     for (const Planet &p : m_planets) {
         QJsonArray lanes;
@@ -1746,6 +1816,9 @@ bool ConquestGame::fromJson(const QJsonObject &json)
         f.researchProgress = std::clamp(o.value("researchProgress").toDouble(), 0.0, 1.0);
         f.allied = o.value("allied").toBool() && !f.player;
         f.allyCooldown = std::max(0.0, o.value("allyCooldown").toDouble());
+        for (const QJsonValue &pact : o.value("pacts").toArray())
+            if (factionInfoIndex(pact.toString()) >= 0)
+                f.pacts << pact.toString();
         factions << f;
     }
     QList<Planet> planets;

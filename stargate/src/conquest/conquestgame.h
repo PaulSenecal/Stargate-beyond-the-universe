@@ -106,6 +106,7 @@ struct Faction
     double researchProgress = 0;    // 0..1
     bool allied = false;            // allied with the player
     double allyCooldown = 0;        // seconds before a new proposal
+    QStringList pacts;              // AI factions it is allied with (AI diplomacy)
 };
 
 // Technology tree: 3 branches (weapons, defense, industry) of 3 tiers;
@@ -225,6 +226,7 @@ public:
     // --- Alliances with the player (phase 4)
     bool hostile(int a, int b) const;       // can a attack b (-1 = neutral)
     bool isAllied(int faction) const;
+    bool hasPact(int a, int b) const;       // alliance between two AI factions
     bool proposeAlliance(const QString &faction, QString *answer = nullptr);
     bool breakAlliance(const QString &faction, QString *error = nullptr);
     int findFaction(const QString &name) const;
@@ -268,6 +270,8 @@ private:
     bool involvesPlayer(int owner) const { return owner == m_player; }
     QString ownerName(int owner) const;
     void factionEvents();
+    void aiDiplomacy();
+    void stopFightsBetween(int a, int b);
 
     QList<Conquest::Planet> m_planets;
     QList<Conquest::Faction> m_factions;

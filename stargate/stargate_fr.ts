@@ -412,6 +412,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 monde(s) - %2 flotte(s) - %3 technologie(s)</translation>
     </message>
     <message>
+        <source>No pact with the other factions</source>
+        <translation>Aucun pacte avec les autres factions</translation>
+    </message>
+    <message>
+        <source>Allied with: %1</source>
+        <translation>Alliée avec : %1</translation>
+    </message>
+    <message>
         <source>No one to talk to</source>
         <translation>Plus personne à qui parler</translation>
     </message>
@@ -636,6 +644,18 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>naquadah +25%</source>
         <translation>naquadah +25 %</translation>
+    </message>
+    <message>
+        <source>The %1 and the %2 ally against the %3</source>
+        <translation>Les %1 et les %2 s&apos;allient contre les %3</translation>
+    </message>
+    <message>
+        <source>The %1 betray the %2!</source>
+        <translation>Les %1 trahissent les %2 !</translation>
+    </message>
+    <message>
+        <source>The %1 and the %2 end their alliance</source>
+        <translation>Les %1 et les %2 mettent fin à leur alliance</translation>
     </message>
     <message>
         <source>unknown faction</source>

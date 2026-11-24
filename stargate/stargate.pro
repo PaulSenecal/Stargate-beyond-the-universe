@@ -26,6 +26,7 @@ SOURCES += \
     src/Menu/setting/settingspanel.cpp \
     src/audio/soundsystem.cpp \
     src/core/commandmanager.cpp \
+    src/core/language.cpp \
     src/core/destinystate.cpp \
     src/core/questsystem.cpp \
     src/db/databasemanager.cpp \
@@ -66,6 +67,7 @@ HEADERS += \
     src/audio/soundcue.h \
     src/audio/soundsystem.h \
     src/core/commandmanager.h \
+    src/core/language.h \
     src/core/destinystate.h \
     src/core/questsystem.h \
     src/core/assets.h \
@@ -96,7 +98,7 @@ FORMS += \
     src/Menu/campaign/campaign.ui
 
 TRANSLATIONS += \
-    stargate_fr_FR.ts
+    stargate_fr.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 

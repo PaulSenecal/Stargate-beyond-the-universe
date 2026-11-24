@@ -3,8 +3,10 @@
 #include "src/Menu/gamemenu/gamemenu.h"
 #include "src/Menu/mainmenu/titlescreen.h"
 #include "src/audio/soundsystem.h"
+#include "src/core/language.h"
 
 #include <QStackedWidget>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -19,13 +21,9 @@ MainWindow::MainWindow(QWidget *parent)
     // in mainwindow.ui.
     m_sound = new SoundSystem(this);
     m_screens = new QStackedWidget(this);
-    m_title = new TitleScreen(m_sound, m_screens);
-    m_screens->addWidget(m_title);
     setCentralWidget(m_screens);
     menuBar()->hide();
-
-    connect(m_title, &TitleScreen::playRequested, this, &MainWindow::startGame);
-    connect(m_title, &TitleScreen::quitRequested, this, &MainWindow::close);
+    createTitle();
     startGame();
     //menuBackground();
 
@@ -37,6 +35,36 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::createTitle()
+{
+    m_title = new TitleScreen(m_sound, m_screens);
+    m_screens->insertWidget(0, m_title);
+    connect(m_title, &TitleScreen::playRequested, this, &MainWindow::startGame);
+    connect(m_title, &TitleScreen::quitRequested, this, &MainWindow::close);
+    connect(m_title, &TitleScreen::languageChanged, this, &MainWindow::changeLanguage);
+}
+
+void MainWindow::changeLanguage(const QString &code)
+{
+    Language::apply(code);
+    // Later: the request comes from a widget that is about to be deleted
+    QTimer::singleShot(0, this, [this] {
+        const bool inGame = m_game && m_screens->currentWidget() == m_game;
+        setWindowTitle(tr("Stargate - Beyond the Universe"));
+        delete m_title;
+        createTitle();
+        if (inGame) {
+            delete m_game;          // saved, then reloaded in the new language
+            m_game = nullptr;
+            startGame();
+            m_game->openSettings();
+        } else {
+            m_screens->setCurrentWidget(m_title);
+            m_title->showSettings();
+        }
+    });
+}
+
 void MainWindow::startGame()
 {
     if (!m_game) {
@@ -44,6 +72,7 @@ void MainWindow::startGame()
         m_screens->addWidget(m_game);
         connect(m_game, &GameMenu::quitToTitleRequested, this, &MainWindow::showTitle);
         connect(m_game, &GameMenu::quitGameRequested, this, &MainWindow::close);
+        connect(m_game, &GameMenu::languageChanged, this, &MainWindow::changeLanguage);
     }
     m_screens->setCurrentWidget(m_game);
 }

@@ -1,7 +1,9 @@
 #include "settingspanel.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QSettings>
@@ -9,6 +11,7 @@
 #include <QVBoxLayout>
 
 #include "src/audio/soundsystem.h"
+#include "src/core/language.h"
 
 SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     : QWidget(parent)
@@ -20,6 +23,7 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
 
     // --- Sound
     auto *soundTitle = new QLabel(tr("Sound effects volume"), this);
+    soundTitle->setObjectName("field");
     m_volume = new QSlider(Qt::Horizontal, this);
     m_volume->setRange(0, 100);
     m_volume->setPageStep(10);
@@ -33,6 +37,11 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
 
     // --- Display
     m_fullScreen = new QCheckBox(tr("Full screen"), this);
+    auto *languageTitle = new QLabel(tr("Language"), this);
+    languageTitle->setObjectName("field");
+    m_language = new QComboBox(this);
+    for (const auto &language : Language::available())
+        m_language->addItem(language.second, language.first);
 
     auto *grid = new QGridLayout;
     grid->setHorizontalSpacing(12);
@@ -44,6 +53,11 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     grid->addWidget(m_soundStatus, 3, 0, 1, 2);
     grid->setRowMinimumHeight(4, 12);
     grid->addWidget(m_fullScreen, 5, 0, 1, 2);
+    auto *languageRow = new QHBoxLayout;
+    languageRow->addWidget(languageTitle);
+    languageRow->addWidget(m_language);
+    languageRow->addStretch(1);
+    grid->addLayout(languageRow, 6, 0, 1, 2);
 
     auto *back = new QPushButton(tr("Back"), this);
 
@@ -69,6 +83,13 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
         if (QWidget *w = window())
             on ? w->showFullScreen() : w->showMaximized();
     });
+    connect(m_language, &QComboBox::currentIndexChanged, this, [this] {
+        const QString code = m_language->currentData().toString();
+        if (code == Language::current())
+            return;
+        Language::save(code);
+        emit languageChanged(code);
+    });
     connect(back, &QPushButton::clicked, this, &SettingsPanel::backRequested);
 
     refresh();
@@ -82,7 +103,9 @@ bool SettingsPanel::fullScreenSetting()
 void SettingsPanel::refresh()
 {
     const int volume = m_sound ? m_sound->volume() : 0;
-    const QSignalBlocker blockVolume(m_volume), blockMute(m_mute), blockScreen(m_fullScreen);
+    const QSignalBlocker blockVolume(m_volume), blockMute(m_mute), blockScreen(m_fullScreen),
+        blockLanguage(m_language);
+    m_language->setCurrentIndex(std::max(0, m_language->findData(Language::current())));
     if (volume > 0)
         m_lastVolume = volume;
     m_volume->setValue(volume > 0 ? volume : m_lastVolume);

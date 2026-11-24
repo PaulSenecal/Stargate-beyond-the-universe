@@ -121,6 +121,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     });
     connect(m_pauseMenu, &PauseMenu::quitToTitleRequested, this, &GameMenu::quitToTitleRequested);
     connect(m_pauseMenu, &PauseMenu::quitGameRequested, this, &GameMenu::quitGameRequested);
+    connect(m_pauseMenu, &PauseMenu::languageChanged, this, &GameMenu::languageChanged);
     auto *escape = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     escape->setContext(Qt::WidgetWithChildrenShortcut);
     connect(escape, &QShortcut::activated, this, [this] {
@@ -357,6 +358,12 @@ void GameMenu::openPauseMenu()
         return;
     setPaused(true);
     m_pauseMenu->open();
+}
+
+void GameMenu::openSettings()
+{
+    openPauseMenu();
+    m_pauseMenu->openSettings();
 }
 
 void GameMenu::setPaused(bool paused)

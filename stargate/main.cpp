@@ -1,11 +1,10 @@
 #include "mainwindow.h"
 #include "src/Menu/setting/settingspanel.h"
+#include "src/core/language.h"
 #include "src/db/databasemanager.h"
 
 #include <QApplication>
-#include <QLocale>
 #include <QSurfaceFormat>
-#include <QTranslator>
 
 int main(int argc, char *argv[])
 {
@@ -20,15 +19,9 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    QTranslator translator;
-    const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages) {
-        const QString baseName = "stargate_" + QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName)) {
-            a.installTranslator(&translator);
-            break;
-        }
-    }
+    // Interface language: saved choice, else the system language
+    Language::apply(Language::current());
+
     // Player save database (copied from the template on first launch).
     // The game still runs without it, with default values.
     if (!DatabaseManager::instance().openRuntimeCopy(":/db/stargate.db", "stargate.db"))

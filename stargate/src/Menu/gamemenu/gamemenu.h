@@ -43,10 +43,12 @@ public:
     ~GameMenu() override;     // saves the game
 
     void openPauseMenu();
+    void openSettings();          // pause menu on its settings page
 
 signals:
     void quitToTitleRequested();
     void quitGameRequested();
+    void languageChanged(const QString &code);
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

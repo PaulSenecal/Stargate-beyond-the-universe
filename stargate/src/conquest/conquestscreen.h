@@ -71,7 +71,7 @@ private:
     void updatePlanetLook();
     void setHudVisible(bool visible);
     void setupHud();
-    void joinFriendlyFleets();      // own and allied fleets at the battle fight in 3D
+    void joinFriendlyFleets();      // own and allied fleets at the flagship's planet: in orbit, in the battle
     void reportAllySurvivors();     // their losses go back to the fleets
     void showEnd(bool victory);
 

@@ -142,7 +142,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     connect(m_battle, &BattleView::sectorCleared, this, [this] {
         if (!m_game->inBattle())
             return;
-        reportAllySurvivors();
+        reportAllySurvivors();                      // the fleets stay in orbit, hangar fighters land
         ++m_battlesWon;
         m_game->battleWon();
     });
@@ -152,6 +152,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
         reportAllySurvivors();
         ++m_battlesLost;
         m_battle->clearBattlefield(0.0f);
+        m_joined.clear();
         m_game->battleLost();
         m_game->setFlagshipHull(m_battle->hull());
     });
@@ -312,8 +313,7 @@ void ConquestScreen::tick()
     m_game->tick(dt);
     m_playSeconds += dt;
     m_command->refresh();
-    if (m_game->inBattle())
-        joinFriendlyFleets();           // reinforcements arriving during the battle
+    joinFriendlyFleets();               // fleets in orbit, reinforcements during a battle
     if (m_game->travelling() != m_wasTravelling) {
         m_wasTravelling = m_game->travelling();
         m_battle->hyperspaceFlash();     // jump into / out of hyperspace
@@ -337,7 +337,7 @@ void ConquestScreen::onBattleStarted(int planetId, const QString &faction, int m
 {
     m_map->select(planetId);
     updatePlanetLook();
-    m_battle->clearBattlefield(0.0f);
+    m_battle->clearBattlefield(0.0f, true);         // the fleets in orbit fight along
     m_battle->restoreDefenses(float(m_game->flagshipHull()), m_battle->shieldStrength(), true);
     if (!m_battle->spawnFleet(faction, motherships, fighters)) {
         // No ship of that faction in the library: the planet surrenders
@@ -346,7 +346,6 @@ void ConquestScreen::onBattleStarted(int planetId, const QString &faction, int m
         m_game->battleWon();
         return;
     }
-    m_joined.clear();
     joinFriendlyFleets();
     if (m_sound && m_sound->music())
         m_sound->music()->setMood(MusicPlayer::Mood::Battle, faction);
@@ -813,44 +812,77 @@ void ConquestScreen::setupHud()
 
 void ConquestScreen::joinFriendlyFleets()
 {
-    const int planet = m_game->battlePlanet();
-    for (const Conquest::Fleet &f : m_game->fleets()) {
-        if (f.at != planet || f.moving() || m_joined.contains(f.id))
+    // Planet shown in 3D: the battle, or the orbit of the flagship (none in hyperspace)
+    const bool battle = m_game->inBattle();
+    const int planet = battle ? m_game->battlePlanet() : m_game->travelling() ? -1 : m_game->flagshipPlanet();
+    auto friendly = [this](const Conquest::Fleet &f) {
+        return f.owner == m_game->playerIndex() || m_game->isAllied(f.owner);
+    };
+
+    // Fleets that left the planet (or the flagship left): out of the view
+    for (auto it = m_joined.begin(); it != m_joined.end();) {
+        const Conquest::Fleet *fleet = nullptr;
+        for (const Conquest::Fleet &f : m_game->fleets())
+            if (f.id == it.key())
+                fleet = &f;
+        const bool here = fleet && fleet->at == planet && !fleet->moving() && friendly(*fleet);
+        // Out of battle, a fleet whose strength changed (new ships, losses) is shown again
+        const bool changed = here && !battle
+                          && (fleet->motherships != it->motherships || fleet->fighters != it->fighters);
+        if (here && !changed) {
+            ++it;
             continue;
-        if (f.owner != m_game->playerIndex() && !m_game->isAllied(f.owner))
+        }
+        m_battle->removeAllyGroup(it.key(), planet >= 0 && !changed);   // it jumps away
+        it = m_joined.erase(it);
+    }
+
+    if (planet < 0)
+        return;
+    for (const Conquest::Fleet &f : m_game->fleets()) {
+        if (f.at != planet || f.moving() || m_joined.contains(f.id) || !friendly(f))
+            continue;
+        if (f.motherships + f.fighters <= 0)
             continue;
         // A big fleet sends part of its ships (the 3D view is limited);
         // the survivors' share is applied to the whole fleet afterwards
         const int big = std::min(f.motherships, 3);
         const int small = std::min(f.fighters, 6);
-        if (!m_battle->spawnAllies(m_game->factions()[f.owner].id, big, small, f.id))
+        if (!m_battle->spawnAllies(m_game->factions()[f.owner].id, big, small, f.id, false))
             continue;
         m_joined.insert(f.id, {big, small, f.motherships, f.fighters});
-        m_console->appendLine(f.owner == m_game->playerIndex()
-                                  ? tr("Your fleet %1 joins the battle").arg(f.id)
-                                  : tr("Allied %1 ships join the battle").arg(m_game->factions()[f.owner].id),
-                              CommandConsole::Tone::Success);
+        const bool own = f.owner == m_game->playerIndex();
+        const QString faction = m_game->factions()[f.owner].id;
+        if (battle)
+            m_console->appendLine(own ? tr("Your fleet %1 joins the battle").arg(f.id)
+                                      : tr("Allied %1 ships join the battle").arg(faction),
+                                  CommandConsole::Tone::Success);
+        else
+            m_console->appendLine(own ? tr("Your fleet %1 is in orbit").arg(f.id)
+                                      : tr("Allied %1 ships in orbit").arg(faction),
+                                  CommandConsole::Tone::Info);
     }
 }
 
+// End of a battle: the losses go back to the fleets; the survivors stay
+// in orbit (what they show now becomes their reference strength)
 void ConquestScreen::reportAllySurvivors()
 {
     const QList<BattleView::AllySurvivors> survivors = m_battle->allySurvivors();
-    for (auto it = m_joined.cbegin(); it != m_joined.cend(); ++it) {
+    for (auto it = m_joined.begin(); it != m_joined.end(); ++it) {
         int big = 0, small = 0;
         for (const BattleView::AllySurvivors &s : survivors)
             if (s.group == it.key()) {
                 big = s.motherships;
                 small = s.fighters;
             }
-        const Joined &j = it.value();
+        Joined &j = it.value();
         const int motherships = j.spawnedMotherships > 0 ? qRound(double(j.motherships) * big / j.spawnedMotherships)
                                                          : j.motherships;
         const int fighters = j.spawnedFighters > 0 ? qRound(double(j.fighters) * small / j.spawnedFighters) : j.fighters;
         m_game->setFleetStrength(it.key(), motherships, fighters);
+        j = {big, small, motherships, fighters};
     }
-    m_joined.clear();
-    m_battle->clearAllies();
 }
 
 void ConquestScreen::showEnd(bool victory)

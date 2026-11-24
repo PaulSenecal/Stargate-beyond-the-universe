@@ -7,6 +7,7 @@
 
 #include <QDebug>
 #include <QFontDatabase>
+#include <QHash>
 #include <QLineF>
 #include <QMap>
 #include <QMutex>
@@ -559,12 +560,13 @@ void BattleView::restoreDefenses(float hull, float shield, bool shieldOn)
     m_shieldCollapsed = m_shieldStrength <= 0.0f;
 }
 
-void BattleView::clearBattlefield(float calmSeconds)
+void BattleView::clearBattlefield(float calmSeconds, bool keepAllies)
 {
     for (Enemy &e : m_enemies)
         e.alive = false;
     m_enemies.clear();
-    clearAllies();
+    if (!keepAllies)
+        clearAllies();
     m_projectiles.clear();
     m_effects.clear();
     m_lockedId = -1;
@@ -940,7 +942,19 @@ BattleView::Enemy &BattleView::spawnAlly(int classIndex, const QVector3D &from, 
     return m_allies.back();
 }
 
-bool BattleView::spawnAllies(const QString &faction, int motherships, int fighters, int group)
+void BattleView::removeAllyGroup(int group, bool jumpOut)
+{
+    for (Enemy &a : m_allies)
+        if (a.alive && a.group == group) {
+            if (jumpOut)
+                hyperspaceWindow(a.pos + a.facing * a.radius * 2.0f, a.cls == EnemyClass::Mothership ? 1.6f : 0.7f);
+            a.alive = false;
+        }
+    m_allies.erase(std::remove_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return !a.alive; }),
+                   m_allies.end());
+}
+
+bool BattleView::spawnAllies(const QString &faction, int motherships, int fighters, int group, bool announce)
 {
     constexpr int kBossHull = 900;
     QList<int> big, small;
@@ -966,7 +980,8 @@ bool BattleView::spawnAllies(const QString &faction, int motherships, int fighte
         const float angle = qDegreesToRadians(randRange(40.0f, 140.0f));
         hyperspaceWindow(spawnAlly(pick(small), QVector3D(50.0f * std::cos(angle), randRange(0.0f, 8.0f), 50.0f * std::sin(angle)), group).pos, 0.7f);
     }
-    emit logMessage(tr("Friendly %1 ships join the battle").arg(faction), LogLevel::Success);
+    if (announce)
+        emit logMessage(tr("Friendly %1 ships join the battle").arg(faction), LogLevel::Success);
     return true;
 }
 
@@ -2495,7 +2510,15 @@ QString BattleView::meshKeyOf(const ShipClass &shipClass)
 {
     if (shipClass.picture == "ancients_destiny")
         return QStringLiteral("ancientsdestiny");
-    return shipClass.picture;
+    if (!shipClass.picture.isEmpty())
+        return shipClass.picture;
+    // Ships of the library without a picture: closest model of the mod
+    static const QHash<QString, QString> kByName{
+        {"Asgard Cruiser", "asgard_cruiser_heavy"},
+        {"Asgard Scout", "asgard_corvette_scout"},
+        {"Lantean Warship", "ancients_battlecruiser"},
+    };
+    return kByName.value(shipClass.name);
 }
 
 QString BattleView::flagshipMeshKey() const

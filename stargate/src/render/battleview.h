@@ -150,7 +150,7 @@ public:
     void spawnWave(bool announce, const QString &faction = QString());
     // FTL jump: every enemy is left behind; new contacts may show up
     // after `calmSeconds`
-    void clearBattlefield(float calmSeconds);
+    void clearBattlefield(float calmSeconds, bool keepAllies = false);
     // Conquest: no automatic wave; fleets come from spawnFleet() and
     // sectorCleared() tells when one is destroyed
     void setAutoWaves(bool on) { m_autoWaves = on; }
@@ -177,7 +177,8 @@ public:
     // --- Friendly ships: allied or own fleets and the Destiny's hangar
     // fighters. They fly and fight at the Destiny's side; `group` tags
     // them (a conquest fleet id) to report the survivors, -1 = hangar.
-    bool spawnAllies(const QString &faction, int motherships, int fighters, int group);
+    bool spawnAllies(const QString &faction, int motherships, int fighters, int group, bool announce = true);
+    void removeAllyGroup(int group, bool jumpOut);  // a fleet leaves the orbit
     void setHangar(const QString &fighterClass, int capacity);
     int launchFighters(int count = -1);         // how many took off
     int hangarFighters() const { return m_hangar; }

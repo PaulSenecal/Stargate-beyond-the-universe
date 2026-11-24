@@ -78,3 +78,7 @@ CMakeLists.txt.user*
 *.dll
 *.exe
 
+
+# Local assets of the Stargate Reborn mod (Sins of a Solar Empire II):
+# personal use only, never published (5.6 GB, third-party content)
+/stargate/src/autre/

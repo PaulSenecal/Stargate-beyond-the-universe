@@ -2,7 +2,10 @@
 
 #include <QMouseEvent>
 #include <QPainter>
+#include <QDateTime>
+#include <QHash>
 #include <QPainterPath>
+#include <QPolygonF>
 #include <QRandomGenerator>
 
 #include <algorithm>
@@ -162,6 +165,65 @@ void GalaxyMapWidget::paintEvent(QPaintEvent *)
         p.setPen(planet.capital ? kGold : kText);
         p.drawText(QPointF(c.x() + r + 5, c.y() + 4), planet.capital ? QStringLiteral("♛ ") + planet.name : planet.name);
     }
+
+    // Battles in progress: pulsing ring and the balance of forces
+    const double pulse = 0.5 + 0.5 * std::sin(QDateTime::currentMSecsSinceEpoch() / 180.0);
+    for (const Skirmish &battle : m_game->skirmishes()) {
+        const QPointF c = toScreen(planets[battle.planet].pos);
+        QColor ring(255, 120, 60, 120 + int(120 * pulse));
+        p.setPen(QPen(ring, 2.5));
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(c, 17 + 3 * pulse, 17 + 3 * pulse);
+        const double attack = m_game->sidePower(battle.planet, battle.attacker);
+        const double defense = m_game->sidePower(battle.planet, battle.defender);
+        const QRectF bar(c.x() - 18, c.y() - 30, 36, 5);
+        const double share = attack + defense > 0 ? attack / (attack + defense) : 0.5;
+        p.setPen(Qt::NoPen);
+        p.setBrush(ownerColor(m_game, battle.defender));
+        p.drawRect(bar);
+        p.setBrush(ownerColor(m_game, battle.attacker));
+        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * share, bar.height()));
+        p.setPen(QColor(255, 150, 90));
+        p.drawText(QPointF(c.x() - 30, c.y() - 26), QStringLiteral("⚔"));
+    }
+
+    // Fleets: diamonds in the owner color (yours: gold outline and number).
+    // Red dashes: enemy fleets heading for one of your worlds.
+    QFont small = font;
+    small.setPixelSize(9);
+    p.setFont(small);
+    QHash<int, int> stacked;                    // fleets already drawn around a planet
+    for (const Fleet &fleet : m_game->fleets()) {
+        const bool mine = fleet.owner == m_game->playerIndex();
+        const QColor color = ownerColor(m_game, fleet.owner);
+        QPointF at = toScreen(m_game->fleetPos(fleet));
+        if (!fleet.moving()) {
+            const int index = stacked[fleet.at]++;
+            const double angle = (-35.0 + 55.0 * index) * M_PI / 180.0;
+            at += QPointF(std::cos(angle), std::sin(angle)) * 20.0;
+        }
+        if (fleet.target >= 0) {
+            const bool threat = !mine && planets[fleet.target].owner == m_game->playerIndex();
+            if (mine || threat) {
+                QPainterPath route(at);
+                for (int id : fleet.route)
+                    route.lineTo(toScreen(planets[id].pos));
+                p.setPen(QPen(threat ? QColor(255, 90, 72) : color, threat ? 1.6 : 1.2, Qt::DashLine));
+                p.setBrush(Qt::NoBrush);
+                p.drawPath(route);
+            }
+        }
+        QPolygonF diamond;
+        diamond << at + QPointF(0, -6) << at + QPointF(6, 0) << at + QPointF(0, 6) << at + QPointF(-6, 0);
+        p.setPen(QPen(mine ? kGold : color.darker(160), mine ? 1.6 : 1.0));
+        p.setBrush(color);
+        p.drawPolygon(diamond);
+        const QString label = mine ? QStringLiteral("F%1 %2+%3").arg(fleet.id).arg(fleet.motherships).arg(fleet.fighters)
+                                   : QStringLiteral("%1+%2").arg(fleet.motherships).arg(fleet.fighters);
+        p.setPen(mine ? kGold : color.lighter(130));
+        p.drawText(at + QPointF(8, 3), label);
+    }
+    p.setFont(font);
 
     // Flagship: gold arrow pointing along its route
     const QPointF ship = toScreen(m_game->flagshipPos());

@@ -324,6 +324,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Prenez toutes les planètes des factions ennemies. Les mondes neutres vous rejoignent après un séjour en orbite.</translation>
     </message>
     <message>
+        <source>Shipyards build fleets that act on their own - yours too. Enemy fleets will attack.</source>
+        <translation>Les chantiers navals construisent des flottes qui agissent seules - les vôtres aussi. Les flottes ennemies vont attaquer.</translation>
+    </message>
+    <message>
         <source>Shipyard (fast repairs)</source>
         <translation>Chantier naval (réparations rapides)</translation>
     </message>
@@ -342,6 +346,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>None</source>
         <translation>Aucun</translation>
+    </message>
+    <message>
+        <source>independent world</source>
+        <translation>monde indépendant</translation>
     </message>
     <message>
         <source>the game is over</source>
@@ -396,12 +404,100 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Vaisseau amiral réparé : coque %1% (-%2 trinium)</translation>
     </message>
     <message>
+        <source>%1 has no shipyard</source>
+        <translation>%1 n&apos;a pas de chantier naval</translation>
+    </message>
+    <message>
+        <source>the shipyard of %1 is full</source>
+        <translation>le chantier naval de %1 est plein</translation>
+    </message>
+    <message>
+        <source>Mothership built at %1</source>
+        <translation>Vaisseau-mère construit à %1</translation>
+    </message>
+    <message>
+        <source>Fighter built at %1</source>
+        <translation>Chasseur construit à %1</translation>
+    </message>
+    <message>
+        <source>no fleet of yours with that number</source>
+        <translation>aucune de vos flottes ne porte ce numéro</translation>
+    </message>
+    <message>
+        <source>that fleet is in battle</source>
+        <translation>cette flotte est en combat</translation>
+    </message>
+    <message>
+        <source>the fleet is already there</source>
+        <translation>la flotte y est déjà</translation>
+    </message>
+    <message>
+        <source>Fleet %1 heads for %2</source>
+        <translation>La flotte %1 part vers %2</translation>
+    </message>
+    <message>
         <source>%1 joins your faction</source>
         <translation>%1 rejoint votre faction</translation>
     </message>
     <message>
+        <source>Battle in progress at %1: the %2 attack the %3. &apos;engage &lt;faction&gt;&apos; to join in, or wait for the winner</source>
+        <translation>Bataille en cours à %1 : les %2 attaquent (%3). &apos;engage &lt;faction&gt;&apos; pour intervenir, ou attendez le vainqueur</translation>
+    </message>
+    <message>
         <source>%1 is defended by the %2 fleet: battle!</source>
         <translation>%1 est défendue par la flotte %2 : combat !</translation>
+    </message>
+    <message>
+        <source>New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))</source>
+        <translation>Nouvelle flotte %1 lancée depuis %2 (%3 vaisseau(x)-mère(s), %4 chasseur(s))</translation>
+    </message>
+    <message>
+        <source>A %1 fleet (%2 mothership(s), %3 fighter(s)) heads for %4!</source>
+        <translation>Une flotte %1 (%2 vaisseau(x)-mère(s), %3 chasseur(s)) se dirige vers %4 !</translation>
+    </message>
+    <message>
+        <source>the flagship must be in orbit, out of battle</source>
+        <translation>le vaisseau amiral doit être en orbite, hors combat</translation>
+    </message>
+    <message>
+        <source>no battle here</source>
+        <translation>aucune bataille ici</translation>
+    </message>
+    <message>
+        <source>the factions fighting here: %1 and %2</source>
+        <translation>les factions qui combattent ici : %1 et %2</translation>
+    </message>
+    <message>
+        <source>nothing left to fight</source>
+        <translation>plus rien à combattre</translation>
+    </message>
+    <message>
+        <source>Your fleet attacks %1</source>
+        <translation>Votre flotte attaque %1</translation>
+    </message>
+    <message>
+        <source>%1 is under attack by the %2!</source>
+        <translation>%1 est attaquée par les %2 !</translation>
+    </message>
+    <message>
+        <source>Your fleet takes %1 from the %2</source>
+        <translation>Votre flotte prend %1 (avant : %2)</translation>
+    </message>
+    <message>
+        <source>%1 falls to the %2!</source>
+        <translation>%1 tombe aux mains des %2 !</translation>
+    </message>
+    <message>
+        <source>The %1 take %2 from the %3</source>
+        <translation>%2 tombe aux mains des %1 (avant : %3)</translation>
+    </message>
+    <message>
+        <source>%1 holds against a %2 attack</source>
+        <translation>%1 résiste à une attaque %2</translation>
+    </message>
+    <message>
+        <source>Your fleet is destroyed attacking %1</source>
+        <translation>Votre flotte est détruite en attaquant %1</translation>
     </message>
     <message>
         <source>In orbit of %1: the planet joins you in %2 s if you stay</source>
@@ -412,8 +508,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Arrivée à %1</translation>
     </message>
     <message>
+        <source>A %1 fleet attacks the flagship at %2: battle!</source>
+        <translation>Une flotte %1 attaque le vaisseau amiral à %2 : combat !</translation>
+    </message>
+    <message>
         <source>%1 taken from the %2</source>
         <translation>%1 prise aux %2</translation>
+    </message>
+    <message>
+        <source>The %1 fleet at %2 is destroyed</source>
+        <translation>La flotte %1 à %2 est détruite</translation>
     </message>
     <message>
         <source>Hull breached: the flagship retreats from %1 to %2</source>
@@ -515,6 +619,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Produit %1 naquadah et %2 trinium par minute</translation>
     </message>
     <message>
+        <source>Shipyard: %1 mothership(s), %2 fighter(s) ready</source>
+        <translation>Chantier naval : %1 vaisseau(x)-mère(s), %2 chasseur(s) prêts</translation>
+    </message>
+    <message>
+        <source>your fleet %1</source>
+        <translation>votre flotte %1</translation>
+    </message>
+    <message>
+        <source>In orbit: %1</source>
+        <translation>En orbite : %1</translation>
+    </message>
+    <message>
+        <source>militia</source>
+        <translation>milice</translation>
+    </message>
+    <message>
+        <source>BATTLE: %1 (%2) attack %3 (%4) - %5 s</source>
+        <translation>BATAILLE : %1 (%2) attaquent %3 (%4) - %5 s</translation>
+    </message>
+    <message>
         <source>Your flagship is here</source>
         <translation>Votre vaisseau amiral est ici</translation>
     </message>
@@ -529,6 +653,18 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>BATTLE FOR %1</source>
         <translation>BATAILLE POUR %1</translation>
+    </message>
+    <message>
+        <source>BATTLE IN PROGRESS: %1 %2 vs %3 %4</source>
+        <translation>BATAILLE EN COURS : %1 %2 contre %3 %4</translation>
+    </message>
+    <message>
+        <source>MILITIA</source>
+        <translation>MILICE</translation>
+    </message>
+    <message>
+        <source>&apos;engage &lt;faction&gt;&apos; to join in - or wait for the winner</source>
+        <translation>&apos;engage &lt;faction&gt;&apos; pour intervenir - ou attendez le vainqueur</translation>
     </message>
     <message>
         <source>IN HYPERSPACE - %1 jump(s) to go</source>
@@ -567,6 +703,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Réparation impossible : %1</translation>
     </message>
     <message>
+        <source>Cannot engage: %1</source>
+        <translation>Intervention impossible : %1</translation>
+    </message>
+    <message>
+        <source>Usage: send &lt;fleet number&gt; &lt;planet&gt; - see &apos;fleets&apos;</source>
+        <translation>Usage : send &lt;numéro de flotte&gt; &lt;planète&gt; - voir &apos;fleets&apos;</translation>
+    </message>
+    <message>
+        <source>Cannot send the fleet: %1</source>
+        <translation>Impossible d&apos;envoyer la flotte : %1</translation>
+    </message>
+    <message>
+        <source>Usage: build fighter|mothership [planet] (%1 / %2 naquadah)</source>
+        <translation>Usage : build fighter|mothership [planète] (%1 / %2 naquadah)</translation>
+    </message>
+    <message>
+        <source>Cannot build: %1</source>
+        <translation>Construction impossible : %1</translation>
+    </message>
+    <message>
         <source>Unknown command &apos;%1&apos; - type &apos;help&apos;</source>
         <translation>Commande inconnue &apos;%1&apos; - tapez &apos;help&apos;</translation>
     </message>
@@ -583,8 +739,20 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Économie : fortify &lt;planète&gt; (+1 défense, %1 naquadah), repair (coque du vaisseau amiral, trinium)</translation>
     </message>
     <message>
+        <source>Fleets: shipyards build ships on their own, fleets attack and defend by themselves</source>
+        <translation>Flottes : les chantiers construisent seuls, les flottes attaquent et défendent d&apos;elles-mêmes</translation>
+    </message>
+    <message>
+        <source>   fleets (list), send &lt;fleet&gt; &lt;planet&gt;, build fighter|mothership [planet] (%1 / %2 naquadah)</source>
+        <translation>   fleets (liste), send &lt;flotte&gt; &lt;planète&gt;, build fighter|mothership [planète] (%1 / %2 naquadah)</translation>
+    </message>
+    <message>
         <source>Battle: attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</source>
         <translation>Combat : attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</translation>
+    </message>
+    <message>
+        <source>Battles between other factions last a while: watch them, or &apos;engage &lt;faction&gt;&apos; to fight one side</source>
+        <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
     </message>
     <message>
         <source>Display: hud on|off (radar, ship and weapon panels), or the HUD button</source>
@@ -597,6 +765,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Win by taking every planet of the enemy factions. Menu: Esc or &apos;menu&apos;.</source>
         <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
+    </message>
+    <message>
+        <source>No fleet in the galaxy</source>
+        <translation>Aucune flotte dans la galaxie</translation>
+    </message>
+    <message>
+        <source> -&gt; %1</source>
+        <translation> -&gt; %1</translation>
+    </message>
+    <message>
+        <source>%1 %2: %3 mothership(s), %4 fighter(s) at %5%6</source>
+        <translation>%1 %2 : %3 vaisseau(x)-mère(s), %4 chasseur(s) à %5%6</translation>
+    </message>
+    <message>
+        <source>Fleet %1</source>
+        <translation>Flotte %1</translation>
+    </message>
+    <message>
+        <source>(yours)</source>
+        <translation>(à vous)</translation>
     </message>
     <message>
         <source>neutral</source>

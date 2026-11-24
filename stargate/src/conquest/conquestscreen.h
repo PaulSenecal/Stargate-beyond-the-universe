@@ -59,6 +59,7 @@ private:
     void refresh();
     void showHelp();
     void listPlanets();
+    void listFleets();
     QString planetSummary(int planetId) const;
     bool save();
     void setPaused(bool paused);

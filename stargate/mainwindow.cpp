@@ -3,6 +3,7 @@
 #include "src/Menu/gamemenu/gamemenu.h"
 #include "src/Menu/mainmenu/titlescreen.h"
 #include "src/audio/soundsystem.h"
+#include "src/conquest/conquestscreen.h"
 #include "src/core/language.h"
 
 #include <QStackedWidget>
@@ -35,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete m_game;          // saves the game while the database is still open
+    delete m_conquest;
     delete ui;
 }
 
@@ -45,6 +47,18 @@ void MainWindow::createTitle()
     connect(m_title, &TitleScreen::playRequested, this, &MainWindow::startGame);
     connect(m_title, &TitleScreen::quitRequested, this, &MainWindow::close);
     connect(m_title, &TitleScreen::languageChanged, this, &MainWindow::changeLanguage);
+    connect(m_title, &TitleScreen::conquestRequested, this, &MainWindow::startConquest);
+}
+
+void MainWindow::startConquest(const ConquestGame::Setup &setup, bool continueSaved)
+{
+    delete m_conquest;      // a new conquest replaces the previous one
+    m_conquest = new ConquestScreen(m_sound, setup, continueSaved, m_screens);
+    m_screens->addWidget(m_conquest);
+    connect(m_conquest, &ConquestScreen::quitToTitleRequested, this, &MainWindow::showTitle);
+    connect(m_conquest, &ConquestScreen::quitGameRequested, this, &MainWindow::close);
+    connect(m_conquest, &ConquestScreen::languageChanged, this, &MainWindow::changeLanguage);
+    m_screens->setCurrentWidget(m_conquest);
 }
 
 void MainWindow::changeLanguage(const QString &code)
@@ -53,9 +67,15 @@ void MainWindow::changeLanguage(const QString &code)
     // Later: the request comes from a widget that is about to be deleted
     QTimer::singleShot(0, this, [this] {
         const bool inGame = m_game && m_screens->currentWidget() == m_game;
+        const bool inConquest = m_conquest && m_screens->currentWidget() == m_conquest;
         delete m_title;
         createTitle();
-        if (inGame) {
+        if (inConquest) {
+            delete m_conquest;      // saved, then reloaded in the new language
+            m_conquest = nullptr;
+            startConquest({}, true);
+            m_conquest->openSettings();
+        } else if (inGame) {
             delete m_game;          // saved, then reloaded in the new language
             m_game = nullptr;
             startGame();
@@ -87,6 +107,11 @@ void MainWindow::showTitle()
         m_screens->removeWidget(m_game);
         m_game->deleteLater();
         m_game = nullptr;
+    }
+    if (m_conquest) {
+        m_screens->removeWidget(m_conquest);
+        m_conquest->deleteLater();
+        m_conquest = nullptr;
     }
 }
 

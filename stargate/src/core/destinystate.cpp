@@ -44,10 +44,14 @@ bool DestinyState::load(const QString &username)
 
 void DestinyState::migrateSupplies()
 {
-    // "food" was added after the first saves: make sure it exists
-    DatabaseManager::instance().exec(
-        "INSERT OR IGNORE INTO Resource (name, description, rarity, base_drop_chance) "
-        "VALUES ('food', 'Edible biomass and supplies for the crew', 'COMMON', 0.4)");
+    // Data added after the first saves: "food", weapon ranges
+    DatabaseManager &db = DatabaseManager::instance();
+    db.exec("INSERT OR IGNORE INTO Resource (name, description, rarity, base_drop_chance) "
+            "VALUES ('food', 'Edible biomass and supplies for the crew', 'COMMON', 0.4)");
+    // Weapon ranges were empty in the first saves
+    db.exec("UPDATE Component SET reach = 22 WHERE name = 'Railgun' AND reach IS NULL");
+    db.exec("UPDATE Component SET reach = 45 WHERE name = 'Energy Cannon' AND reach IS NULL");
+    db.exec("UPDATE Component SET reach = 60 WHERE name = 'Missile Bay' AND reach IS NULL");
 }
 
 QList<int> DestinyState::componentIndexes(const QString &key) const

@@ -30,6 +30,7 @@ struct RadarPicture
     struct Bolt {
         QPointF local;
         bool fromDestiny = false;
+        bool missile = false;
     };
 
     QList<Contact> contacts;

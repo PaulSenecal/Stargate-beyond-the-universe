@@ -17,6 +17,7 @@ const QColor kScope(70, 255, 110);
 const QColor kEnemy(255, 74, 61);
 const QColor kIncoming(255, 170, 40);
 const QColor kOutgoing(130, 200, 255);
+const QColor kMissile(255, 60, 160);
 
 constexpr qreal kRange = 42.0;          // world units shown to the edge
 constexpr qreal kUnitKm = 10.0;         // same scale as the sector report
@@ -109,6 +110,8 @@ void RadarWidget::paintEvent(QPaintEvent *)
         p.setBrush(color);
         if (shape == 0)
             drawTriangle(p, c + QPointF(0, -3), QPointF(0, 1), 3.5);
+        else if (shape == 2)
+            p.drawPolygon(QPolygonF{c + QPointF(0, -4), c + QPointF(4, 0), c + QPointF(0, 4), c + QPointF(-4, 0)});
         else
             p.drawEllipse(c, 2.5, 2.5);
         p.setPen(kDim);
@@ -118,6 +121,7 @@ void RadarWidget::paintEvent(QPaintEvent *)
     legend(kEnemy, 0, tr("Hostile"));
     legend(kIncoming, 1, tr("Incoming fire"));
     legend(kOutgoing, 1, tr("Destiny fire"));
+    legend(kMissile, 2, tr("Missile"));
     p.setPen(kDim);
     p.drawText(QRectF(left, y + 2, 140, smallLine), Qt::AlignVCenter,
                tr("Ring: %1 km").arg(qRound(kRange / 4 * kUnitKm)));
@@ -170,6 +174,11 @@ void RadarWidget::paintEvent(QPaintEvent *)
         const QPointF at = toScreen(b.local);
         if (QLineF(at, center).length() > radius)
             continue;
+        if (b.missile) {
+            p.setBrush(kMissile);
+            p.drawPolygon(QPolygonF{at + QPointF(0, -4), at + QPointF(4, 0), at + QPointF(0, 4), at + QPointF(-4, 0)});
+            continue;
+        }
         p.setBrush(b.fromDestiny ? kOutgoing : kIncoming);
         p.drawEllipse(at, 1.8, 1.8);
     }

@@ -164,7 +164,7 @@ GameMenu::GameMenu(QWidget *parent)
         for (const BattleView::RadarBlip &b : m_battle->radarContacts())
             picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health});
         for (const BattleView::RadarShot &s : m_battle->radarShots())
-            picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny});
+            picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny, s.missile});
         return picture;
     });
 
@@ -305,6 +305,12 @@ void GameMenu::loadSave()
 
     for (const QString &key : BattleView::systemKeys())
         m_battle->setSubsystemHealth(key, m_destiny.systemHealth(key));
+
+    QList<WeaponProfile> weapons;
+    for (const ComponentInfo &c : ComponentRepository::all())
+        if (c.category == "WEAPON")
+            weapons.append({c.name, c.munitionType, float(c.damage), float(c.penetration), float(c.reach)});
+    m_battle->setWeaponProfiles(weapons);
 
     connect(m_battle, &BattleView::subsystemChanged, this, [this](const QString &key, float health) {
         m_destiny.setSystemHealth(key, health);

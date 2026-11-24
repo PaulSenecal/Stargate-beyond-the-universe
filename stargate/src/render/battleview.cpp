@@ -165,6 +165,8 @@ const QVector3D kEnemyDark(0.30f, 0.25f, 0.16f);
 const QVector3D kFighterColor(0.45f, 0.42f, 0.38f);
 const QVector3D kDestinyBolt(0.55f, 0.85f, 1.0f);
 const QVector3D kEnemyBolt(1.0f, 0.72f, 0.18f);
+const QVector3D kMissileExhaust(1.0f, 0.35f, 0.15f);
+const QVector3D kSlug(1.0f, 0.92f, 0.65f);
 const QVector3D kExplosion(1.0f, 0.5f, 0.12f);
 const QVector3D kShieldColor(0.35f, 0.65f, 1.0f);
 const QVector3D kEngineGlow(0.35f, 0.65f, 1.0f);
@@ -180,6 +182,12 @@ constexpr float kMainCooldown = 4.0f;
 constexpr float kPulseCooldown = 8.0f;
 constexpr float kSecondaryCooldown = 2.0f;
 constexpr size_t kMaxFires = 14;
+constexpr float kWaveDelay = 15.0f;            // seconds between cleared sector and next wave
+constexpr float kMissileDamage = 14.0f;
+constexpr float kMissileSpeed = 8.0f;
+constexpr float kSlugSpeed = 70.0f;
+constexpr float kSlugVsFighter = 2.5f;         // railguns shred small ships…
+constexpr float kSlugVsMothership = 0.3f;      // …but barely scratch motherships
 
 float randRange(float a, float b)
 {
@@ -362,6 +370,26 @@ void BattleView::setShieldActive(bool active)
         emit logMessage(tr("Shields lowered"), LogLevel::Warning);
 }
 
+void BattleView::setWeaponProfiles(const QList<WeaponProfile> &profiles)
+{
+    for (const WeaponProfile &w : profiles) {
+        WeaponProfile profile = w;
+        if (profile.reach <= 0.0f)
+            profile.reach = w.name == "Railgun" ? 22.0f : 45.0f;
+        if (w.name == "Railgun")
+            m_railgun = profile;
+        else if (w.name == "Energy Cannon")
+            m_cannon = profile;
+    }
+}
+
+void BattleView::simulate(float seconds)
+{
+    constexpr float dt = 1.0f / 60.0f;
+    for (float t = 0.0f; t < seconds; t += dt)
+        step(dt);
+}
+
 QString BattleView::systemKey(const QString &name)
 {
     const QString key = name.toLower().remove(' ').remove('_');
@@ -527,9 +555,12 @@ void BattleView::step(float dt)
         m_autoFireTimer = 0.45f / efficiency;
         if (const Enemy *t = pickTarget()) {
             const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
-            shoot(true, destinyWorld(turret), t->id, {}, 7.0f * efficiency, 38.0f, kDestinyBolt, 1.0f, 0.09f);
+            shoot(true, destinyWorld(turret), t->id, {}, m_cannon.damage / 17.0f * efficiency, 38.0f,
+                  kDestinyBolt, 1.0f, 0.09f);
         }
     }
+
+    fireRailguns(dt);
 
     m_mainCooldown = std::max(0.0f, m_mainCooldown - dt);
     m_pulseCooldown = std::max(0.0f, m_pulseCooldown - dt);
@@ -538,7 +569,7 @@ void BattleView::step(float dt)
 
     // Shield regeneration (slower while under fire)
     if (m_shieldOrdered) {
-        const float base = m_time - m_lastShieldHit > 1.5f ? 6.0f : 2.0f;
+        const float base = m_time - m_lastShieldHit > 1.5f ? 6.0f : 3.0f;
         const float rate = base * std::max(0.2f, subsystemHealth("shields") / 100.0f);
         m_shieldStrength = std::min(100.0f, m_shieldStrength + rate * dt);
         if (m_shieldCollapsed && m_shieldStrength >= 35.0f) {
@@ -562,7 +593,7 @@ void BattleView::step(float dt)
     // New wave a few seconds after the sector is cleared
     if (aliveIds().empty()) {
         if (m_waveTimer < 0.0f) {
-            m_waveTimer = 7.0f;
+            m_waveTimer = kWaveDelay;
             emit logMessage(tr("Sector clear"), LogLevel::Success);
         } else {
             m_waveTimer -= dt;
@@ -590,6 +621,7 @@ void BattleView::spawnWave(bool announce)
         e.cls = cls;
         e.phase = randRange(0.0f, 2.0f * float(M_PI));
         e.fireCooldown = randRange(1.0f, 3.5f);
+        e.missileCooldown = randRange(3.0f, 8.0f);
         if (cls == EnemyClass::Mothership) {
             e.hp = e.maxHp = 420.0f;
             e.radius = 3.6f;
@@ -649,6 +681,17 @@ void BattleView::updateEnemy(Enemy &e, float dt)
         }
         e.fireCooldown = big ? randRange(2.5f, 4.0f) : randRange(1.8f, 3.0f);
     }
+
+    // Motherships also launch slow homing missiles, that railguns can shoot down
+    if (e.cls == EnemyClass::Mothership) {
+        e.missileCooldown -= dt;
+        if (e.missileCooldown <= 0.0f) {
+            shoot(false, e.pos, -1, randomHullPoint(), kMissileDamage, kMissileSpeed, kMissileExhaust, 0.6f, 0.16f);
+            m_projectiles.back().kind = Projectile::Kind::Missile;
+            m_projectiles.back().life = 14.0f;
+            e.missileCooldown = randRange(5.0f, 8.0f);
+        }
+    }
 }
 
 void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, const QVector3D &aimLocal,
@@ -656,6 +699,7 @@ void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, co
                        float delay)
 {
     Projectile p;
+    p.id = m_nextShotId++;
     p.fromDestiny = fromDestiny;
     p.targetId = targetId;
     p.pos = from;
@@ -673,20 +717,110 @@ void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, co
     m_projectiles.push_back(p);
 }
 
+BattleView::Projectile *BattleView::findShot(int id)
+{
+    for (Projectile &p : m_projectiles)
+        if (p.id == id && !p.dead)
+            return &p;
+    return nullptr;
+}
+
+void BattleView::fireRailguns(float dt)
+{
+    m_railgunTimer -= dt;
+    if (m_railgunTimer > 0.0f)
+        return;
+    const float efficiency = std::max(0.25f, subsystemHealth("weapons") / 100.0f);
+    m_railgunTimer = 0.3f / efficiency;
+    const float damage = m_railgun.damage / 10.0f * efficiency;
+    const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
+    const QVector3D from = destinyWorld(turret);
+
+    // 1. Point defense: closest incoming missile not already engaged twice
+    int missileId = -1;
+    QVector3D missilePos;
+    float best = m_railgun.reach;
+    for (const Projectile &p : m_projectiles) {
+        if (p.dead || p.delay > 0.0f || p.kind != Projectile::Kind::Missile || p.fromDestiny)
+            continue;
+        const float distance = p.pos.length();
+        const auto engaged = std::count_if(m_projectiles.begin(), m_projectiles.end(),
+                                           [&](const Projectile &s) { return !s.dead && s.targetShot == p.id; });
+        if (distance < best && engaged < 2) {
+            best = distance;
+            missileId = p.id;
+            missilePos = p.pos;
+        }
+    }
+    if (missileId >= 0) {
+        shoot(true, from, 0, {}, damage, kSlugSpeed, kSlug, 1.2f, 0.05f);
+        Projectile &slug = m_projectiles.back();
+        slug.kind = Projectile::Kind::Slug;
+        slug.targetShot = missileId;
+        slug.life = 1.5f;
+        slug.vel = (missilePos - from).normalized() * kSlugSpeed;
+        return;
+    }
+
+    // 2. Otherwise the closest fighter in range
+    const Enemy *target = nullptr;
+    best = m_railgun.reach * 1.2f;
+    for (const Enemy &e : m_enemies) {
+        if (!e.alive || e.cls != EnemyClass::Fighter)
+            continue;
+        const float distance = e.pos.length();
+        if (distance < best) {
+            best = distance;
+            target = &e;
+        }
+    }
+    if (target) {
+        shoot(true, from, target->id, {}, damage, kSlugSpeed, kSlug, 1.2f, 0.05f);
+        m_projectiles.back().kind = Projectile::Kind::Slug;
+        m_projectiles.back().life = 1.5f;
+    }
+}
+
 void BattleView::updateProjectiles(float dt)
 {
-    // Impacts may spawn effects / logs but never new projectiles,
-    // so iterating while erasing is safe here.
-    for (auto it = m_projectiles.begin(); it != m_projectiles.end();) {
-        Projectile &p = *it;
+    // Impacts spawn effects / logs but never new projectiles: indexes
+    // stay valid; destroyed projectiles are flagged and removed after.
+    for (size_t i = 0; i < m_projectiles.size(); ++i) {
+        Projectile &p = m_projectiles[i];
+        if (p.dead)
+            continue;
         if (p.delay > 0.0f) {
             p.delay -= dt;
-            ++it;
             continue;
         }
 
         p.life -= dt;
-        bool remove = p.life <= 0.0f;
+        if (p.life <= 0.0f) {
+            p.dead = true;
+            continue;
+        }
+
+        // Railgun slug chasing a missile
+        if (p.targetShot >= 0) {
+            const float speed = p.vel.length();
+            if (Projectile *missile = findShot(p.targetShot)) {
+                const QVector3D toMissile = missile->pos - p.pos;
+                const float distance = toMissile.length();
+                if (distance <= speed * dt + 0.6f) {
+                    missile->dead = true;
+                    p.dead = true;
+                    ++m_interceptions;
+                    m_effects.push_back({missile->pos, QVector3D(1.0f, 0.8f, 0.5f), 0.0f, 0.35f, 0.9f});
+                    continue;
+                }
+                if (distance > 1e-3f)
+                    p.vel = toMissile / distance * speed;
+            }
+            p.pos += p.vel * dt;
+            continue;
+        }
+
+        bool remove = false;
 
         Enemy *enemy = nullptr;
         bool hasTarget = false;
@@ -724,13 +858,20 @@ void BattleView::updateProjectiles(float dt)
             }
         }
 
-        it = remove ? m_projectiles.erase(it) : it + 1;
+        if (remove)
+            p.dead = true;
     }
+    m_projectiles.erase(std::remove_if(m_projectiles.begin(), m_projectiles.end(),
+                                       [](const Projectile &p) { return p.dead; }),
+                        m_projectiles.end());
 }
 
 void BattleView::hitEnemy(Enemy &e, const Projectile &p)
 {
-    e.hp -= p.damage;
+    float damage = p.damage;
+    if (p.kind == Projectile::Kind::Slug)
+        damage *= e.cls == EnemyClass::Fighter ? kSlugVsFighter : kSlugVsMothership;
+    e.hp -= damage;
     e.hitFlash = 1.0f;
     m_effects.push_back({p.pos, kExplosion, 0.0f, 0.35f, 0.5f + p.width * 2.0f});
 
@@ -768,7 +909,12 @@ void BattleView::hitHull(const Projectile &p)
 {
     const float before = m_hull;
     m_hull = std::max(0.0f, m_hull - p.damage);
-    m_effects.push_back({p.pos, kExplosion, 0.0f, 0.45f, 0.9f});
+    const bool missile = p.kind == Projectile::Kind::Missile;
+    m_effects.push_back({p.pos, kExplosion, 0.0f, missile ? 0.8f : 0.45f, missile ? 2.2f : 0.9f});
+    if (missile && m_time - m_lastMissileLog > 4.0f) {
+        m_lastMissileLog = m_time;
+        emit logMessage(tr("Missile impact on the hull (-%1)").arg(qRound(p.damage)), LogLevel::Warning);
+    }
     damageSubsystemNear(p.aimLocal, p.damage * 1.6f);
     m_hits.push_back({p.aimLocal, {m_time, false}});
     if (m_fires.size() < kMaxFires && randRange(0, 1) < 0.35f)
@@ -810,7 +956,7 @@ QList<BattleView::RadarShot> BattleView::radarShots() const
     QList<RadarShot> shots;
     for (const Projectile &p : m_projectiles)
         if (p.delay <= 0.0f)
-            shots.append({m_destinyInverse.map(p.pos), p.fromDestiny});
+            shots.append({m_destinyInverse.map(p.pos), p.fromDestiny, p.kind == Projectile::Kind::Missile});
     return shots;
 }
 
@@ -826,6 +972,11 @@ WeaponReadiness BattleView::weaponReadiness() const
     w.efficiency = subsystemHealth("weapons");
     w.hostiles = int(aliveIds().size());
     w.kills = m_kills;
+    w.railgunReach = m_railgun.reach;
+    w.interceptions = m_interceptions;
+    w.incomingMissiles = int(std::count_if(m_projectiles.begin(), m_projectiles.end(), [](const Projectile &p) {
+        return !p.dead && !p.fromDestiny && p.kind == Projectile::Kind::Missile;
+    }));
     if (const Enemy *e = findEnemy(m_lockedId); e && e->alive) {
         w.hasTarget = true;
         w.targetIndex = indexOfId(e->id);
@@ -1253,6 +1404,16 @@ void BattleView::drawEffects()
         QMatrix4x4 core;
         core.translate(p.pos);
         core.rotate(orient);
+        if (p.kind == Projectile::Kind::Missile) {
+            // Pale body + flickering exhaust behind it
+            QMatrix4x4 body = core;
+            body.scale(p.width, p.width, p.length);
+            drawMesh(m_box, body, QVector3D(0.9f, 0.9f, 0.85f), 0.8f, 1.0f, ModeGlow);
+            const float flicker = 0.4f + 0.12f * std::sin(m_time * 30.0f + p.id);
+            drawGlow(p.pos - p.vel.normalized() * p.length * 0.7f, flicker, p.color, 0.9f);
+            drawGlow(p.pos - p.vel.normalized() * p.length * 1.4f, flicker * 1.8f, p.color, 0.2f);
+            continue;
+        }
         QMatrix4x4 halo = core;
         core.scale(p.width, p.width, p.length);
         halo.scale(p.width * 3.0f, p.width * 3.0f, p.length * 1.2f);

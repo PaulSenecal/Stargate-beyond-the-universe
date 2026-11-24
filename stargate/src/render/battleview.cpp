@@ -33,6 +33,7 @@ const char *kLitVertexShader = R"(
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aUv;
+layout(location = 3) in vec4 aTangent;
 uniform mat4 uModel;
 uniform mat4 uViewProj;
 uniform mat3 uNormalMat;
@@ -40,8 +41,12 @@ out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vObjPos;
 out vec2 vUv;
+out vec3 vTangent;
+out float vSign;
 void main() {
     vUv = aUv;
+    vTangent = uNormalMat * aTangent.xyz;
+    vSign = aTangent.w < 0.0 ? -1.0 : 1.0;
     vec4 world = uModel * vec4(aPos, 1.0);
     vWorldPos = world.xyz;
     vNormal = normalize(uNormalMat * aNormal);
@@ -56,8 +61,17 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vObjPos;
 in vec2 vUv;
+in vec3 vTangent;
+in float vSign;
 uniform sampler2D uTexture;
-uniform int uTextured;      // hull with the color texture of a mod model
+uniform sampler2D uMask;
+uniform sampler2D uOrm;
+uniform sampler2D uNormalMap;
+uniform int uTextured;      // hull with the textures of a mod model
+uniform int uHasMask;
+uniform int uHasOrm;
+uniform int uHasNormal;
+uniform vec3 uLightColor;   // color of the ship lights (faction)
 uniform vec3 uColor;
 uniform float uEmissive;
 uniform float uAlpha;
@@ -131,14 +145,37 @@ void main() {
         return;
     }
 
-    // Textured hull (mod model): its own colors, same lighting
+    // Textured hull (mod model): color, relief, metal and lights
     if (uTextured == 1) {
         vec3 base = texture(uTexture, vUv).rgb;
-        float diff = max(dot(N, L), 0.0);
+        vec3 n = N;
+        if (uHasNormal == 1) {
+            vec2 relief = texture(uNormalMap, vUv).rg * 2.0 - 1.0;
+            relief.y = -relief.y;                   // DirectX normal maps
+            float z = sqrt(max(0.0, 1.0 - dot(relief, relief)));
+            vec3 T = normalize(vTangent - N * dot(N, vTangent));
+            vec3 B = cross(N, T) * vSign;
+            n = normalize(T * relief.x + B * relief.y + N * z);
+        }
+        float ao = 1.0, rough = 0.7, metal = 0.2;
+        if (uHasOrm == 1) {
+            vec3 orm = texture(uOrm, vUv).rgb;
+            ao = orm.r;
+            rough = orm.g;
+            metal = orm.b;
+        }
+        float diff = max(dot(n, L), 0.0);
         vec3 H = normalize(L + V);
-        float spec = pow(max(dot(N, H), 0.0), 32.0) * 0.25;
-        vec3 back = vec3(0.12, 0.18, 0.3) * max(dot(N, -L), 0.0) * 0.5;
-        fragColor = vec4(base * (0.45 + diff * 1.35) + back + vec3(spec) + uColor * uEmissive, uAlpha);
+        vec3 specColor = mix(vec3(0.06), base, metal);
+        vec3 spec = specColor * pow(max(dot(n, H), 0.0), mix(96.0, 6.0, rough)) * (1.0 - 0.7 * rough) * 2.5;
+        vec3 back = vec3(0.12, 0.18, 0.3) * max(dot(n, -L), 0.0) * 0.5;
+        // No environment map: metal gets a soft fake reflection of the sky
+        float fresnel = pow(1.0 - max(dot(n, V), 0.0), 3.0);
+        vec3 env = specColor * (0.35 + 0.65 * fresnel) * (1.0 - 0.6 * rough) * 0.8 * ao;
+        vec3 col = base * (1.0 - 0.2 * metal) * (0.45 * ao + diff * 1.35) + spec + env + back * ao;
+        if (uHasMask == 1)
+            col += texture(uMask, vUv).b * uLightColor * 2.2;   // lights, even on the dark side
+        fragColor = vec4(col + uColor * uEmissive, uAlpha);
         return;
     }
 
@@ -320,8 +357,10 @@ BattleView::~BattleView()
         if (model) {
             model->mesh.vao.destroy();
             model->mesh.vbo.destroy();
-            if (model->texture)
-                glDeleteTextures(1, &model->texture);
+            for (GLuint texture : {model->textures.color, model->textures.mask, model->textures.orm,
+                                   model->textures.normal})
+                if (texture)
+                    glDeleteTextures(1, &texture);
         }
     m_starVao.destroy();
     m_starVbo.destroy();
@@ -1154,7 +1193,9 @@ void BattleView::drawAllies()
         const float flash = a.hitFlash * 0.5f;
         const QVector3D tint = colorOf(classOf(a).color);
         const QVector3D dark = tint * 0.5f;
-        if (drawModShip(meshKeyOf(classOf(a)), m, a.cls == EnemyClass::Mothership ? 9.0f : 2.6f, tint, flash)) {
+        // Friendly ships light up in blue, whatever their faction
+        if (drawModShip(meshKeyOf(classOf(a)), m, a.cls == EnemyClass::Mothership ? 9.0f : 2.6f, tint, flash,
+                        QVector3D(0.35f, 0.7f, 1.0f))) {
             drawGlow(a.pos - a.facing * a.radius * 0.95f, a.radius * 0.35f, QVector3D(0.35f, 0.7f, 1.0f), 0.8f);
             continue;
         }
@@ -2095,17 +2136,27 @@ void BattleView::paintGL()
 void BattleView::drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color,
                           float emissive, float alpha, ShaderMode mode)
 {
-    drawMesh(mesh, model, color, emissive, alpha, mode, 0);
+    drawMesh(mesh, model, color, emissive, alpha, mode, nullptr);
 }
 
 void BattleView::drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color, float emissive, float alpha,
-                          ShaderMode mode, GLuint texture)
+                          ShaderMode mode, const ShipTextures *textures)
 {
-    m_lit.setUniformValue("uTextured", texture != 0 ? 1 : 0);
-    if (texture != 0) {
+    const bool textured = textures && textures->color != 0;
+    m_lit.setUniformValue("uTextured", textured ? 1 : 0);
+    if (textured) {
+        const GLuint units[4] = {textures->color, textures->mask, textures->orm, textures->normal};
+        const char *samplers[4] = {"uTexture", "uMask", "uOrm", "uNormalMap"};
+        for (int i = 0; i < 4; ++i) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, units[i]);
+            m_lit.setUniformValue(samplers[i], i);
+        }
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        m_lit.setUniformValue("uTexture", 0);
+        m_lit.setUniformValue("uHasMask", textures->mask != 0 ? 1 : 0);
+        m_lit.setUniformValue("uHasOrm", textures->orm != 0 ? 1 : 0);
+        m_lit.setUniformValue("uHasNormal", textures->normal != 0 ? 1 : 0);
+        m_lit.setUniformValue("uLightColor", m_shipLights);
     }
     m_lit.setUniformValue("uModel", model);
     m_lit.setUniformValue("uNormalMat", model.normalMatrix());
@@ -2146,7 +2197,8 @@ void BattleView::drawDestiny()
                                : m_flagshipStyle == "Asgard" || m_flagshipStyle == "Ancients" ? QVector3D(0.62f, 0.66f, 0.7f)
                                : m_flagshipStyle == "Lucian Alliance"                       ? QVector3D(0.62f, 0.36f, 0.26f)
                                                                                             : QVector3D(0.78f, 0.64f, 0.32f);
-    if (drawModShip(flagshipMeshKey(), m_destinyModel, 13.5f, modelColor * 1.3f, 0.0f))
+    if (drawModShip(flagshipMeshKey(), m_destinyModel, 13.5f, modelColor * 1.3f, 0.0f,
+                    factionLights(m_flagshipStyle.isEmpty() ? QStringLiteral("Ancients") : m_flagshipStyle)))
         return;
 
     // --- Conquest flagships of the other factions
@@ -2252,7 +2304,7 @@ void BattleView::drawDestiny()
 struct BattleView::TextureJob
 {
     QMutex mutex;
-    QImage image;
+    QImage images[4];           // color, mask, orm, normal
     bool done = false;
 };
 
@@ -2266,8 +2318,11 @@ BattleView::ModModel *BattleView::modModel(const QString &key)
         std::unique_ptr<ModModel> model;
         if (!data.vertices.empty()) {
             model = std::make_unique<ModModel>();
-            model->texturePath = data.texturePath;
-            // position, normal, uv
+            model->texturePaths[0] = data.texturePath;
+            model->texturePaths[1] = data.maskPath;
+            model->texturePaths[2] = data.ormPath;
+            model->texturePaths[3] = data.normalPath;
+            // position, normal, uv, tangent + sign
             const int stride = ModMesh::kFloatsPerVertex * sizeof(float);
             Mesh &mesh = model->mesh;
             mesh.vao.create();
@@ -2281,6 +2336,8 @@ BattleView::ModModel *BattleView::modModel(const QString &key)
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(3 * sizeof(float)));
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(6 * sizeof(float)));
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(8 * sizeof(float)));
             mesh.vao.release();
             mesh.vbo.release();
             mesh.vertexCount = int(data.vertices.size()) / ModMesh::kFloatsPerVertex;
@@ -2296,33 +2353,45 @@ BattleView::ModModel *BattleView::modModel(const QString &key)
 // then sent to the GPU here (the GL context is current while painting)
 void BattleView::updateTexture(ModModel &model)
 {
-    if (model.texturePath.isEmpty())
+    if (model.texturePaths[0].isEmpty())
         return;
     const int quality = DdsTexture::qualitySetting();
     if (model.job) {
-        QImage image;
+        QImage images[4];
         {
             QMutexLocker lock(&model.job->mutex);
             if (!model.job->done)
                 return;
-            image = std::move(model.job->image);
+            for (int i = 0; i < 4; ++i)
+                images[i] = std::move(model.job->images[i]);
         }
         model.job.reset();
-        if (image.isNull()) {
-            model.texturePath.clear();          // unreadable: keep the plain color
+        if (images[0].isNull()) {
+            model.texturePaths[0].clear();      // unreadable: keep the plain color
             return;
         }
-        if (model.texture == 0)
-            glGenTextures(1, &model.texture);
-        glBindTexture(GL_TEXTURE_2D, model.texture);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                     image.constBits());
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        GLuint *targets[4] = {&model.textures.color, &model.textures.mask, &model.textures.orm,
+                              &model.textures.normal};
+        for (int i = 0; i < 4; ++i) {
+            GLuint &texture = *targets[i];
+            if (images[i].isNull()) {
+                if (texture)
+                    glDeleteTextures(1, &texture);
+                texture = 0;
+                continue;
+            }
+            if (texture == 0)
+                glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, images[i].width(), images[i].height(), 0, GL_RGBA,
+                         GL_UNSIGNED_BYTE, images[i].constBits());
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
         glBindTexture(GL_TEXTURE_2D, 0);
         return;
     }
@@ -2331,14 +2400,36 @@ void BattleView::updateTexture(ModModel &model)
     model.quality = quality;
     auto job = std::make_shared<TextureJob>();
     model.job = job;
-    const QString path = model.texturePath;
+    const QStringList paths{model.texturePaths[0], model.texturePaths[1], model.texturePaths[2],
+                            model.texturePaths[3]};
     const int size = DdsTexture::maxSizeFor(quality);
-    QThreadPool::globalInstance()->start([job, path, size] {
-        QImage image = DdsTexture::load(path, size);
+    QThreadPool::globalInstance()->start([job, paths, size] {
+        QImage images[4];
+        for (int i = 0; i < 4; ++i)
+            images[i] = DdsTexture::load(paths[i], size);
         QMutexLocker lock(&job->mutex);
-        job->image = std::move(image);
+        for (int i = 0; i < 4; ++i)
+            job->images[i] = std::move(images[i]);
         job->done = true;
     });
+}
+
+// Color of the ship lights (mask of the mod textures)
+QVector3D BattleView::factionLights(const QString &faction)
+{
+    if (faction == "Goa'uld")
+        return {1.0f, 0.72f, 0.3f};
+    if (faction == "Wraith")
+        return {0.4f, 1.0f, 0.5f};
+    if (faction == "Lucian Alliance")
+        return {1.0f, 0.42f, 0.3f};
+    if (faction == "Ori")
+        return {1.0f, 0.6f, 0.2f};
+    if (faction == "Drones")
+        return {1.0f, 0.3f, 0.25f};
+    if (faction == "Tau'ri")
+        return {0.45f, 0.65f, 1.0f};
+    return {0.55f, 0.9f, 1.0f};                 // Ancients, Asgard: cool blue
 }
 
 QString BattleView::meshKeyOf(const ShipClass &shipClass)
@@ -2364,14 +2455,15 @@ QString BattleView::flagshipMeshKey() const
 }
 
 bool BattleView::drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color,
-                             float flash)
+                             float flash, const QVector3D &lights)
 {
+    m_shipLights = lights;
     ModModel *ship = modModel(key);
     if (!ship)
         return false;
     QMatrix4x4 m = model;
     m.scale(length);
-    drawMesh(ship->mesh, m, color, flash, 1.0f, ModeHull, ship->texture);
+    drawMesh(ship->mesh, m, color, flash, 1.0f, ModeHull, &ship->textures);
     return true;
 }
 
@@ -2388,7 +2480,7 @@ void BattleView::drawEnemies()
         const QVector3D tint = colorOf(classOf(e).color);
         const QVector3D dark = tint * 0.5f;
         if (drawModShip(meshKeyOf(classOf(e)), m, e.cls == EnemyClass::Mothership ? 9.0f : 2.6f, tint,
-                        flash + (e.diving ? 0.4f : 0.0f)))
+                        flash + (e.diving ? 0.4f : 0.0f), factionLights(classOf(e).faction)))
             continue;
         if (e.cls == EnemyClass::Mothership) {
             drawMesh(m_ring, m, dark, flash, 1.0f, ModeHull);

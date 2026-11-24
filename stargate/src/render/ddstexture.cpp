@@ -18,6 +18,7 @@
 #pragma GCC diagnostic ignored "-Wall"
 #pragma GCC diagnostic ignored "-Wextra"
 #endif
+#define BCDEC_BC4BC5_PRECISE
 #define BCDEC_IMPLEMENTATION
 #include "src/thirdparty/bcdec.h"
 #if defined(__clang__)
@@ -28,6 +29,8 @@
 
 namespace {
 
+constexpr quint32 kDxgiBc5Unorm = 83;
+constexpr quint32 kDxgiBc5Snorm = 84;
 constexpr quint32 kDxgiBc7Unorm = 98;
 constexpr quint32 kDxgiBc7Srgb = 99;
 constexpr qsizetype kHeaderSize = 4 + 124;     // magic + DDS_HEADER
@@ -47,12 +50,29 @@ QImage DdsTexture::load(const QString &path, int maxSize)
         return {};
     const QByteArray bytes = file.readAll();
     const char *data = bytes.constData();
-    if (bytes.size() < kHeaderSize + kDx10Size || std::memcmp(data, "DDS ", 4) != 0
-        || std::memcmp(data + 84, "DX10", 4) != 0)
+    if (bytes.size() < kHeaderSize + kDx10Size || std::memcmp(data, "DDS ", 4) != 0)
         return {};
-    const quint32 dxgi = qFromLittleEndian<quint32>(data + kHeaderSize);
-    if (dxgi != kDxgiBc7Unorm && dxgi != kDxgiBc7Srgb)
+    // Format: DX10 header (BC7, BC5) or the legacy BC5 four-character codes
+    enum class Format { Bc7, Bc5Unsigned, Bc5Signed } format;
+    qsizetype offset = kHeaderSize;
+    if (std::memcmp(data + 84, "DX10", 4) == 0) {
+        const quint32 dxgi = qFromLittleEndian<quint32>(data + kHeaderSize);
+        if (dxgi == kDxgiBc7Unorm || dxgi == kDxgiBc7Srgb)
+            format = Format::Bc7;
+        else if (dxgi == kDxgiBc5Unorm)
+            format = Format::Bc5Unsigned;
+        else if (dxgi == kDxgiBc5Snorm)
+            format = Format::Bc5Signed;
+        else
+            return {};
+        offset += kDx10Size;
+    } else if (std::memcmp(data + 84, "BC5S", 4) == 0) {
+        format = Format::Bc5Signed;
+    } else if (std::memcmp(data + 84, "BC5U", 4) == 0 || std::memcmp(data + 84, "ATI2", 4) == 0) {
+        format = Format::Bc5Unsigned;
+    } else {
         return {};
+    }
     int width = int(qFromLittleEndian<quint32>(data + 16));
     int height = int(qFromLittleEndian<quint32>(data + 12));
     const int levels = std::max(1, int(qFromLittleEndian<quint32>(data + 28)));
@@ -60,7 +80,6 @@ QImage DdsTexture::load(const QString &path, int maxSize)
         return {};
 
     // Skip the mip levels bigger than wanted (they come first)
-    qsizetype offset = kHeaderSize + kDx10Size;
     for (int level = 0; level < levels - 1 && std::max(width, height) > maxSize && std::min(width, height) > 4; ++level) {
         offset += levelBytes(width, height);
         width = std::max(4, width / 2);
@@ -74,10 +93,29 @@ QImage DdsTexture::load(const QString &path, int maxSize)
         return {};
     const int pitch = int(image.bytesPerLine());
     const char *block = data + offset;
+    float normal[4 * 4 * 2];
     for (int y = 0; y < height; y += 4)
         for (int x = 0; x < width; x += 4) {
-            bcdec_bc7(block, image.scanLine(y) + x * 4, pitch);
-            block += BCDEC_BC7_BLOCK_SIZE;
+            if (format == Format::Bc7) {
+                bcdec_bc7(block, image.scanLine(y) + x * 4, pitch);
+            } else {
+                // Two channels in -1..1 (signed) or 0..1, stored as bytes
+                bcdec_bc5_float(block, normal, 4 * 2, format == Format::Bc5Signed ? 1 : 0);
+                for (int row = 0; row < 4; ++row) {
+                    uchar *out = image.scanLine(y + row) + x * 4;
+                    for (int col = 0; col < 4; ++col) {
+                        for (int c = 0; c < 2; ++c) {
+                            float v = normal[(row * 4 + col) * 2 + c];
+                            if (format == Format::Bc5Signed)
+                                v = v * 0.5f + 0.5f;
+                            out[col * 4 + c] = uchar(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
+                        }
+                        out[col * 4 + 2] = 255;
+                        out[col * 4 + 3] = 255;
+                    }
+                }
+            }
+            block += BCDEC_BC7_BLOCK_SIZE;          // 16 bytes per block for BC7 and BC5
         }
     return image;
 }

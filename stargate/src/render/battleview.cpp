@@ -2080,6 +2080,54 @@ void BattleView::drawDestiny()
     };
 
     const QVector3D one(1, 1, 1);
+
+    // --- Conquest flagships of the other factions
+    if (m_flagshipStyle == "Tau'ri") {
+        // BC-304: long hull, two side hangar pods, bridge, engine blocks
+        const QVector3D hull(0.52f, 0.55f, 0.6f), dark(0.3f, 0.32f, 0.36f);
+        part(m_box, {0.0f, 0.0f, 0.0f}, {11.5f, 0.8f, 1.5f}, 0, hull);
+        part(m_box, {-0.8f, -0.05f, 1.75f}, {7.5f, 0.7f, 1.0f}, 0, dark);
+        part(m_box, {-0.8f, -0.05f, -1.75f}, {7.5f, 0.7f, 1.0f}, 0, dark);
+        part(m_box, {2.4f, 0.75f, 0.0f}, {1.6f, 0.7f, 0.8f}, 0, hull);
+        part(m_box, {5.9f, 0.0f, 0.0f}, {1.0f, 0.55f, 1.0f}, 45, dark);
+        for (float z : {-1.75f, 0.0f, 1.75f})
+            part(m_sphere, {-5.9f, 0.0f, z}, {0.35f, 0.35f, 0.35f}, 0, QVector3D(0.4f, 0.6f, 1.0f));
+        return;
+    }
+    if (m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance") {
+        // Ha'tak: golden pyramid on its ring (rust colors for a stolen one)
+        const bool lucian = m_flagshipStyle == "Lucian Alliance";
+        const QVector3D gold = lucian ? QVector3D(0.62f, 0.36f, 0.26f) : QVector3D(0.78f, 0.64f, 0.32f);
+        const QVector3D dark = gold * 0.5f;
+        QMatrix4x4 m = m_destinyModel;
+        m.scale(1.9f);
+        drawMesh(m_ring, m, dark, 0.0f, 1.0f, ModeHull);
+        QMatrix4x4 top = m;
+        top.translate(0, 0.1f, 0);
+        top.rotate(45, 0, 1, 0);
+        drawMesh(m_pyramid, top, gold, 0.0f, 1.0f, ModeHull);
+        QMatrix4x4 bottom = m;
+        bottom.translate(0, -0.1f, 0);
+        bottom.scale(1.0f, -0.45f, 1.0f);
+        bottom.rotate(45, 0, 1, 0);
+        drawMesh(m_pyramid, bottom, dark, 0.0f, 1.0f, ModeHull);
+        return;
+    }
+    if (m_flagshipStyle == "Wraith") {
+        // Hive ship: long organic hull, bristling with spikes
+        const QVector3D skin(0.26f, 0.3f, 0.24f), dark(0.14f, 0.16f, 0.14f), glow(0.45f, 0.85f, 0.5f);
+        part(m_sphere, {0.0f, 0.0f, 0.0f}, {6.4f, 1.1f, 2.4f}, 0, skin);
+        part(m_sphere, {-1.0f, 0.5f, 0.0f}, {4.2f, 0.8f, 1.4f}, 0, dark);
+        part(m_sphere, {5.6f, 0.0f, 0.0f}, {1.4f, 0.7f, 1.0f}, 0, skin);
+        for (int i = 0; i < 9; ++i) {
+            const float x = -5.0f + i * 1.15f;
+            const float side = (i % 2 ? 1.0f : -1.0f) * (1.2f + 0.4f * (i % 3));
+            part(m_box, {x, 0.9f, side * 0.5f}, {0.18f, 1.3f, 0.18f}, 20.0f * i, dark);
+        }
+        part(m_sphere, {-6.1f, 0.0f, 0.0f}, {0.5f, 0.5f, 0.9f}, 0, glow);
+        return;
+    }
+
     part(m_spire, {}, one, 0, kHullColor);
     part(m_spireRidge, {0, 0.42f, 0}, one, 0, kHullDark);
     part(m_fan, {}, one, 0, kHullColor);
@@ -2127,9 +2175,10 @@ void BattleView::drawEnemies()
 
 void BattleView::drawEffects()
 {
-    // Destiny engines
+    // Destiny engines (a Ha'tak has none there)
     const float engines = subsystemHealth("engines") / 100.0f;
-    for (float angle = 160.0f; angle <= 200.0f; angle += 10.0f) {
+    const bool hatak = m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance";
+    for (float angle = 160.0f; angle <= 200.0f && !hatak; angle += 10.0f) {
         const float a = qDegreesToRadians(angle);
         const QVector3D pos = destinyWorld({kFanCenter.x() + 6.0f * std::cos(a), 0.0f, 6.0f * std::sin(a)});
         const float pulse = 0.3f + 0.04f * std::sin(m_time * 9.0f + angle);

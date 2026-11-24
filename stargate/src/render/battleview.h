@@ -186,6 +186,10 @@ public:
     int allyCount() const;
     // Flash of the Destiny entering or leaving hyperspace
     void hyperspaceFlash();
+    // Look of the player's ship: "" = the Destiny (campaign), else the
+    // conquest faction: Tau'ri (BC-304), Goa'uld / Lucian Alliance (Ha'tak),
+    // Wraith (hive ship). Same size, shield and hit points as the Destiny.
+    void setFlagshipStyle(const QString &faction) { m_flagshipStyle = faction; update(); }
     // Lines drawn in the bottom-right corner of the view
     void setNavigationLines(const QStringList &lines);
     void setPlanetLook(const PlanetLook &look);
@@ -373,6 +377,7 @@ private:
     bool m_autoWaves = true;
     float m_damageBonus = 1.0f;
     float m_shieldRegenBonus = 1.0f;
+    QString m_flagshipStyle;
     bool m_turretsOn = true;
     bool m_railgunsOn = true;
     PowerPriority m_priority = PowerPriority::Balanced;

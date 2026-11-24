@@ -251,6 +251,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
         m_game->start(setup);
     m_battle->restoreDefenses(float(m_game->flagshipHull()), 100.0f, true);
     m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), 4);
+    m_battle->setFlagshipStyle(m_game->player().id);
     m_wasTravelling = m_game->travelling();
     m_end = new ConquestEndScreen(this);
     connect(m_end, &ConquestEndScreen::titleRequested, this, &ConquestScreen::quitToTitleRequested);

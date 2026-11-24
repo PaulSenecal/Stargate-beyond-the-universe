@@ -151,21 +151,44 @@ void ShipStatusWidget::paintEvent(QPaintEvent *)
     const qreal listHeight = rows * (smallLine + 2) + 4;
     const QRectF schematic(left, y, right - left, r.bottom() - 10 - listHeight - y);
     if (schematic.height() > 30) {
-        const qreal scale = std::min(schematic.width() / (kMaxX - kMinX), schematic.height() / (2 * kHalfZ));
-        const QPointF origin(schematic.center().x() - (kMinX + kMaxX) / 2 * scale, schematic.center().y());
+        // Bounds: the Destiny drawing, or the silhouette of the ship and its shield
+        const bool own = !m_data.silhouette.isNull();
+        QRectF bounds(kMinX, -kHalfZ, kMaxX - kMinX, 2 * kHalfZ);
+        if (own)
+            bounds = m_data.silhouetteRect.united(QRectF(m_data.shieldCenter.x() - m_data.shieldRadii.width(),
+                                                         m_data.shieldCenter.y() - m_data.shieldRadii.height(),
+                                                         2 * m_data.shieldRadii.width(), 2 * m_data.shieldRadii.height()));
+        const qreal halfZ = std::max(-bounds.top(), bounds.bottom());
+        const qreal scale = std::min(schematic.width() / bounds.width(), schematic.height() / (2 * halfZ));
+        const QPointF origin(schematic.center().x() - bounds.center().x() * scale, schematic.center().y());
         auto toScreen = [&](const QPointF &local) {   // x forward -> right, z -> down
             return QPointF(origin.x() + local.x() * scale, origin.y() + local.y() * scale);
         };
 
         // Shield bubble (ellipse from the 3D model)
-        const QPointF shieldCenter = toScreen({1.95, 0.0});
+        const QPointF shieldCenter = toScreen(own ? m_data.shieldCenter : QPointF(1.95, 0.0));
         if (m_data.shieldUp && m_data.shield > 0) {
             p.setPen(QPen(QColor(kShield.red(), kShield.green(), kShield.blue(), 60 + int(m_data.shield)), 1.2, Qt::DashLine));
             p.setBrush(QColor(kShield.red(), kShield.green(), kShield.blue(), 18));
-            p.drawEllipse(shieldCenter, 6.9 * scale, 5.8 * scale);
+            p.drawEllipse(shieldCenter, (own ? m_data.shieldRadii.width() : 6.9) * scale,
+                          (own ? m_data.shieldRadii.height() : 5.8) * scale);
         }
 
-        // Hull outline: spire + rear fan
+        // Hull: silhouette of the 3D model, tinted like a blueprint
+        if (own) {
+            QImage tinted(m_data.silhouette.size(), QImage::Format_ARGB32_Premultiplied);
+            tinted.fill(QColor(150, 160, 165));
+            QPainter mask(&tinted);
+            mask.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+            mask.drawImage(0, 0, m_data.silhouette);
+            mask.end();
+            const QRectF target(toScreen(m_data.silhouetteRect.topLeft()), toScreen(m_data.silhouetteRect.bottomRight()));
+            p.setOpacity(0.75);
+            p.drawImage(target, tinted);
+            p.setOpacity(1.0);
+        }
+
+        // Destiny drawing: spire + rear fan
         QPainterPath hull;
         hull.moveTo(toScreen({0.0, -0.9}));
         hull.lineTo(toScreen({8.0, 0.0}));
@@ -176,9 +199,11 @@ void ShipStatusWidget::paintEvent(QPaintEvent *)
             hull.lineTo(toScreen({fanCenter.x() + 5.6 * std::cos(a), -5.6 * std::sin(a)}));
         }
         hull.closeSubpath();
-        p.setPen(QPen(QColor(200, 200, 200, 170), 1.3));
-        p.setBrush(QColor(60, 60, 58));
-        p.drawPath(hull);
+        if (!own) {
+            p.setPen(QPen(QColor(200, 200, 200, 170), 1.3));
+            p.setBrush(QColor(60, 60, 58));
+            p.drawPath(hull);
+        }
 
         // Fires
         for (const QPointF &f : m_data.fires) {
@@ -190,7 +215,11 @@ void ShipStatusWidget::paintEvent(QPaintEvent *)
 
         // Components
         for (const ShipStatusData::Component &c : m_data.components) {
-            const QPointF at = toScreen(kComponentPos.value(c.name, QPointF(0, 0)));
+            QPointF local = kComponentPos.value(c.name, QPointF(0, 0));
+            if (own)                                // same place relative to the hull
+                local = QPointF(m_data.silhouetteRect.left() + (local.x() - kMinX) / (kMaxX - kMinX) * m_data.silhouetteRect.width(),
+                                local.y() / kHalfZ * m_data.silhouetteRect.height() / 2);
+            const QPointF at = toScreen(local);
             const float pct = 100.0f * c.hp / std::max(1, c.maxHp);
             if (c.underAttack) {
                 p.setPen(QPen(kCritical, 1.5));

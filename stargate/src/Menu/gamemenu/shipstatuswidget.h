@@ -3,6 +3,7 @@
 
 #include <QList>
 #include <QPointF>
+#include <QImage>
 #include <QWidget>
 #include <functional>
 
@@ -41,6 +42,11 @@ struct ShipStatusData
     QList<Component> components;
     QList<QPointF> fires;           // (x, z)
     QList<Hit> hits;
+    // Schematic of the ship (from its 3D model); empty = the Destiny drawing
+    QImage silhouette;
+    QRectF silhouetteRect;          // (x, z) area of the silhouette
+    QPointF shieldCenter;
+    QSizeF shieldRadii;
 };
 
 class ShipStatusWidget : public QWidget

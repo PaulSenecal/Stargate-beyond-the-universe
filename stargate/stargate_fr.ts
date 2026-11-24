@@ -1,6 +1,32 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
+<?xml version='1.0' encoding='utf-8'?>
 <TS version="2.1" language="fr_FR">
+<context>
+    <name>Balance</name>
+    <message>
+        <source>Asgard beam</source>
+        <translation>Rayon asgard</translation>
+    </message>
+    <message>
+        <source>Staff cannons</source>
+        <translation>Canons à plasma</translation>
+    </message>
+    <message>
+        <source>Energy cannons</source>
+        <translation>Canons à énergie</translation>
+    </message>
+    <message>
+        <source>Energy weapons</source>
+        <translation>Armes à énergie</translation>
+    </message>
+    <message>
+        <source>Ori beam</source>
+        <translation>Rayon ori</translation>
+    </message>
+    <message>
+        <source>Main tower</source>
+        <translation>Tour principale</translation>
+    </message>
+</context>
 <context>
     <name>BattleView</name>
     <message>
@@ -40,6 +66,26 @@
         <translation>Tour principale : tir sur T%1</translation>
     </message>
     <message>
+        <source>No drone bay aboard</source>
+        <translation>Pas de baie à drones à bord</translation>
+    </message>
+    <message>
+        <source>Drone bay empty - salvos are rebuilt out of battle</source>
+        <translation>Baie à drones vide - les salves se rechargent hors combat</translation>
+    </message>
+    <message>
+        <source>Drones: no target</source>
+        <translation>Drones : aucune cible</translation>
+    </message>
+    <message>
+        <source>Drone salvo launched at T%1 (%2 left)</source>
+        <translation>Salve de drones lancée sur T%1 (%2 restantes)</translation>
+    </message>
+    <message>
+        <source>No pulse weapons aboard this ship</source>
+        <translation>Pas d'armes à impulsion à bord de ce vaisseau</translation>
+    </message>
+    <message>
         <source>Pulse weapons recharging (%1 s)</source>
         <translation>Armes à impulsion en recharge (%1 s)</translation>
     </message>
@@ -50,6 +96,10 @@
     <message>
         <source>Pulse weapons: full volley on %1 targets</source>
         <translation>Armes à impulsion : salve complète sur %1 cibles</translation>
+    </message>
+    <message>
+        <source>No secondary towers aboard this ship</source>
+        <translation>Pas de tours secondaires à bord de ce vaisseau</translation>
     </message>
     <message>
         <source>Secondary towers recharging (%1 s)</source>
@@ -80,8 +130,8 @@
         <translation>%1 réparé : %2%</translation>
     </message>
     <message>
-        <source>Unknown system &apos;%1&apos; (engines, shields, weapons, lifesupport, hull)</source>
-        <translation>Système inconnu &apos;%1&apos; (engines, shields, weapons, lifesupport, hull)</translation>
+        <source>Unknown system '%1' (engines, shields, weapons, lifesupport, hull)</source>
+        <translation>Système inconnu '%1' (engines, shields, weapons, lifesupport, hull)</translation>
     </message>
     <message>
         <source>collapsed</source>
@@ -181,7 +231,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Secondary towers: auto-fire off (+%1 power)</source>
-        <translation>Tours secondaires : tir automatique coupé (+%1 d&apos;énergie)</translation>
+        <translation>Tours secondaires : tir automatique coupé (+%1 d'énergie)</translation>
+    </message>
+    <message>
+        <source>No railguns aboard this ship</source>
+        <translation>Pas de railguns à bord de ce vaisseau</translation>
     </message>
     <message>
         <source>Railguns: point defense on</source>
@@ -189,7 +243,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Railguns: point defense off (+%1 power)</source>
-        <translation>Railguns : défense rapprochée coupée (+%1 d&apos;énergie)</translation>
+        <translation>Railguns : défense rapprochée coupée (+%1 d'énergie)</translation>
     </message>
     <message>
         <source>shields</source>
@@ -233,7 +287,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>%1 crashed into the shield</source>
-        <translation>%1 s&apos;est écrasé sur le bouclier</translation>
+        <translation>%1 s'est écrasé sur le bouclier</translation>
     </message>
     <message>
         <source>%1 rammed the hull (-%2)</source>
@@ -257,7 +311,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Hull breach! Emergency repair teams deployed</source>
-        <translation>Brèche dans la coque ! Équipes de réparation d&apos;urgence déployées</translation>
+        <translation>Brèche dans la coque ! Équipes de réparation d'urgence déployées</translation>
     </message>
     <message>
         <source>%1 damaged (%2%)</source>
@@ -278,6 +332,30 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>T%1</source>
         <translation>T%1</translation>
+    </message>
+    <message>
+        <source>Pulse</source>
+        <translation>Impulsion</translation>
+    </message>
+    <message>
+        <source>Towers</source>
+        <translation>Tours</translation>
+    </message>
+    <message>
+        <source>Beam</source>
+        <translation>Rayon</translation>
+    </message>
+    <message>
+        <source>Drones</source>
+        <translation>Drones</translation>
+    </message>
+    <message>
+        <source>Missiles</source>
+        <translation>Missiles</translation>
+    </message>
+    <message>
+        <source>Railguns</source>
+        <translation>Railguns</translation>
     </message>
     <message>
         <source>HULL</source>
@@ -318,8 +396,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
 <context>
     <name>CommandConsole</name>
     <message>
-        <source>Type a command — Tab completes, &apos;help&apos; for the list</source>
-        <translation>Tapez une commande — Tab complète, &apos;help&apos; pour la liste</translation>
+        <source>Type a command — Tab completes, 'help' for the list</source>
+        <translation>Tapez une commande — Tab complète, 'help' pour la liste</translation>
     </message>
     <message>
         <source>Possible: %1</source>
@@ -333,20 +411,20 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Commande vide</translation>
     </message>
     <message>
-        <source>Unknown command &apos;%1&apos;</source>
-        <translation>Commande inconnue &apos;%1&apos;</translation>
+        <source>Unknown command '%1'</source>
+        <translation>Commande inconnue '%1'</translation>
     </message>
     <message>
         <source>expected %1 parameter(s), got %2 - usage: %3</source>
         <translation>%1 paramètre(s) attendu(s), %2 reçu(s) - usage : %3</translation>
     </message>
     <message>
-        <source>&apos;%1&apos; is not a valid %2 - expected: %3</source>
-        <translation>&apos;%1&apos; n&apos;est pas un %2 valide - attendu : %3</translation>
+        <source>'%1' is not a valid %2 - expected: %3</source>
+        <translation>'%1' n'est pas un %2 valide - attendu : %3</translation>
     </message>
     <message>
-        <source>&apos;%1&apos; must be a %2 (%3)</source>
-        <translation>&apos;%1&apos; doit être un %2 (%3)</translation>
+        <source>'%1' must be a %2 (%3)</source>
+        <translation>'%1' doit être un %2 (%3)</translation>
     </message>
     <message>
         <source>whole number</source>
@@ -365,12 +443,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 doit valoir au plus %2</translation>
     </message>
     <message>
-        <source>&apos;%1&apos; is not a valid %2 - usage: %3</source>
-        <translation>&apos;%1&apos; n&apos;est pas un %2 valide - usage : %3</translation>
+        <source>'%1' is not a valid %2 - usage: %3</source>
+        <translation>'%1' n'est pas un %2 valide - usage : %3</translation>
     </message>
     <message>
-        <source> - did you mean &apos;%1&apos;?</source>
-        <translation> - vouliez-vous dire &apos;%1&apos; ?</translation>
+        <source> - did you mean '%1'?</source>
+        <translation> - vouliez-vous dire '%1' ?</translation>
     </message>
     <message>
         <source>Valid command: %1</source>
@@ -425,7 +503,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Break the alliance</source>
-        <translation>Rompre l&apos;alliance</translation>
+        <translation>Rompre l'alliance</translation>
     </message>
     <message>
         <source>They will listen again in %1 s</source>
@@ -445,14 +523,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>A faction accepts an alliance against a common enemy at least as strong as itself, if you do not hold 40% of the galaxy. Above 45%, allies break away.</source>
-        <translation>Une faction accepte une alliance contre un ennemi commun au moins aussi fort qu&apos;elle, si vous ne tenez pas 40 % de la galaxie. Au-delà de 45 %, les alliés vous quittent.</translation>
+        <translation>Une faction accepte une alliance contre un ennemi commun au moins aussi fort qu'elle, si vous ne tenez pas 40 % de la galaxie. Au-delà de 45 %, les alliés vous quittent.</translation>
     </message>
 </context>
 <context>
     <name>ConquestEndScreen</name>
     <message>
         <source>Back to the title screen</source>
-        <translation>Retour à l&apos;écran titre</translation>
+        <translation>Retour à l'écran titre</translation>
     </message>
     <message>
         <source>Quit game</source>
@@ -472,7 +550,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>The %1 have no world left</source>
-        <translation>Les %1 n&apos;ont plus aucun monde</translation>
+        <translation>Les %1 n'ont plus aucun monde</translation>
     </message>
 </context>
 <context>
@@ -527,7 +605,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>the flagship is in battle - win it first</source>
-        <translation>le vaisseau amiral est en combat - gagnez-le d&apos;abord</translation>
+        <translation>le vaisseau amiral est en combat - gagnez-le d'abord</translation>
     </message>
     <message>
         <source>unknown planet</source>
@@ -571,7 +649,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>needs %1 first</source>
-        <translation>nécessite d&apos;abord %1</translation>
+        <translation>nécessite d'abord %1</translation>
     </message>
     <message>
         <source>Research started: %1 (%2 s)</source>
@@ -631,7 +709,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>defenses rebuilt twice as fast, up to 4</source>
-        <translation>défenses reconstruites deux fois plus vite, jusqu&apos;à 4</translation>
+        <translation>défenses reconstruites deux fois plus vite, jusqu'à 4</translation>
     </message>
     <message>
         <source>shipyards +25%</source>
@@ -647,7 +725,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>The %1 and the %2 ally against the %3</source>
-        <translation>Les %1 et les %2 s&apos;allient contre les %3</translation>
+        <translation>Les %1 et les %2 s'allient contre les %3</translation>
     </message>
     <message>
         <source>The %1 betray the %2!</source>
@@ -671,7 +749,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>the %1 are no more</source>
-        <translation>les %1 n&apos;existent plus</translation>
+        <translation>les %1 n'existent plus</translation>
     </message>
     <message>
         <source>the %1 refuse: your power frightens them</source>
@@ -679,7 +757,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>the %1 refuse: they see no common enemy</source>
-        <translation>les %1 refusent : ils ne voient pas d&apos;ennemi commun</translation>
+        <translation>les %1 refusent : ils ne voient pas d'ennemi commun</translation>
     </message>
     <message>
         <source>Alliance sealed with the %1: they will not attack you</source>
@@ -711,7 +789,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Crusade: conquered worlds keep most of their people, who grow faster; the Priors convert neutral neighbours; fleets +10%; but the crusade builds slowly (shipyards x0.85).</source>
-        <translation>Croisade : les mondes conquis gardent l&apos;essentiel de leur population, qui croît plus vite ; les Prieurs convertissent les voisins neutres ; flottes +10 % ; mais la croisade construit lentement (chantiers x0,85).</translation>
+        <translation>Croisade : les mondes conquis gardent l'essentiel de leur population, qui croît plus vite ; les Prieurs convertissent les voisins neutres ; flottes +10 % ; mais la croisade construit lentement (chantiers x0,85).</translation>
     </message>
     <message>
         <source>%1 fortified: defense %2/5</source>
@@ -731,7 +809,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>%1 has no shipyard</source>
-        <translation>%1 n&apos;a pas de chantier naval</translation>
+        <translation>%1 n'a pas de chantier naval</translation>
     </message>
     <message>
         <source>the shipyard of %1 is full</source>
@@ -770,8 +848,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 rejoint votre faction</translation>
     </message>
     <message>
-        <source>Battle in progress at %1: the %2 attack the %3. &apos;engage &lt;faction&gt;&apos; to join in, or wait for the winner</source>
-        <translation>Bataille en cours à %1 : les %2 attaquent (%3). &apos;engage &lt;faction&gt;&apos; pour intervenir, ou attendez le vainqueur</translation>
+        <source>Battle in progress at %1: the %2 attack the %3. 'engage &lt;faction&gt;' to join in, or wait for the winner</source>
+        <translation>Bataille en cours à %1 : les %2 attaquent (%3). 'engage &lt;faction&gt;' pour intervenir, ou attendez le vainqueur</translation>
     </message>
     <message>
         <source>%1 is defended by the %2 fleet: battle!</source>
@@ -787,23 +865,23 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Allied victory: only you and your allies remain</source>
-        <translation>Victoire de l&apos;alliance : il ne reste que vous et vos alliés</translation>
+        <translation>Victoire de l'alliance : il ne reste que vous et vos alliés</translation>
     </message>
     <message>
-        <source>Jaffa revolt on %1: the world breaks free from the Goa&apos;uld</source>
-        <translation>Révolte jaffa sur %1 : le monde se libère des Goa&apos;uld</translation>
+        <source>Jaffa revolt on %1: the world breaks free from the Goa'uld</source>
+        <translation>Révolte jaffa sur %1 : le monde se libère des Goa'uld</translation>
     </message>
     <message>
         <source>The Priors convert %1 to Origin</source>
-        <translation>Les Prieurs convertissent %1 à l&apos;Origine</translation>
+        <translation>Les Prieurs convertissent %1 à l'Origine</translation>
     </message>
     <message>
-        <source>%1 joins the Tau&apos;ri through diplomacy</source>
-        <translation>%1 rejoint les Tau&apos;ri par la diplomatie</translation>
+        <source>%1 joins the Tau'ri through diplomacy</source>
+        <translation>%1 rejoint les Tau'ri par la diplomatie</translation>
     </message>
     <message>
         <source>The %1 fear your power and break the alliance!</source>
-        <translation>Les %1 craignent votre puissance et rompent l&apos;alliance !</translation>
+        <translation>Les %1 craignent votre puissance et rompent l'alliance !</translation>
     </message>
     <message>
         <source>New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))</source>
@@ -893,16 +971,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
 <context>
     <name>ConquestScreen</name>
     <message>
-        <source>VICTORY - the galaxy is yours. &apos;menu&apos; to go back to the title screen.</source>
-        <translation>VICTOIRE - la galaxie est à vous. &apos;menu&apos; pour revenir à l&apos;écran titre.</translation>
+        <source>VICTORY - the galaxy is yours. 'menu' to go back to the title screen.</source>
+        <translation>VICTOIRE - la galaxie est à vous. 'menu' pour revenir à l'écran titre.</translation>
     </message>
     <message>
         <source>DEFEAT - your faction has no world left.</source>
-        <translation>DÉFAITE - votre faction n&apos;a plus aucun monde.</translation>
+        <translation>DÉFAITE - votre faction n'a plus aucun monde.</translation>
     </message>
     <message>
         <source>Cannot go there: %1</source>
-        <translation>Impossible d&apos;y aller : %1</translation>
+        <translation>Impossible d'y aller : %1</translation>
     </message>
     <message>
         <source>Conquest saved</source>
@@ -925,16 +1003,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>HUD</translation>
     </message>
     <message>
-        <source>Show or hide the radar, ship and weapon panels (&apos;hud on|off&apos;)</source>
-        <translation>Afficher ou masquer le radar et les panneaux du vaisseau et des armes (&apos;hud on|off&apos;)</translation>
+        <source>Show or hide the radar, ship and weapon panels ('hud on|off')</source>
+        <translation>Afficher ou masquer le radar et les panneaux du vaisseau et des armes ('hud on|off')</translation>
     </message>
     <message>
         <source>TECH</source>
         <translation>TECH</translation>
     </message>
     <message>
-        <source>Research tree and diplomacy (&apos;research&apos;, &apos;diplomacy&apos;)</source>
-        <translation>Arbre de recherche et diplomatie (&apos;research&apos;, &apos;diplomacy&apos;)</translation>
+        <source>Research tree and diplomacy ('research', 'diplomacy')</source>
+        <translation>Arbre de recherche et diplomatie ('research', 'diplomacy')</translation>
     </message>
     <message>
         <source>Conquest restored: %1 - %2 planet(s) of %3</source>
@@ -949,16 +1027,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Trait de faction : %1</translation>
     </message>
     <message>
-        <source>Type &apos;help&apos; for the conquest commands - double click a planet to travel there</source>
-        <translation>Tapez &apos;help&apos; pour les commandes de conquête - double-cliquez sur une planète pour y aller</translation>
+        <source>Type 'help' for the conquest commands - double click a planet to travel there</source>
+        <translation>Tapez 'help' pour les commandes de conquête - double-cliquez sur une planète pour y aller</translation>
     </message>
     <message>
         <source>No %1 fleet available - the planet surrenders</source>
         <translation>Aucune flotte %1 disponible - la planète se rend</translation>
     </message>
     <message>
-        <source>%1 mothership(s) and %2 fighter(s) - shields up, fire at will (&apos;attack &lt;n&gt;&apos;, &apos;pulseweapon&apos;)</source>
-        <translation>%1 vaisseau(x)-mère(s) et %2 chasseur(s) - boucliers levés, feu à volonté (&apos;attack &lt;n&gt;&apos;, &apos;pulseweapon&apos;)</translation>
+        <source>%1 mothership(s) and %2 fighter(s) - shields up, fire at will ('attack &lt;n&gt;', 'pulseweapon')</source>
+        <translation>%1 vaisseau(x)-mère(s) et %2 chasseur(s) - boucliers levés, feu à volonté ('attack &lt;n&gt;', 'pulseweapon')</translation>
     </message>
     <message>
         <source>Neutral</source>
@@ -1017,8 +1095,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Votre vaisseau amiral est ici</translation>
     </message>
     <message>
-        <source>%1 jump(s) - double click or &apos;goto %2&apos; to travel</source>
-        <translation>%1 saut(s) - double-clic ou &apos;goto %2&apos; pour y aller</translation>
+        <source>%1 jump(s) - double click or 'goto %2' to travel</source>
+        <translation>%1 saut(s) - double-clic ou 'goto %2' pour y aller</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; - naquadah %2 - trinium %3 - planets %4/%5 - hull %6%</source>
@@ -1041,8 +1119,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>MILICE</translation>
     </message>
     <message>
-        <source>&apos;engage &lt;faction&gt;&apos; to join in - or wait for the winner</source>
-        <translation>&apos;engage &lt;faction&gt;&apos; pour intervenir - ou attendez le vainqueur</translation>
+        <source>'engage &lt;faction&gt;' to join in - or wait for the winner</source>
+        <translation>'engage &lt;faction&gt;' pour intervenir - ou attendez le vainqueur</translation>
     </message>
     <message>
         <source>IN HYPERSPACE - %1 jump(s) to go</source>
@@ -1057,8 +1135,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>NAQUADAH %1   TRINIUM %2</translation>
     </message>
     <message>
-        <source>Unknown planet &apos;%1&apos; - type &apos;planets&apos; for the list</source>
-        <translation>Planète inconnue &apos;%1&apos; - tapez &apos;planets&apos; pour la liste</translation>
+        <source>Unknown planet '%1' - type 'planets' for the list</source>
+        <translation>Planète inconnue '%1' - tapez 'planets' pour la liste</translation>
     </message>
     <message>
         <source>%1 %2 - population %3 M, defense %4/5, %5</source>
@@ -1085,8 +1163,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Réparation impossible : %1</translation>
     </message>
     <message>
-        <source>Unknown technology &apos;%1&apos; - type &apos;research&apos; for the list</source>
-        <translation>Technologie inconnue &apos;%1&apos; - tapez &apos;research&apos; pour la liste</translation>
+        <source>Unknown technology '%1' - type 'research' for the list</source>
+        <translation>Technologie inconnue '%1' - tapez 'research' pour la liste</translation>
     </message>
     <message>
         <source>Cannot research: %1</source>
@@ -1094,7 +1172,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>No alliance: %1</source>
-        <translation>Pas d&apos;alliance : %1</translation>
+        <translation>Pas d'alliance : %1</translation>
     </message>
     <message>
         <source>Cannot break: %1</source>
@@ -1117,12 +1195,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Intervention impossible : %1</translation>
     </message>
     <message>
-        <source>Usage: send &lt;fleet number&gt; &lt;planet&gt; - see &apos;fleets&apos;</source>
-        <translation>Usage : send &lt;numéro de flotte&gt; &lt;planète&gt; - voir &apos;fleets&apos;</translation>
+        <source>Usage: send &lt;fleet number&gt; &lt;planet&gt; - see 'fleets'</source>
+        <translation>Usage : send &lt;numéro de flotte&gt; &lt;planète&gt; - voir 'fleets'</translation>
     </message>
     <message>
         <source>Cannot send the fleet: %1</source>
-        <translation>Impossible d&apos;envoyer la flotte : %1</translation>
+        <translation>Impossible d'envoyer la flotte : %1</translation>
     </message>
     <message>
         <source>Usage: build fighter|mothership [planet] (%1 / %2 naquadah)</source>
@@ -1133,8 +1211,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Construction impossible : %1</translation>
     </message>
     <message>
-        <source>Unknown command &apos;%1&apos; - type &apos;help&apos;</source>
-        <translation>Commande inconnue &apos;%1&apos; - tapez &apos;help&apos;</translation>
+        <source>Unknown command '%1' - type 'help'</source>
+        <translation>Commande inconnue '%1' - tapez 'help'</translation>
     </message>
     <message>
         <source>Travel: goto &lt;planet&gt; (number or name), or double click it on the map</source>
@@ -1150,7 +1228,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Fleets: shipyards build ships on their own, fleets attack and defend by themselves</source>
-        <translation>Flottes : les chantiers construisent seuls, les flottes attaquent et défendent d&apos;elles-mêmes</translation>
+        <translation>Flottes : les chantiers construisent seuls, les flottes attaquent et défendent d'elles-mêmes</translation>
     </message>
     <message>
         <source>   fleets (list), send &lt;fleet&gt; &lt;planet&gt;, build fighter|mothership [planet] (%1 / %2 naquadah)</source>
@@ -1161,12 +1239,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Combat : attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</translation>
     </message>
     <message>
-        <source>Battles between other factions last a while: watch them, or &apos;engage &lt;faction&gt;&apos; to fight one side</source>
-        <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
+        <source>Battles between other factions last a while: watch them, or 'engage &lt;faction&gt;' to fight one side</source>
+        <translation>Les batailles entre autres factions durent un moment : observez-les, ou 'engage &lt;faction&gt;' pour combattre un camp</translation>
     </message>
     <message>
         <source>Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle</source>
         <translation>Hangar : launch [n] - vos chasseurs combattent à vos côtés ; vos flottes et vos alliés en orbite rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>Drones (Ancients): drones &lt;n&gt; - a salvo that goes through the shields, limited stock</source>
+        <translation>Drones (Anciens) : drones &lt;n&gt; - une salve qui traverse les boucliers, stock limité</translation>
     </message>
     <message>
         <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
@@ -1189,8 +1271,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les mondes neutres vous rejoignent après un séjour en orbite ; les mondes ennemis se prennent en détruisant leur flotte.</translation>
     </message>
     <message>
-        <source>Win by taking every planet of the enemy factions. Menu: Esc or &apos;menu&apos;.</source>
-        <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
+        <source>Win by taking every planet of the enemy factions. Menu: Esc or 'menu'.</source>
+        <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou 'menu'.</translation>
     </message>
     <message>
         <source>Weapons</source>
@@ -1253,6 +1335,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Des vaisseaux %1 alliés rejoignent la bataille</translation>
     </message>
     <message>
+        <source>Your fleet %1 is in orbit</source>
+        <translation>Ta flotte %1 est en orbite</translation>
+    </message>
+    <message>
+        <source>Allied %1 ships in orbit</source>
+        <translation>Vaisseaux alliés (%1) en orbite</translation>
+    </message>
+    <message>
         <source>Worlds held: %1 of %2</source>
         <translation>Mondes contrôlés : %1 sur %2</translation>
     </message>
@@ -1281,7 +1371,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Power Shortage</source>
-        <translation>Pénurie d&apos;énergie</translation>
+        <translation>Pénurie d'énergie</translation>
     </message>
     <message>
         <source>Signal in the Dark</source>
@@ -1289,11 +1379,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Bring the Destiny systems back online after the emergency drop.</source>
-        <translation>Remettre en ligne les systèmes du Destiny après la sortie d&apos;urgence.</translation>
+        <translation>Remettre en ligne les systèmes du Destiny après la sortie d'urgence.</translation>
     </message>
     <message>
         <source>Collect naquadah to restore the Power Core to full capacity.</source>
-        <translation>Collecter du naquadah pour rendre au cœur d&apos;énergie sa pleine capacité.</translation>
+        <translation>Collecter du naquadah pour rendre au cœur d'énergie sa pleine capacité.</translation>
     </message>
     <message>
         <source>Explore the nearby planet and locate the source of the signal.</source>
@@ -1309,7 +1399,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Report to the bridge: check the ship status</source>
-        <translation>Au rapport sur la passerelle : vérifier l&apos;état du vaisseau</translation>
+        <translation>Au rapport sur la passerelle : vérifier l'état du vaisseau</translation>
     </message>
     <message>
         <source>Collect 10 units of naquadah</source>
@@ -1321,7 +1411,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Return the team safely</source>
-        <translation>Ramener l&apos;équipe saine et sauve</translation>
+        <translation>Ramener l'équipe saine et sauve</translation>
     </message>
     <message>
         <source>ancient_alloy</source>
@@ -1353,7 +1443,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Dense mineral, primary energy source</source>
-        <translation>Minerai dense, source d&apos;énergie principale</translation>
+        <translation>Minerai dense, source d'énergie principale</translation>
     </message>
     <message>
         <source>Ancient crystal used in electronic systems</source>
@@ -1377,7 +1467,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Edible biomass and supplies for the crew</source>
-        <translation>Biomasse comestible et vivres pour l&apos;équipage</translation>
+        <translation>Biomasse comestible et vivres pour l'équipage</translation>
     </message>
     <message>
         <source>uncommon</source>
@@ -1413,7 +1503,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Power Core</source>
-        <translation>Cœur d&apos;énergie</translation>
+        <translation>Cœur d'énergie</translation>
     </message>
     <message>
         <source>Railgun</source>
@@ -1441,31 +1531,31 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Ancient seed ship launched millions of years ago, crossing the universe ahead of the Stargate builders. Powered by stars, it drops out of FTL on its own schedule.</source>
-        <translation>Vaisseau ensemenceur des Anciens lancé il y a des millions d&apos;années, qui traverse l&apos;univers en avance sur les bâtisseurs des portes. Alimenté par les étoiles, il sort de FTL selon son propre programme.</translation>
+        <translation>Vaisseau ensemenceur des Anciens lancé il y a des millions d'années, qui traverse l'univers en avance sur les bâtisseurs des portes. Alimenté par les étoiles, il sort de FTL selon son propre programme.</translation>
     </message>
     <message>
         <source>Small automated attack drone, fast and relentless, firing twin plasma bolts.</source>
-        <translation>Petit drone d&apos;attaque automatisé, rapide et implacable, qui tire des doubles rayons de plasma.</translation>
+        <translation>Petit drone d'attaque automatisé, rapide et implacable, qui tire des doubles rayons de plasma.</translation>
     </message>
     <message>
         <source>Stolen Death Glider flown by Alliance mercenaries.</source>
-        <translation>Planeur de la mort volé, piloté par des mercenaires de l&apos;Alliance.</translation>
+        <translation>Planeur de la mort volé, piloté par des mercenaires de l'Alliance.</translation>
     </message>
     <message>
-        <source>Goa&apos;uld pyramid mothership. Heavy staff cannon batteries and a hangar of Death Gliders.</source>
-        <translation>Vaisseau-mère pyramidal goa&apos;uld. Lourdes batteries de canons à plasma et un hangar de planeurs de la mort.</translation>
+        <source>Goa'uld pyramid mothership. Heavy staff cannon batteries and a hangar of Death Gliders.</source>
+        <translation>Vaisseau-mère pyramidal goa'uld. Lourdes batteries de canons à plasma et un hangar de planeurs de la mort.</translation>
     </message>
     <message>
-        <source>Two-seat Goa&apos;uld attack fighter armed with twin staff cannons.</source>
-        <translation>Chasseur d&apos;attaque goa&apos;uld biplace armé de deux canons à plasma.</translation>
+        <source>Two-seat Goa'uld attack fighter armed with twin staff cannons.</source>
+        <translation>Chasseur d'attaque goa'uld biplace armé de deux canons à plasma.</translation>
     </message>
     <message>
-        <source>Ha&apos;tak taken over by the Lucian Alliance and refitted with naquadah-enhanced missile racks.</source>
-        <translation>Ha&apos;tak pris par l&apos;Alliance Lucienne et équipé de lance-missiles au naquadah.</translation>
+        <source>Ha'tak taken over by the Lucian Alliance and refitted with naquadah-enhanced missile racks.</source>
+        <translation>Ha'tak pris par l'Alliance Lucienne et équipé de lance-missiles au naquadah.</translation>
     </message>
     <message>
         <source>Organic Wraith flagship. Self-repairing hull, energy batteries and swarms of Darts.</source>
-        <translation>Vaisseau amiral organique wraith. Coque autoréparatrice, batteries d&apos;énergie et essaims de Darts.</translation>
+        <translation>Vaisseau amiral organique wraith. Coque autoréparatrice, batteries d'énergie et essaims de Darts.</translation>
     </message>
     <message>
         <source>Light Wraith interceptor. Badly damaged Darts dive into their target.</source>
@@ -1473,27 +1563,27 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Automated control ship of the Berserker drones. Destroying it does not stop its drones.</source>
-        <translation>Vaisseau de contrôle automatisé des drones berserkers. Le détruire n&apos;arrête pas ses drones.</translation>
+        <translation>Vaisseau de contrôle automatisé des drones berserkers. Le détruire n'arrête pas ses drones.</translation>
     </message>
     <message>
-        <source>BC-304 battlecruiser of the Tau&apos;ri, upgraded with Asgard shields and the Asgard plasma beam.</source>
-        <translation>Croiseur de combat BC-304 des Tau&apos;ri, amélioré avec des boucliers et le rayon à plasma asgard.</translation>
+        <source>BC-304 battlecruiser of the Tau'ri, upgraded with Asgard shields and the Asgard plasma beam.</source>
+        <translation>Croiseur de combat BC-304 des Tau'ri, amélioré avec des boucliers et le rayon à plasma asgard.</translation>
     </message>
     <message>
-        <source>Tau&apos;ri interceptor carried by the BC-304s. Railguns and air-to-air missiles.</source>
-        <translation>Intercepteur tau&apos;ri embarqué sur les BC-304. Railguns et missiles air-air.</translation>
+        <source>Tau'ri interceptor carried by the BC-304s. Railguns and air-to-air missiles.</source>
+        <translation>Intercepteur tau'ri embarqué sur les BC-304. Railguns et missiles air-air.</translation>
     </message>
     <message>
         <source>Wraith battlecruiser escorting the hives. Fills its hangar with Darts ready to sacrifice themselves.</source>
         <translation>Croiseur wraith escortant les ruches. Son hangar est rempli de Darts prêts à se sacrifier.</translation>
     </message>
     <message>
-        <source>Goa&apos;uld mid-range bomber. Slow, but its plasma bombs hit hard.</source>
-        <translation>Bombardier goa&apos;uld de moyenne portée. Lent, mais ses bombes à plasma frappent fort.</translation>
+        <source>Goa'uld mid-range bomber. Slow, but its plasma bombs hit hard.</source>
+        <translation>Bombardier goa'uld de moyenne portée. Lent, mais ses bombes à plasma frappent fort.</translation>
     </message>
     <message>
         <source>Ancient warship of the Lantean fleet, armed with drone weapons and an energy-absorptive shield.</source>
-        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, armé de drones et d&apos;un bouclier absorbant l&apos;énergie.</translation>
+        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, armé de drones et d'un bouclier absorbant l'énergie.</translation>
     </message>
     <message>
         <source>Small Ancient gateship able to cloak and fire drones.</source>
@@ -1504,16 +1594,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Le vaisseau de guerre asgard le plus avancé, construit pour combattre les Réplicateurs. Boucliers énormes, coque fragile.</translation>
     </message>
     <message>
-        <source>Asgard Beliskner-class vessel, Thor&apos;s ship. Asgard beams and laser barrages.</source>
+        <source>Asgard Beliskner-class vessel, Thor's ship. Asgard beams and laser barrages.</source>
         <translation>Vaisseau asgard de classe Beliskner, celui de Thor. Rayons asgard et barrages laser.</translation>
     </message>
     <message>
-        <source>Ha&apos;tak of the System Lord Apophis, reinforced and heavily armed. A boss for later.</source>
-        <translation>Ha&apos;tak du Grand Maître Apophis, renforcé et lourdement armé. Un boss pour plus tard.</translation>
+        <source>Ha'tak of the System Lord Apophis, reinforced and heavily armed. A boss for later.</source>
+        <translation>Ha'tak du Grand Maître Apophis, renforcé et lourdement armé. Un boss pour plus tard.</translation>
     </message>
     <message>
         <source>Flagship of Anubis with Ancient-derived shields and a superweapon able to destroy a planet.</source>
-        <translation>Vaisseau amiral d&apos;Anubis aux boucliers issus des Anciens, doté d&apos;une superarme capable de détruire une planète.</translation>
+        <translation>Vaisseau amiral d'Anubis aux boucliers issus des Anciens, doté d'une superarme capable de détruire une planète.</translation>
     </message>
     <message>
         <source>Hive powered by a ZPM: grows, regenerates and launches endless swarms of Darts.</source>
@@ -1525,11 +1615,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Small Asgard escort ship with an ion cannon.</source>
-        <translation>Petit vaisseau d&apos;escorte asgard armé d&apos;un canon ionique.</translation>
+        <translation>Petit vaisseau d'escorte asgard armé d'un canon ionique.</translation>
     </message>
     <message>
         <source>Ancient warship of the Lantean fleet, launching drones and firing energy batteries.</source>
-        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, lanceur de drones et de batteries d&apos;énergie.</translation>
+        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, lanceur de drones et de batteries d'énergie.</translation>
     </message>
     <message>
         <source>Ori crusade mothership, powered by the Ori themselves. Its main beam crosses any shield.</source>
@@ -1537,7 +1627,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Small Ori attack craft escorting the warships of the crusade.</source>
-        <translation>Petit appareil d&apos;attaque ori escortant les vaisseaux de guerre de la croisade.</translation>
+        <translation>Petit appareil d'attaque ori escortant les vaisseaux de guerre de la croisade.</translation>
     </message>
     <message>
         <source>Main tower</source>
@@ -1585,11 +1675,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Energy barrage</source>
-        <translation>Barrage d&apos;énergie</translation>
+        <translation>Barrage d'énergie</translation>
     </message>
     <message>
         <source>Energy bolt</source>
-        <translation>Rayon d&apos;énergie</translation>
+        <translation>Rayon d'énergie</translation>
     </message>
     <message>
         <source>Kamikaze dive</source>
@@ -1621,7 +1711,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Energy batteries</source>
-        <translation>Batteries d&apos;énergie</translation>
+        <translation>Batteries d'énergie</translation>
     </message>
     <message>
         <source>Kamikaze Darts</source>
@@ -1692,12 +1782,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Rayon de plasma</translation>
     </message>
     <message>
-        <source>Heavy shot from the main tower on the locked target (command &apos;maintower&apos;).</source>
-        <translation>Tir lourd de la tour principale sur la cible verrouillée (commande &apos;maintower&apos;).</translation>
+        <source>Heavy shot from the main tower on the locked target (command 'maintower').</source>
+        <translation>Tir lourd de la tour principale sur la cible verrouillée (commande 'maintower').</translation>
     </message>
     <message>
-        <source>Three bolts on every contact at once (command &apos;pulseweapon&apos;).</source>
-        <translation>Trois rayons sur chaque contact à la fois (commande &apos;pulseweapon&apos;).</translation>
+        <source>Three bolts on every contact at once (command 'pulseweapon').</source>
+        <translation>Trois rayons sur chaque contact à la fois (commande 'pulseweapon').</translation>
     </message>
     <message>
         <source>Automatic fire of the secondary towers, slower when the weapons are damaged.</source>
@@ -1721,7 +1811,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Slow homing missile. Railguns can shoot it down.</source>
-        <translation>Missile à tête chercheuse lent. Les railguns peuvent l&apos;abattre.</translation>
+        <translation>Missile à tête chercheuse lent. Les railguns peuvent l'abattre.</translation>
     </message>
     <message>
         <source>Three missiles at once to saturate the point defense.</source>
@@ -1729,7 +1819,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Three energy bolts from the organic batteries.</source>
-        <translation>Trois rayons d&apos;énergie tirés par les batteries organiques.</translation>
+        <translation>Trois rayons d'énergie tirés par les batteries organiques.</translation>
     </message>
     <message>
         <source>Releases three Darts.</source>
@@ -1737,11 +1827,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Light energy bolt.</source>
-        <translation>Rayon d&apos;énergie léger.</translation>
+        <translation>Rayon d'énergie léger.</translation>
     </message>
     <message>
         <source>Below half hull, may dive into the Destiny. Railguns can stop it on the way.</source>
-        <translation>Sous la moitié de sa coque, peut plonger sur le Destiny. Les railguns peuvent l&apos;arrêter en route.</translation>
+        <translation>Sous la moitié de sa coque, peut plonger sur le Destiny. Les railguns peuvent l'arrêter en route.</translation>
     </message>
     <message>
         <source>Pair of heavy plasma bolts.</source>
@@ -1777,7 +1867,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Pair of energy bolts.</source>
-        <translation>Paire de rayons d&apos;énergie.</translation>
+        <translation>Paire de rayons d'énergie.</translation>
     </message>
     <message>
         <source>Releases two Darts, ready to dive into the Destiny once damaged.</source>
@@ -1801,7 +1891,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Five ion bolts in a row.</source>
-        <translation>Cinq rayons ioniques d&apos;affilée.</translation>
+        <translation>Cinq rayons ioniques d'affilée.</translation>
     </message>
     <message>
         <source>Eight quick laser shots.</source>
@@ -1821,11 +1911,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Ancient-derived beam weapon, the most powerful attack of the library.</source>
-        <translation>Arme à rayon issue des Anciens, l&apos;attaque la plus puissante de la bibliothèque.</translation>
+        <translation>Arme à rayon issue des Anciens, l'attaque la plus puissante de la bibliothèque.</translation>
     </message>
     <message>
         <source>Eight energy bolts at once.</source>
-        <translation>Huit rayons d&apos;énergie à la fois.</translation>
+        <translation>Huit rayons d'énergie à la fois.</translation>
     </message>
     <message>
         <source>Releases five Darts.</source>
@@ -1855,8 +1945,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>fin de la route connue atteinte</translation>
     </message>
     <message>
-        <source>a team is still on %1 - recall it with &apos;stargate destiny&apos;</source>
-        <translation>une équipe est encore sur %1 - rappelez-la avec &apos;stargate destiny&apos;</translation>
+        <source>a team is still on %1 - recall it with 'stargate destiny'</source>
+        <translation>une équipe est encore sur %1 - rappelez-la avec 'stargate destiny'</translation>
     </message>
     <message>
         <source>FTL drive charging (%1%)</source>
@@ -1867,32 +1957,32 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>fenêtre de porte fermée - attendez le prochain système</translation>
     </message>
     <message>
-        <source>no such gate address in this system (see &apos;scansector&apos;)</source>
-        <translation>adresse de porte inconnue dans ce système (voir &apos;scansector&apos;)</translation>
+        <source>no such gate address in this system (see 'scansector')</source>
+        <translation>adresse de porte inconnue dans ce système (voir 'scansector')</translation>
     </message>
     <message>
         <source>the team is already there</source>
-        <translation>l&apos;équipe y est déjà</translation>
+        <translation>l'équipe y est déjà</translation>
     </message>
     <message>
-        <source>a team is already deployed - recall it with &apos;stargate destiny&apos;</source>
-        <translation>une équipe est déjà déployée - rappelez-la avec &apos;stargate destiny&apos;</translation>
+        <source>a team is already deployed - recall it with 'stargate destiny'</source>
+        <translation>une équipe est déjà déployée - rappelez-la avec 'stargate destiny'</translation>
     </message>
     <message>
         <source>no team deployed</source>
         <translation>aucune équipe déployée</translation>
     </message>
     <message>
-        <source>FTL drive fully charged - ready to jump (&apos;engine ftl&apos;)</source>
-        <translation>Propulsion FTL chargée - prêt pour le saut (&apos;engine ftl&apos;)</translation>
+        <source>FTL drive fully charged - ready to jump ('engine ftl')</source>
+        <translation>Propulsion FTL chargée - prêt pour le saut ('engine ftl')</translation>
     </message>
     <message>
-        <source>Gate window closing in %1 h - recall the team (&apos;stargate destiny&apos;)</source>
-        <translation>La fenêtre de porte se ferme dans %1 h - rappelez l&apos;équipe (&apos;stargate destiny&apos;)</translation>
+        <source>Gate window closing in %1 h - recall the team ('stargate destiny')</source>
+        <translation>La fenêtre de porte se ferme dans %1 h - rappelez l'équipe ('stargate destiny')</translation>
     </message>
     <message>
         <source>Gate window closed - team stranded on the surface! %1 crew lost</source>
-        <translation>Fenêtre de porte fermée - équipe bloquée sur la surface ! %1 membre(s) d&apos;équipage perdu(s)</translation>
+        <translation>Fenêtre de porte fermée - équipe bloquée sur la surface ! %1 membre(s) d'équipage perdu(s)</translation>
     </message>
     <message>
         <source>Gate window closed</source>
@@ -1922,7 +2012,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Transit through an ion-rich nebula. The collectors absorb extra energy.</source>
-        <translation>Traversée d&apos;une nébuleuse riche en ions. Les collecteurs absorbent un surplus d&apos;énergie.</translation>
+        <translation>Traversée d'une nébuleuse riche en ions. Les collecteurs absorbent un surplus d'énergie.</translation>
     </message>
     <message>
         <source>Ice field</source>
@@ -1930,15 +2020,15 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>The Destiny scoops ice fragments during the transit. Water reserves partly refilled.</source>
-        <translation>Le Destiny récupère des fragments de glace pendant le transit. Réserves d&apos;eau en partie reconstituées.</translation>
+        <translation>Le Destiny récupère des fragments de glace pendant le transit. Réserves d'eau en partie reconstituées.</translation>
     </message>
     <message>
         <source>Ancient ship debris</source>
-        <translation>Débris d&apos;un vaisseau des Anciens</translation>
+        <translation>Débris d'un vaisseau des Anciens</translation>
     </message>
     <message>
         <source>Drifting debris holds salvageable parts. The engineering team collects them.</source>
-        <translation>Des débris à la dérive contiennent des pièces récupérables. L&apos;équipe d&apos;ingénierie les collecte.</translation>
+        <translation>Des débris à la dérive contiennent des pièces récupérables. L'équipe d'ingénierie les collecte.</translation>
     </message>
     <message>
         <source>Favourable hyperspace current</source>
@@ -2022,11 +2112,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>FTL chamber explosion</source>
-        <translation>Explosion d&apos;une chambre FTL</translation>
+        <translation>Explosion d'une chambre FTL</translation>
     </message>
     <message>
         <source>An FTL chamber explodes during the transit. Critical damage, emergency stop.</source>
-        <translation>Une chambre FTL explose pendant le transit. Dégâts critiques, arrêt d&apos;urgence.</translation>
+        <translation>Une chambre FTL explose pendant le transit. Dégâts critiques, arrêt d'urgence.</translation>
     </message>
     <message>
         <source>Hull breach</source>
@@ -2034,7 +2124,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>A breach opens in section E. Partial depressurisation. Casualties.</source>
-        <translation>Une brèche s&apos;ouvre dans la section E. Dépressurisation partielle. Des victimes.</translation>
+        <translation>Une brèche s'ouvre dans la section E. Dépressurisation partielle. Des victimes.</translation>
     </message>
     <message>
         <source>Nominal transit</source>
@@ -2072,16 +2162,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Console tactique du Destiny en ligne</translation>
     </message>
     <message>
-        <source>Dropped out of FTL in %1 - %2 planet(s), gate window %3 h - type &apos;scansector&apos;</source>
-        <translation>Sortie de FTL dans %1 - %2 planète(s), fenêtre de porte %3 h - tapez &apos;scansector&apos;</translation>
+        <source>Dropped out of FTL in %1 - %2 planet(s), gate window %3 h - type 'scansector'</source>
+        <translation>Sortie de FTL dans %1 - %2 planète(s), fenêtre de porte %3 h - tapez 'scansector'</translation>
     </message>
     <message>
         <source>Hostile ships detected - shields up</source>
         <translation>Vaisseaux hostiles détectés - boucliers levés</translation>
     </message>
     <message>
-        <source>Type &apos;help&apos; for the command list</source>
-        <translation>Tapez &apos;help&apos; pour la liste des commandes</translation>
+        <source>Type 'help' for the command list</source>
+        <translation>Tapez 'help' pour la liste des commandes</translation>
     </message>
     <message>
         <source>No quest available (no save database)</source>
@@ -2172,8 +2262,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Bibliothèque des vaisseaux : %1</translation>
     </message>
     <message>
-        <source>Unknown ship &apos;%1&apos; - type &apos;library&apos; for the list</source>
-        <translation>Vaisseau inconnu &apos;%1&apos; - tapez &apos;library&apos; pour la liste</translation>
+        <source>Unknown ship '%1' - type 'library' for the list</source>
+        <translation>Vaisseau inconnu '%1' - tapez 'library' pour la liste</translation>
     </message>
     <message>
         <source>No save database - progress will not be kept</source>
@@ -2213,7 +2303,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>A crew member died of deprivation (%1 left)</source>
-        <translation>Un membre d&apos;équipage est mort de privations (%1 restants)</translation>
+        <translation>Un membre d'équipage est mort de privations (%1 restants)</translation>
     </message>
     <message>
         <source>Supplies restored</source>
@@ -2221,7 +2311,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Water reserves low (%1) - find a planet with water</source>
-        <translation>Réserves d&apos;eau basses (%1) - trouvez une planète avec de l&apos;eau</translation>
+        <translation>Réserves d'eau basses (%1) - trouvez une planète avec de l'eau</translation>
     </message>
     <message>
         <source>Food reserves low (%1) - find a planet with organics</source>
@@ -2236,8 +2326,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>FTL %1   ÉNERGIE %2</translation>
     </message>
     <message>
-        <source>VIEW %1 &quot;%2&quot; %3</source>
-        <translation>VUE %1 &quot;%2&quot; %3</translation>
+        <source>VIEW %1 "%2" %3</source>
+        <translation>VUE %1 "%2" %3</translation>
     </message>
     <message>
         <source>GATE OPEN %1 h</source>
@@ -2268,8 +2358,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>La progression ne peut pas être sauvegardée (pas de session)</translation>
     </message>
     <message>
-        <source>New journey - progress is saved automatically (&apos;save&apos; to force it)</source>
-        <translation>Nouveau voyage - la progression est sauvegardée automatiquement (&apos;save&apos; pour forcer)</translation>
+        <source>New journey - progress is saved automatically ('save' to force it)</source>
+        <translation>Nouveau voyage - la progression est sauvegardée automatiquement ('save' pour forcer)</translation>
     </message>
     <message>
         <source>Game restored: day %1, G%2 %3 system %4, crew %5</source>
@@ -2289,7 +2379,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Emergency drop: life support and sublight engines damaged</source>
-        <translation>Sortie d&apos;urgence : support vital et moteurs subluminiques endommagés</translation>
+        <translation>Sortie d'urgence : support vital et moteurs subluminiques endommagés</translation>
     </message>
     <message>
         <source>New quest: %1 - %2</source>
@@ -2312,8 +2402,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Campagne tutoriel terminée - le Destiny est sous votre commandement</translation>
     </message>
     <message>
-        <source>Hint: %1  (&apos;quests&apos; for the journal)</source>
-        <translation>Indice : %1  (&apos;quests&apos; pour le journal)</translation>
+        <source>Hint: %1  ('quests' for the journal)</source>
+        <translation>Indice : %1  ('quests' pour le journal)</translation>
     </message>
     <message>
         <source>FTL jump impossible: %1</source>
@@ -2349,35 +2439,35 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Gate dialed home - the team is back aboard the Destiny</source>
-        <translation>Porte composée vers le Destiny - l&apos;équipe est de retour à bord</translation>
+        <translation>Porte composée vers le Destiny - l'équipe est de retour à bord</translation>
     </message>
     <message>
         <source>Recall impossible: %1</source>
         <translation>Rappel impossible : %1</translation>
     </message>
     <message>
-        <source>No gate answers at %1 - addresses of this system: &apos;scansector&apos;</source>
-        <translation>Aucune porte ne répond à %1 - adresses de ce système : &apos;scansector&apos;</translation>
+        <source>No gate answers at %1 - addresses of this system: 'scansector'</source>
+        <translation>Aucune porte ne répond à %1 - adresses de ce système : 'scansector'</translation>
     </message>
     <message>
         <source>Dialing failed: %1</source>
         <translation>Échec de la composition : %1</translation>
     </message>
     <message>
-        <source>Chevron 7 locked - team deployed on %1 &quot;%2&quot; (%3)</source>
-        <translation>Chevron 7 enclenché - équipe déployée sur %1 &quot;%2&quot; (%3)</translation>
+        <source>Chevron 7 locked - team deployed on %1 "%2" (%3)</source>
+        <translation>Chevron 7 enclenché - équipe déployée sur %1 "%2" (%3)</translation>
     </message>
     <message>
         <source>Hazardous environment: toxicity %1, radiation %2</source>
         <translation>Environnement dangereux : toxicité %1, radiation %2</translation>
     </message>
     <message>
-        <source>Type &apos;explore&apos; to search for resources, &apos;stargate destiny&apos; to come back</source>
-        <translation>Tapez &apos;explore&apos; pour chercher des ressources, &apos;stargate destiny&apos; pour revenir</translation>
+        <source>Type 'explore' to search for resources, 'stargate destiny' to come back</source>
+        <translation>Tapez 'explore' pour chercher des ressources, 'stargate destiny' pour revenir</translation>
     </message>
     <message>
-        <source>No team deployed - dial a planet first (&apos;stargate &lt;address&gt;&apos;)</source>
-        <translation>Aucune équipe déployée - composez d&apos;abord une planète (&apos;stargate &lt;adresse&gt;&apos;)</translation>
+        <source>No team deployed - dial a planet first ('stargate &lt;address&gt;')</source>
+        <translation>Aucune équipe déployée - composez d'abord une planète ('stargate &lt;adresse&gt;')</translation>
     </message>
     <message>
         <source>%1 already explored - nothing more to find</source>
@@ -2392,12 +2482,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Exploration de %1 : %2</translation>
     </message>
     <message>
-        <source>Ancient site found: &quot;%1&quot;</source>
-        <translation>Site des Anciens découvert : &quot;%1&quot;</translation>
+        <source>Ancient site found: "%1"</source>
+        <translation>Site des Anciens découvert : "%1"</translation>
     </message>
     <message>
         <source>A team member was lost on the hostile surface (crew %1)</source>
-        <translation>Un membre de l&apos;équipe a été perdu sur la surface hostile (équipage %1)</translation>
+        <translation>Un membre de l'équipe a été perdu sur la surface hostile (équipage %1)</translation>
     </message>
     <message>
         <source>System G%1-%2 (%3) - gate window %4</source>
@@ -2413,9 +2503,9 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>
-%1 &quot;%2&quot; %3 - address %4</source>
+%1 "%2" %3 - address %4</source>
         <translation>
-%1 &quot;%2&quot; %3 - adresse %4</translation>
+%1 "%2" %3 - adresse %4</translation>
     </message>
     <message>
         <source> [TEAM]</source>
@@ -2514,7 +2604,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Quit to title screen</source>
-        <translation>Quitter vers l&apos;écran titre</translation>
+        <translation>Quitter vers l'écran titre</translation>
     </message>
     <message>
         <source>Quit game</source>
@@ -2556,7 +2646,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <name>QObject</name>
     <message>
         <source>energy bolts</source>
-        <translation>rayons d&apos;énergie</translation>
+        <translation>rayons d'énergie</translation>
     </message>
     <message>
         <source>kinetic slugs</source>
@@ -2644,7 +2734,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source> - railguns can stop it</source>
-        <translation> - les railguns peuvent l&apos;arrêter</translation>
+        <translation> - les railguns peuvent l'arrêter</translation>
     </message>
     <message>
         <source>%1%2: %3, %4, %5% every %6 s (~%7/min)</source>
@@ -2656,7 +2746,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>, railguns can stop it</source>
-        <translation>, les railguns peuvent l&apos;arrêter</translation>
+        <translation>, les railguns peuvent l'arrêter</translation>
     </message>
     <message>
         <source>%1 - %2 %3, hull %4%5</source>
@@ -2675,11 +2765,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>Campaign complete - keep exploring</source>
-        <translation>Campagne terminée - continuez d&apos;explorer</translation>
+        <translation>Campagne terminée - continuez d'explorer</translation>
     </message>
     <message>
-        <source>destroy ships or &apos;explore&apos; planets rich in %1</source>
-        <translation>détruisez des vaisseaux ou faites &apos;explore&apos; sur des planètes riches en %1</translation>
+        <source>destroy ships or 'explore' planets rich in %1</source>
+        <translation>détruisez des vaisseaux ou faites 'explore' sur des planètes riches en %1</translation>
     </message>
     <message>
         <source>energy</source>
@@ -2823,6 +2913,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Langue</translation>
     </message>
     <message>
+        <source>Ship textures</source>
+        <translation>Textures des vaisseaux</translation>
+    </message>
+    <message>
+        <source>Normal (1024)</source>
+        <translation>Normale (1024)</translation>
+    </message>
+    <message>
+        <source>High (2048)</source>
+        <translation>Haute (2048)</translation>
+    </message>
+    <message>
+        <source>Ultra (4096)</source>
+        <translation>Ultra (4096)</translation>
+    </message>
+    <message>
+        <source>Textures of the mod ship models (if the mod folder is installed)</source>
+        <translation>Textures des modèles de vaisseaux du mod (si le dossier du mod est installé)</translation>
+    </message>
+    <message>
+        <source>Combat assist (health bars of the ships, damage callouts on the hull)</source>
+        <translation>Aide au combat (barres de vie des vaisseaux, repères de dégâts sur la coque)</translation>
+    </message>
+    <message>
+        <source>Off: watch the ship status panels of the HUD to know your damage</source>
+        <translation>Désactivée : surveille les panneaux d'état du HUD pour connaître tes dégâts</translation>
+    </message>
+    <message>
         <source>Back</source>
         <translation>Retour</translation>
     </message>
@@ -2893,11 +3011,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source> - weapon sounds missing (mod folder not found)</source>
-        <translation> - sons d&apos;armes absents (dossier du mod introuvable)</translation>
+        <translation> - sons d'armes absents (dossier du mod introuvable)</translation>
     </message>
     <message>
         <source> - %1 weapon clips from the mod</source>
-        <translation> - %1 sons d&apos;armes du mod</translation>
+        <translation> - %1 sons d'armes du mod</translation>
     </message>
 </context>
 <context>
@@ -3010,12 +3128,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Retour</translation>
     </message>
     <message>
-        <source>Earth&apos;s forces: Daedalus battlecruisers and F-302 fighters.</source>
+        <source>Earth's forces: Daedalus battlecruisers and F-302 fighters.</source>
         <translation>Les forces de la Terre : croiseurs Daedalus et chasseurs F-302.</translation>
     </message>
     <message>
-        <source>The System Lords: Ha&apos;tak motherships, Al&apos;kesh and Death Gliders.</source>
-        <translation>Les Grands Maîtres : vaisseaux-mères Ha&apos;tak, Al&apos;kesh et planeurs de la mort.</translation>
+        <source>The System Lords: Ha'tak motherships, Al'kesh and Death Gliders.</source>
+        <translation>Les Grands Maîtres : vaisseaux-mères Ha'tak, Al'kesh et planeurs de la mort.</translation>
     </message>
     <message>
         <source>Hive ships, cruisers and swarms of Darts.</source>
@@ -3031,11 +3149,11 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
         <source>The crusade of Origin: Ori warships, fighters and Priors.</source>
-        <translation>La croisade de l&apos;Origine : vaisseaux de guerre ori, chasseurs et Prieurs.</translation>
+        <translation>La croisade de l'Origine : vaisseaux de guerre ori, chasseurs et Prieurs.</translation>
     </message>
     <message>
-        <source>Smugglers and mercenaries: stolen Ha&apos;taks and Gliders.</source>
-        <translation>Contrebandiers et mercenaires : Ha&apos;tak et planeurs volés.</translation>
+        <source>Smugglers and mercenaries: stolen Ha'taks and Gliders.</source>
+        <translation>Contrebandiers et mercenaires : Ha'tak et planeurs volés.</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -3085,8 +3203,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>tir auto %1% - rafale : secondarytower</translation>
     </message>
     <message>
-        <source>auto-fire OFF (&apos;turrets on&apos;) - burst: secondarytower</source>
-        <translation>tir auto COUPÉ (&apos;turrets on&apos;) - rafale : secondarytower</translation>
+        <source>auto-fire OFF ('turrets on') - burst: secondarytower</source>
+        <translation>tir auto COUPÉ ('turrets on') - rafale : secondarytower</translation>
     </message>
     <message>
         <source>AUTO</source>
@@ -3109,8 +3227,8 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>défense rapprochée %1 km - %2 missiles abattus - contre chasseurs x2,5</translation>
     </message>
     <message>
-        <source>POWER free %1 - priority %2 (&apos;power shields|weapons|balanced&apos;)</source>
-        <translation>ÉNERGIE libre %1 - priorité %2 (&apos;power shields|weapons|balanced&apos;)</translation>
+        <source>POWER free %1 - priority %2 ('power shields|weapons|balanced')</source>
+        <translation>ÉNERGIE libre %1 - priorité %2 ('power shields|weapons|balanced')</translation>
     </message>
     <message>
         <source>shields</source>
@@ -3123,6 +3241,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>balanced</source>
         <translation>équilibrée</translation>
+    </message>
+    <message>
+        <source>DRONES</source>
+        <translation>DRONES</translation>
+    </message>
+    <message>
+        <source>drones &lt;n&gt; - salvo through the shields, rebuilt out of battle</source>
+        <translation>drones &lt;n&gt; - salve qui traverse les boucliers, rechargée hors combat</translation>
     </message>
     <message>
         <source>HANGAR</source>

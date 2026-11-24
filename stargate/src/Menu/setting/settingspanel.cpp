@@ -13,6 +13,8 @@
 #include "src/audio/musicplayer.h"
 #include "src/audio/soundsystem.h"
 #include "src/core/language.h"
+#include "src/render/battleview.h"
+#include "src/render/ddstexture.h"
 
 SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     : QWidget(parent)
@@ -50,6 +52,13 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     m_language = new QComboBox(this);
     for (const auto &language : Language::available())
         m_language->addItem(language.second, language.first);
+    auto *texturesTitle = new QLabel(tr("Ship textures"), this);
+    texturesTitle->setObjectName("field");
+    m_textures = new QComboBox(this);
+    m_textures->addItem(tr("Normal (1024)"), 0);
+    m_textures->addItem(tr("High (2048)"), 1);
+    m_textures->addItem(tr("Ultra (4096)"), 2);
+    m_textures->setToolTip(tr("Textures of the mod ship models (if the mod folder is installed)"));
 
     auto *grid = new QGridLayout;
     grid->setHorizontalSpacing(12);
@@ -69,6 +78,15 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     languageRow->addWidget(m_language);
     languageRow->addStretch(1);
     grid->addLayout(languageRow, 8, 0, 1, 2);
+    auto *texturesRow = new QHBoxLayout;
+    texturesRow->addWidget(texturesTitle);
+    texturesRow->addWidget(m_textures);
+    texturesRow->addStretch(1);
+    grid->addLayout(texturesRow, 9, 0, 1, 2);
+    m_assist = new QCheckBox(tr("Combat assist (health bars of the ships, damage callouts on the hull)"), this);
+    m_assist->setToolTip(tr("Off: watch the ship status panels of the HUD to know your damage"));
+    grid->addWidget(m_assist, 10, 0, 1, 2);
+    connect(m_assist, &QCheckBox::toggled, this, [](bool on) { BattleView::setAssistSetting(on); });
 
     auto *back = new QPushButton(tr("Back"), this);
 
@@ -108,6 +126,9 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
         Language::save(code);
         emit languageChanged(code);
     });
+    connect(m_textures, &QComboBox::currentIndexChanged, this, [this] {
+        DdsTexture::setQualitySetting(m_textures->currentData().toInt());
+    });
     connect(back, &QPushButton::clicked, this, &SettingsPanel::backRequested);
 
     refresh();
@@ -124,7 +145,9 @@ void SettingsPanel::refresh()
     MusicPlayer *music = m_sound ? m_sound->music() : nullptr;
     const int musicVolume = music ? music->volume() : 0;
     const QSignalBlocker blockVolume(m_volume), blockMute(m_mute), blockScreen(m_fullScreen),
-        blockLanguage(m_language), blockMusic(m_music);
+        blockLanguage(m_language), blockMusic(m_music), blockTextures(m_textures), blockAssist(m_assist);
+    m_assist->setChecked(BattleView::assistSetting());
+    m_textures->setCurrentIndex(std::max(0, m_textures->findData(DdsTexture::qualitySetting())));
     if (musicVolume > 0)
         m_lastMusic = musicVolume;
     m_music->setValue(volume == 0 && musicVolume == 0 ? m_lastMusic : musicVolume);

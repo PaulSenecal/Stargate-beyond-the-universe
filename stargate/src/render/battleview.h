@@ -10,6 +10,8 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWidget>
+#include "modmesh.h"
+#include "src/core/balance.h"
 #include <QPoint>
 #include <QPointF>
 #include <QStringList>
@@ -63,6 +65,10 @@ struct WeaponReadiness {
     int kills = 0;
     // Hangar fighters and friendly ships
     int hangar = 0, hangarMax = 0;
+    int drones = 0, dronesMax = 0;      // drone salvos (Ancient flagship)
+    // Weapons of the flagship (Balance::flagshipLoadout)
+    QString mainName;                   // untranslated, context "Balance"
+    bool hasPulse = true, hasTowers = true, hasRailguns = true;
     int fightersOut = 0;
     int allies = 0;
     // Energy
@@ -150,7 +156,7 @@ public:
     void spawnWave(bool announce, const QString &faction = QString());
     // FTL jump: every enemy is left behind; new contacts may show up
     // after `calmSeconds`
-    void clearBattlefield(float calmSeconds);
+    void clearBattlefield(float calmSeconds, bool keepAllies = false);
     // Conquest: no automatic wave; fleets come from spawnFleet() and
     // sectorCleared() tells when one is destroyed
     void setAutoWaves(bool on) { m_autoWaves = on; }
@@ -177,8 +183,12 @@ public:
     // --- Friendly ships: allied or own fleets and the Destiny's hangar
     // fighters. They fly and fight at the Destiny's side; `group` tags
     // them (a conquest fleet id) to report the survivors, -1 = hangar.
-    bool spawnAllies(const QString &faction, int motherships, int fighters, int group);
+    bool spawnAllies(const QString &faction, int motherships, int fighters, int group, bool announce = true);
+    void removeAllyGroup(int group, bool jumpOut);  // a fleet leaves the orbit
     void setHangar(const QString &fighterClass, int capacity);
+    void setDroneBay(int salvos);               // 0 = no drones (only the Ancients have some)
+    void setLoadout(const Balance::FlagshipLoadout &loadout);   // weapons of the flagship
+    bool fireDrones(int enemyIndex = -1);       // a salvo through the shields, -1 = current target
     int launchFighters(int count = -1);         // how many took off
     int hangarFighters() const { return m_hangar; }
     int hangarCapacity() const { return m_hangarCapacity; }
@@ -230,6 +240,28 @@ private:
         int vertexCount = 0;
     };
 
+    // A mod model and its color texture (decoded in the background)
+    struct TextureJob;
+    // Textures of a mod model: color, mask (lights in blue), occlusion-
+    // roughness-metallic, normal map; 0 = missing
+    struct ShipTextures {
+        GLuint color = 0, mask = 0, orm = 0, normal = 0;
+    };
+    struct ModModel {
+        Mesh mesh;
+        QString texturePaths[4];                // color, mask, orm, normal
+        std::vector<QVector3D> engines;         // exhaust spots (normalized model space)
+        std::vector<ModMesh::AttachPoint> points;
+        QVector3D halfExtents;
+        QVector3D center;                       // normalization of the file (for its shield model)
+        float length = 0;
+        QImage silhouette;
+        QRectF silhouetteRect;
+        ShipTextures textures;
+        int quality = -1;                       // texture quality it was decoded for
+        std::shared_ptr<TextureJob> job;        // decoding in progress
+    };
+
     struct Enemy {
         int id = 0;
         EnemyClass cls = EnemyClass::Fighter;
@@ -237,6 +269,10 @@ private:
         float orbitRadius = 0, baseAngle = 0, angleAmp = 0, angleSpeed = 0;
         float height = 0, phase = 0;
         float fireCooldown = 0, hitFlash = 0;
+        float shield = 0, maxShield = 0;    // energy shield (0 = none, see Balance)
+        float shieldFlash = 0;      // bubble visible after a hit
+        float lastHit = -1000;      // m_time of the last hit (shield recharge delay)
+        std::vector<int> ammo;      // salvos left per attack, -1 = unlimited (missiles, drones)
         int classIndex = 0;         // in m_classes
         std::vector<float> attackTimers;    // one per attack of its class
         bool diving = false;        // kamikaze run on the Destiny
@@ -260,6 +296,7 @@ private:
         int targetId = -1;          // -1 = the Destiny
         int targetAlly = -1;        // enemy shot at a friendly ship
         bool fromAlly = false;
+        bool drone = false;         // Ancient drone: goes through the shields
         QVector3D pos, vel;
         QVector3D aimLocal;         // aim point on the Destiny hull (local space)
         QVector3D color;
@@ -296,6 +333,10 @@ private:
     QStringList hostileFactions() const;
     Projectile *findShot(int id);
     void hitEnemy(Enemy &e, const Projectile &p);
+    float absorbByShield(Enemy &ship, const Projectile &p, float damage);
+    void setupShip(Enemy &ship);
+    void regenShield(Enemy &ship, float dt);
+    void drawShipShield(const Enemy &ship, const QMatrix4x4 &model);
     void hitShield(const Projectile &p);
     void hitHull(const Projectile &p);
     // Damages the system closest to the impact point (ship-local)
@@ -317,10 +358,18 @@ private:
     void hitAlly(Enemy &a, const Projectile &p);
     void drawAllies();
     // Ship models of the mod (local assets), loaded once on first use
-    Mesh *modMesh(const QString &key);
+    ModModel *modModel(const QString &key, const QString &frameKey = QString());
+    bool useAmmo(Enemy &ship, int attack);
+    static bool isDrone(const ShipAttack &attack);
+    void drawEngineSpots(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color,
+                         float strength);
+    QVector3D m_shieldCenter, m_shieldRadii;    // Destiny / flagship shield (fits its model)
+    void updateTexture(ModModel &model);
     static QString meshKeyOf(const ShipClass &shipClass);
     QString flagshipMeshKey() const;
-    bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash);
+    bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash,
+                     const QVector3D &lights);
+    static QVector3D factionLights(const QString &faction);
     const Enemy *findEnemy(int id) const;
     const Enemy *pickTarget();
     Subsystem *subsystem(const QString &key);
@@ -332,6 +381,8 @@ private:
     // Rendering
     void upload(Mesh &mesh, const MeshBuilder::VertexData &data);
     void updateCamera();
+    void drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color, float emissive, float alpha,
+                  ShaderMode mode, const ShipTextures *textures);
     void drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color,
                   float emissive, float alpha, ShaderMode mode);
     void drawGlow(const QVector3D &pos, float radius, const QVector3D &color, float alpha);
@@ -367,11 +418,14 @@ private:
     QMatrix4x4 m_destinyModel, m_destinyInverse;
     std::vector<Enemy> m_enemies;
     std::vector<Enemy> m_allies;
-    std::map<QString, std::unique_ptr<Mesh>> m_modMeshes;     // nullptr: no model for that key
+    std::map<QString, std::unique_ptr<ModModel>> m_modModels;  // nullptr: no model for that key
     std::vector<std::pair<int, QVector3D>> m_allyLaunches;
     int m_nextAllyId = 100000;
     QString m_hangarClass;
     int m_hangar = 0, m_hangarCapacity = 0;
+    int m_drones = 0, m_droneBay = 0;
+    Balance::FlagshipLoadout m_loadout = Balance::flagshipLoadout(QString());
+    float m_droneRefill = 0;
     float m_hangarRefill = 0;
     std::vector<Projectile> m_projectiles;
     std::vector<Effect> m_effects;
@@ -386,6 +440,20 @@ private:
     bool m_autoWaves = true;
     float m_damageBonus = 1.0f;
     float m_shieldRegenBonus = 1.0f;
+public:
+    // Schematic of the flagship for the status panel (empty without a mod model)
+    struct Schematic {
+        QImage silhouette;
+        QRectF rect;                // (x, z) in ship-local units
+        QPointF shieldCenter;
+        QSizeF shieldRadii;
+    };
+    Schematic schematic() const;
+    // Combat assist (settings): health bars on the ships, callouts on the hull
+    static bool assistSetting();
+    static void setAssistSetting(bool on);
+private:
+    QVector3D m_shipLights;                 // light color of the mod model being drawn
     QString m_flagshipStyle;
     bool m_turretsOn = true;
     bool m_railgunsOn = true;

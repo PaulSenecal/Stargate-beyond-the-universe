@@ -227,6 +227,9 @@ public:
     bool breakAlliance(const QString &faction, QString *error = nullptr);
     int findFaction(const QString &name) const;
     static QString traitSummary(const QString &factionId);
+    static QString hangarFighter(const QString &factionId);     // fighter class of the flagship hangar
+    // Survivors of a fleet after a 3D battle (removed when none is left)
+    void setFleetStrength(int fleetId, int motherships, int fighters);
     bool hasTrait(int faction, const char *factionId) const;
     static QString bonusName(Conquest::Bonus bonus);
 

@@ -554,6 +554,30 @@ bool ConquestGame::breakAlliance(const QString &faction, QString *error)
     return true;
 }
 
+QString ConquestGame::hangarFighter(const QString &factionId)
+{
+    if (factionId == "Goa'uld")
+        return QStringLiteral("Death Glider");
+    if (factionId == "Wraith")
+        return QStringLiteral("Wraith Dart");
+    if (factionId == "Lucian Alliance")
+        return QStringLiteral("Glider");
+    return QStringLiteral("F-302");
+}
+
+void ConquestGame::setFleetStrength(int fleetId, int motherships, int fighters)
+{
+    for (int i = 0; i < m_fleets.size(); ++i) {
+        if (m_fleets[i].id != fleetId)
+            continue;
+        m_fleets[i].motherships = std::max(0, motherships);
+        m_fleets[i].fighters = std::max(0, fighters);
+        if (m_fleets[i].motherships + m_fleets[i].fighters == 0)
+            m_fleets.removeAt(i);
+        return;
+    }
+}
+
 QString ConquestGame::traitSummary(const QString &factionId)
 {
     if (factionId == "Wraith")

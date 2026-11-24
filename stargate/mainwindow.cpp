@@ -19,16 +19,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle(tr("Stargate - Beyond the Universe") + QStringLiteral(" " APP_VERSION));
 
-    // Screens: the title screen and the game (3D battle view + HUD +
-    // command console). The game is the first screen; quitting the game
-    // session leads to the title screen. The former title buttons stay
-    // in mainwindow.ui.
+    // Screens: the title screen (first screen: continue, settings, quit)
+    // and the game (3D battle view + HUD + command console). The former
+    // title buttons stay in mainwindow.ui.
     m_sound = new SoundSystem(this);
     m_screens = new QStackedWidget(this);
     setCentralWidget(m_screens);
     menuBar()->hide();
     createTitle();
-    startGame();
+    m_screens->setCurrentWidget(m_title);
     //menuBackground();
 
 }

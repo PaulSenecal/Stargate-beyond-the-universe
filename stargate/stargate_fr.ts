@@ -314,6 +314,525 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
 </context>
 <context>
+    <name>Database</name>
+    <message>
+        <source>First Contact</source>
+        <translation>Premier contact</translation>
+    </message>
+    <message>
+        <source>Power Shortage</source>
+        <translation>Pénurie d&apos;énergie</translation>
+    </message>
+    <message>
+        <source>Signal in the Dark</source>
+        <translation>Un signal dans le noir</translation>
+    </message>
+    <message>
+        <source>Bring the Destiny systems back online after the emergency drop.</source>
+        <translation>Remettre en ligne les systèmes du Destiny après la sortie d&apos;urgence.</translation>
+    </message>
+    <message>
+        <source>Collect naquadah to restore the Power Core to full capacity.</source>
+        <translation>Collecter du naquadah pour rendre au cœur d&apos;énergie sa pleine capacité.</translation>
+    </message>
+    <message>
+        <source>Explore the nearby planet and locate the source of the signal.</source>
+        <translation>Explorer la planète voisine et localiser la source du signal.</translation>
+    </message>
+    <message>
+        <source>Restore life support</source>
+        <translation>Rétablir le support vital</translation>
+    </message>
+    <message>
+        <source>Restore sublight engines</source>
+        <translation>Rétablir les moteurs subluminiques</translation>
+    </message>
+    <message>
+        <source>Report to the bridge: check the ship status</source>
+        <translation>Au rapport sur la passerelle : vérifier l&apos;état du vaisseau</translation>
+    </message>
+    <message>
+        <source>Collect 10 units of naquadah</source>
+        <translation>Collecter 10 unités de naquadah</translation>
+    </message>
+    <message>
+        <source>Send a team through the Stargate</source>
+        <translation>Envoyer une équipe par la porte des étoiles</translation>
+    </message>
+    <message>
+        <source>Return the team safely</source>
+        <translation>Ramener l&apos;équipe saine et sauve</translation>
+    </message>
+    <message>
+        <source>ancient_alloy</source>
+        <translation>alliage ancien</translation>
+    </message>
+    <message>
+        <source>crystal</source>
+        <translation>cristal</translation>
+    </message>
+    <message>
+        <source>food</source>
+        <translation>nourriture</translation>
+    </message>
+    <message>
+        <source>minerals</source>
+        <translation>minéraux</translation>
+    </message>
+    <message>
+        <source>naquadah</source>
+        <translation>naquadah</translation>
+    </message>
+    <message>
+        <source>trinium</source>
+        <translation>trinium</translation>
+    </message>
+    <message>
+        <source>water</source>
+        <translation>eau</translation>
+    </message>
+    <message>
+        <source>Dense mineral, primary energy source</source>
+        <translation>Minerai dense, source d&apos;énergie principale</translation>
+    </message>
+    <message>
+        <source>Ancient crystal used in electronic systems</source>
+        <translation>Cristal des Anciens utilisé dans les systèmes électroniques</translation>
+    </message>
+    <message>
+        <source>Extremely hard lightweight alloy</source>
+        <translation>Alliage léger extrêmement résistant</translation>
+    </message>
+    <message>
+        <source>Residual material from Ancient construction</source>
+        <translation>Matériau résiduel des constructions des Anciens</translation>
+    </message>
+    <message>
+        <source>Basic resource, essential for life support</source>
+        <translation>Ressource de base, indispensable au support vital</translation>
+    </message>
+    <message>
+        <source>Generic raw minerals for basic repairs</source>
+        <translation>Minéraux bruts pour les réparations de base</translation>
+    </message>
+    <message>
+        <source>Edible biomass and supplies for the crew</source>
+        <translation>Biomasse comestible et vivres pour l&apos;équipage</translation>
+    </message>
+    <message>
+        <source>uncommon</source>
+        <translation>peu commun</translation>
+    </message>
+    <message>
+        <source>rare</source>
+        <translation>rare</translation>
+    </message>
+    <message>
+        <source>common</source>
+        <translation>commun</translation>
+    </message>
+    <message>
+        <source>Life Support</source>
+        <translation>Support vital</translation>
+    </message>
+    <message>
+        <source>Shield Generator</source>
+        <translation>Générateur de bouclier</translation>
+    </message>
+    <message>
+        <source>FTL Drive</source>
+        <translation>Propulsion FTL</translation>
+    </message>
+    <message>
+        <source>Sublight Engine</source>
+        <translation>Moteur subluminique</translation>
+    </message>
+    <message>
+        <source>Stargate Interface</source>
+        <translation>Interface de la porte</translation>
+    </message>
+    <message>
+        <source>Power Core</source>
+        <translation>Cœur d&apos;énergie</translation>
+    </message>
+    <message>
+        <source>Railgun</source>
+        <translation>Railgun</translation>
+    </message>
+    <message>
+        <source>Energy Cannon</source>
+        <translation>Canon à énergie</translation>
+    </message>
+    <message>
+        <source>Missile Bay</source>
+        <translation>Baie de missiles</translation>
+    </message>
+    <message>
+        <source>Medical Bay</source>
+        <translation>Infirmerie</translation>
+    </message>
+    <message>
+        <source>Science Lab</source>
+        <translation>Laboratoire scientifique</translation>
+    </message>
+    <message>
+        <source>Cargo Hold</source>
+        <translation>Soute</translation>
+    </message>
+    <message>
+        <source>Ancient seed ship launched millions of years ago, crossing the universe ahead of the Stargate builders. Powered by stars, it drops out of FTL on its own schedule.</source>
+        <translation>Vaisseau ensemenceur des Anciens lancé il y a des millions d&apos;années, qui traverse l&apos;univers en avance sur les bâtisseurs des portes. Alimenté par les étoiles, il sort de FTL selon son propre programme.</translation>
+    </message>
+    <message>
+        <source>Small automated attack drone, fast and relentless, firing twin plasma bolts.</source>
+        <translation>Petit drone d&apos;attaque automatisé, rapide et implacable, qui tire des doubles rayons de plasma.</translation>
+    </message>
+    <message>
+        <source>Stolen Death Glider flown by Alliance mercenaries.</source>
+        <translation>Planeur de la mort volé, piloté par des mercenaires de l&apos;Alliance.</translation>
+    </message>
+    <message>
+        <source>Goa&apos;uld pyramid mothership. Heavy staff cannon batteries and a hangar of Death Gliders.</source>
+        <translation>Vaisseau-mère pyramidal goa&apos;uld. Lourdes batteries de canons à plasma et un hangar de planeurs de la mort.</translation>
+    </message>
+    <message>
+        <source>Two-seat Goa&apos;uld attack fighter armed with twin staff cannons.</source>
+        <translation>Chasseur d&apos;attaque goa&apos;uld biplace armé de deux canons à plasma.</translation>
+    </message>
+    <message>
+        <source>Ha&apos;tak taken over by the Lucian Alliance and refitted with naquadah-enhanced missile racks.</source>
+        <translation>Ha&apos;tak pris par l&apos;Alliance Lucienne et équipé de lance-missiles au naquadah.</translation>
+    </message>
+    <message>
+        <source>Organic Wraith flagship. Self-repairing hull, energy batteries and swarms of Darts.</source>
+        <translation>Vaisseau amiral organique wraith. Coque autoréparatrice, batteries d&apos;énergie et essaims de Darts.</translation>
+    </message>
+    <message>
+        <source>Light Wraith interceptor. Badly damaged Darts dive into their target.</source>
+        <translation>Intercepteur léger wraith. Les Darts gravement endommagés plongent sur leur cible.</translation>
+    </message>
+    <message>
+        <source>Automated control ship of the Berserker drones. Destroying it does not stop its drones.</source>
+        <translation>Vaisseau de contrôle automatisé des drones berserkers. Le détruire n&apos;arrête pas ses drones.</translation>
+    </message>
+    <message>
+        <source>BC-304 battlecruiser of the Tau&apos;ri, upgraded with Asgard shields and the Asgard plasma beam.</source>
+        <translation>Croiseur de combat BC-304 des Tau&apos;ri, amélioré avec des boucliers et le rayon à plasma asgard.</translation>
+    </message>
+    <message>
+        <source>Tau&apos;ri interceptor carried by the BC-304s. Railguns and air-to-air missiles.</source>
+        <translation>Intercepteur tau&apos;ri embarqué sur les BC-304. Railguns et missiles air-air.</translation>
+    </message>
+    <message>
+        <source>Wraith battlecruiser escorting the hives. Fills its hangar with Darts ready to sacrifice themselves.</source>
+        <translation>Croiseur wraith escortant les ruches. Son hangar est rempli de Darts prêts à se sacrifier.</translation>
+    </message>
+    <message>
+        <source>Goa&apos;uld mid-range bomber. Slow, but its plasma bombs hit hard.</source>
+        <translation>Bombardier goa&apos;uld de moyenne portée. Lent, mais ses bombes à plasma frappent fort.</translation>
+    </message>
+    <message>
+        <source>Ancient warship of the Lantean fleet, armed with drone weapons and an energy-absorptive shield.</source>
+        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, armé de drones et d&apos;un bouclier absorbant l&apos;énergie.</translation>
+    </message>
+    <message>
+        <source>Small Ancient gateship able to cloak and fire drones.</source>
+        <translation>Petit vaisseau-porte des Anciens capable de se camoufler et de tirer des drones.</translation>
+    </message>
+    <message>
+        <source>Most advanced Asgard warship, built to fight the Replicators. Huge shields, fragile hull.</source>
+        <translation>Le vaisseau de guerre asgard le plus avancé, construit pour combattre les Réplicateurs. Boucliers énormes, coque fragile.</translation>
+    </message>
+    <message>
+        <source>Asgard Beliskner-class vessel, Thor&apos;s ship. Asgard beams and laser barrages.</source>
+        <translation>Vaisseau asgard de classe Beliskner, celui de Thor. Rayons asgard et barrages laser.</translation>
+    </message>
+    <message>
+        <source>Ha&apos;tak of the System Lord Apophis, reinforced and heavily armed. A boss for later.</source>
+        <translation>Ha&apos;tak du Grand Maître Apophis, renforcé et lourdement armé. Un boss pour plus tard.</translation>
+    </message>
+    <message>
+        <source>Flagship of Anubis with Ancient-derived shields and a superweapon able to destroy a planet.</source>
+        <translation>Vaisseau amiral d&apos;Anubis aux boucliers issus des Anciens, doté d&apos;une superarme capable de détruire une planète.</translation>
+    </message>
+    <message>
+        <source>Hive powered by a ZPM: grows, regenerates and launches endless swarms of Darts.</source>
+        <translation>Ruche alimentée par un E2PZ : elle grandit, se régénère et lance des essaims infinis de Darts.</translation>
+    </message>
+    <message>
+        <source>Main tower</source>
+        <translation>Tour principale</translation>
+    </message>
+    <message>
+        <source>Pulse volley</source>
+        <translation>Salve à impulsion</translation>
+    </message>
+    <message>
+        <source>Railguns</source>
+        <translation>Railguns</translation>
+    </message>
+    <message>
+        <source>Secondary towers</source>
+        <translation>Tours secondaires</translation>
+    </message>
+    <message>
+        <source>Twin plasma</source>
+        <translation>Double plasma</translation>
+    </message>
+    <message>
+        <source>Staff cannon</source>
+        <translation>Canon à plasma</translation>
+    </message>
+    <message>
+        <source>Glider launch</source>
+        <translation>Lancement de planeurs</translation>
+    </message>
+    <message>
+        <source>Staff cannon barrage</source>
+        <translation>Barrage de canons à plasma</translation>
+    </message>
+    <message>
+        <source>Missile salvo</source>
+        <translation>Salve de missiles</translation>
+    </message>
+    <message>
+        <source>Naquadah missile</source>
+        <translation>Missile au naquadah</translation>
+    </message>
+    <message>
+        <source>Dart swarm</source>
+        <translation>Essaim de Darts</translation>
+    </message>
+    <message>
+        <source>Energy barrage</source>
+        <translation>Barrage d&apos;énergie</translation>
+    </message>
+    <message>
+        <source>Energy bolt</source>
+        <translation>Rayon d&apos;énergie</translation>
+    </message>
+    <message>
+        <source>Kamikaze dive</source>
+        <translation>Plongeon kamikaze</translation>
+    </message>
+    <message>
+        <source>Drone launch</source>
+        <translation>Lancement de drones</translation>
+    </message>
+    <message>
+        <source>Plasma barrage</source>
+        <translation>Barrage de plasma</translation>
+    </message>
+    <message>
+        <source>Asgard plasma beam</source>
+        <translation>Rayon à plasma asgard</translation>
+    </message>
+    <message>
+        <source>Mark VIII missile</source>
+        <translation>Missile Mark VIII</translation>
+    </message>
+    <message>
+        <source>Railgun barrage</source>
+        <translation>Barrage de railguns</translation>
+    </message>
+    <message>
+        <source>AIM-120 missile</source>
+        <translation>Missile AIM-120</translation>
+    </message>
+    <message>
+        <source>Energy batteries</source>
+        <translation>Batteries d&apos;énergie</translation>
+    </message>
+    <message>
+        <source>Kamikaze Darts</source>
+        <translation>Darts kamikazes</translation>
+    </message>
+    <message>
+        <source>Plasma bombs</source>
+        <translation>Bombes à plasma</translation>
+    </message>
+    <message>
+        <source>Drone swarm</source>
+        <translation>Essaim de drones</translation>
+    </message>
+    <message>
+        <source>Drone weapons</source>
+        <translation>Armes à drones</translation>
+    </message>
+    <message>
+        <source>Drone launcher</source>
+        <translation>Lance-drones</translation>
+    </message>
+    <message>
+        <source>Ion burst</source>
+        <translation>Rafale ionique</translation>
+    </message>
+    <message>
+        <source>Asgard beam</source>
+        <translation>Rayon asgard</translation>
+    </message>
+    <message>
+        <source>Laser barrage</source>
+        <translation>Barrage laser</translation>
+    </message>
+    <message>
+        <source>Fleet bombardment</source>
+        <translation>Bombardement de flotte</translation>
+    </message>
+    <message>
+        <source>Main batteries</source>
+        <translation>Batteries principales</translation>
+    </message>
+    <message>
+        <source>Superweapon</source>
+        <translation>Superarme</translation>
+    </message>
+    <message>
+        <source>Endless swarm</source>
+        <translation>Essaim sans fin</translation>
+    </message>
+    <message>
+        <source>Heavy shot from the main tower on the locked target (command &apos;maintower&apos;).</source>
+        <translation>Tir lourd de la tour principale sur la cible verrouillée (commande &apos;maintower&apos;).</translation>
+    </message>
+    <message>
+        <source>Three bolts on every contact at once (command &apos;pulseweapon&apos;).</source>
+        <translation>Trois rayons sur chaque contact à la fois (commande &apos;pulseweapon&apos;).</translation>
+    </message>
+    <message>
+        <source>Automatic fire of the secondary towers, slower when the weapons are damaged.</source>
+        <translation>Tir automatique des tours secondaires, plus lent quand les armes sont endommagées.</translation>
+    </message>
+    <message>
+        <source>Automatic point defense: shoots down missiles and diving ships, otherwise shreds fighters.</source>
+        <translation>Défense rapprochée automatique : abat les missiles et les vaisseaux en piqué, sinon déchiquette les chasseurs.</translation>
+    </message>
+    <message>
+        <source>Pair of heavy plasma bolts from the hull batteries.</source>
+        <translation>Paire de rayons de plasma lourds tirés par les batteries de coque.</translation>
+    </message>
+    <message>
+        <source>Opens its hangar and launches two Death Gliders.</source>
+        <translation>Ouvre son hangar et lance deux planeurs de la mort.</translation>
+    </message>
+    <message>
+        <source>Light plasma bolt.</source>
+        <translation>Rayon de plasma léger.</translation>
+    </message>
+    <message>
+        <source>Slow homing missile. Railguns can shoot it down.</source>
+        <translation>Missile à tête chercheuse lent. Les railguns peuvent l&apos;abattre.</translation>
+    </message>
+    <message>
+        <source>Three missiles at once to saturate the point defense.</source>
+        <translation>Trois missiles à la fois pour saturer la défense rapprochée.</translation>
+    </message>
+    <message>
+        <source>Three energy bolts from the organic batteries.</source>
+        <translation>Trois rayons d&apos;énergie tirés par les batteries organiques.</translation>
+    </message>
+    <message>
+        <source>Releases three Darts.</source>
+        <translation>Libère trois Darts.</translation>
+    </message>
+    <message>
+        <source>Light energy bolt.</source>
+        <translation>Rayon d&apos;énergie léger.</translation>
+    </message>
+    <message>
+        <source>Below half hull, may dive into the Destiny. Railguns can stop it on the way.</source>
+        <translation>Sous la moitié de sa coque, peut plonger sur le Destiny. Les railguns peuvent l&apos;arrêter en route.</translation>
+    </message>
+    <message>
+        <source>Pair of heavy plasma bolts.</source>
+        <translation>Paire de rayons de plasma lourds.</translation>
+    </message>
+    <message>
+        <source>Launches two new drones.</source>
+        <translation>Lance deux nouveaux drones.</translation>
+    </message>
+    <message>
+        <source>Two light plasma bolts.</source>
+        <translation>Deux rayons de plasma légers.</translation>
+    </message>
+    <message>
+        <source>Four railgun slugs.</source>
+        <translation>Quatre projectiles de railgun.</translation>
+    </message>
+    <message>
+        <source>Nuclear-tipped missile, can be shot down.</source>
+        <translation>Missile à ogive nucléaire, peut être abattu.</translation>
+    </message>
+    <message>
+        <source>Asgard beam weapon: half of its energy goes through shields.</source>
+        <translation>Arme à rayon asgard : la moitié de son énergie traverse les boucliers.</translation>
+    </message>
+    <message>
+        <source>Two railgun slugs.</source>
+        <translation>Deux projectiles de railgun.</translation>
+    </message>
+    <message>
+        <source>Light air-to-air missile.</source>
+        <translation>Missile air-air léger.</translation>
+    </message>
+    <message>
+        <source>Pair of energy bolts.</source>
+        <translation>Paire de rayons d&apos;énergie.</translation>
+    </message>
+    <message>
+        <source>Releases two Darts, ready to dive into the Destiny once damaged.</source>
+        <translation>Libère deux Darts, prêts à plonger sur le Destiny une fois endommagés.</translation>
+    </message>
+    <message>
+        <source>Slow, heavy plasma bomb.</source>
+        <translation>Bombe à plasma lourde et lente.</translation>
+    </message>
+    <message>
+        <source>Four homing Ancient drones.</source>
+        <translation>Quatre drones des Anciens à tête chercheuse.</translation>
+    </message>
+    <message>
+        <source>A cloud of eight drones to saturate the point defense.</source>
+        <translation>Un nuage de huit drones pour saturer la défense rapprochée.</translation>
+    </message>
+    <message>
+        <source>Two drones from the side pods.</source>
+        <translation>Deux drones tirés des nacelles latérales.</translation>
+    </message>
+    <message>
+        <source>Five ion bolts in a row.</source>
+        <translation>Cinq rayons ioniques d&apos;affilée.</translation>
+    </message>
+    <message>
+        <source>Eight quick laser shots.</source>
+        <translation>Huit tirs laser rapides.</translation>
+    </message>
+    <message>
+        <source>Four heavy plasma bolts.</source>
+        <translation>Quatre rayons de plasma lourds.</translation>
+    </message>
+    <message>
+        <source>Three heavy plasma torpedoes.</source>
+        <translation>Trois torpilles à plasma lourdes.</translation>
+    </message>
+    <message>
+        <source>Six heavy plasma bolts.</source>
+        <translation>Six rayons de plasma lourds.</translation>
+    </message>
+    <message>
+        <source>Ancient-derived beam weapon, the most powerful attack of the library.</source>
+        <translation>Arme à rayon issue des Anciens, l&apos;attaque la plus puissante de la bibliothèque.</translation>
+    </message>
+    <message>
+        <source>Eight energy bolts at once.</source>
+        <translation>Huit rayons d&apos;énergie à la fois.</translation>
+    </message>
+    <message>
+        <source>Releases five Darts.</source>
+        <translation>Libère cinq Darts.</translation>
+    </message>
+</context>
+<context>
     <name>DestinyRoute</name>
     <message>
         <source>end of the known route reached</source>
@@ -362,6 +881,152 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Gate window closed</source>
         <translation>Fenêtre de porte fermée</translation>
+    </message>
+</context>
+<context>
+    <name>DestinyState</name>
+    <message>
+        <source>%1 %2 (have %3)</source>
+        <translation>%1 %2 (en stock : %3)</translation>
+    </message>
+</context>
+<context>
+    <name>EventSystem</name>
+    <message>
+        <source>Ancient beacon</source>
+        <translation>Balise des Anciens</translation>
+    </message>
+    <message>
+        <source>The Destiny picks up an Ancient beacon on its path. Navigation data recovered, power stabilised.</source>
+        <translation>Le Destiny capte une balise des Anciens sur sa route. Données de navigation récupérées, énergie stabilisée.</translation>
+    </message>
+    <message>
+        <source>Ionising nebula</source>
+        <translation>Nébuleuse ionisante</translation>
+    </message>
+    <message>
+        <source>Transit through an ion-rich nebula. The collectors absorb extra energy.</source>
+        <translation>Traversée d&apos;une nébuleuse riche en ions. Les collecteurs absorbent un surplus d&apos;énergie.</translation>
+    </message>
+    <message>
+        <source>Ice field</source>
+        <translation>Champ de glace</translation>
+    </message>
+    <message>
+        <source>The Destiny scoops ice fragments during the transit. Water reserves partly refilled.</source>
+        <translation>Le Destiny récupère des fragments de glace pendant le transit. Réserves d&apos;eau en partie reconstituées.</translation>
+    </message>
+    <message>
+        <source>Ancient ship debris</source>
+        <translation>Débris d&apos;un vaisseau des Anciens</translation>
+    </message>
+    <message>
+        <source>Drifting debris holds salvageable parts. The engineering team collects them.</source>
+        <translation>Des débris à la dérive contiennent des pièces récupérables. L&apos;équipe d&apos;ingénierie les collecte.</translation>
+    </message>
+    <message>
+        <source>Favourable hyperspace current</source>
+        <translation>Courant hyperspatial favorable</translation>
+    </message>
+    <message>
+        <source>A natural hyperspace current speeds the Destiny up. FTL charge saved.</source>
+        <translation>Un courant hyperspatial naturel accélère le Destiny. Charge FTL économisée.</translation>
+    </message>
+    <message>
+        <source>Gravitational anomaly</source>
+        <translation>Anomalie gravitationnelle</translation>
+    </message>
+    <message>
+        <source>A gravitational anomaly forces a small detour. The transit takes longer.</source>
+        <translation>Une anomalie gravitationnelle impose un petit détour. Le transit dure plus longtemps.</translation>
+    </message>
+    <message>
+        <source>Unknown radio signal</source>
+        <translation>Signal radio inconnu</translation>
+    </message>
+    <message>
+        <source>A signal on an unknown frequency is received during the transit. Origin unidentified.</source>
+        <translation>Un signal sur une fréquence inconnue est reçu pendant le transit. Origine non identifiée.</translation>
+    </message>
+    <message>
+        <source>Engine maintenance</source>
+        <translation>Maintenance des moteurs</translation>
+    </message>
+    <message>
+        <source>The engineers use the transit for preventive maintenance.</source>
+        <translation>Les ingénieurs profitent du transit pour une maintenance préventive.</translation>
+    </message>
+    <message>
+        <source>Cosmic radiation storm</source>
+        <translation>Tempête de rayonnement cosmique</translation>
+    </message>
+    <message>
+        <source>High radiation zone. The shields absorb part of it.</source>
+        <translation>Zone de forte radiation. Les boucliers en absorbent une partie.</translation>
+    </message>
+    <message>
+        <source>Secondary systems failure</source>
+        <translation>Panne des systèmes secondaires</translation>
+    </message>
+    <message>
+        <source>Several secondary systems fail. Overall power reduced.</source>
+        <translation>Plusieurs systèmes secondaires tombent en panne. Énergie globale réduite.</translation>
+    </message>
+    <message>
+        <source>Hostile scout</source>
+        <translation>Éclaireur hostile</translation>
+    </message>
+    <message>
+        <source>A hostile scout detects the Destiny. Crew on full alert.</source>
+        <translation>Un éclaireur hostile détecte le Destiny. Équipage en alerte maximale.</translation>
+    </message>
+    <message>
+        <source>Micrometeorites</source>
+        <translation>Micrométéorites</translation>
+    </message>
+    <message>
+        <source>A swarm of micrometeorites hits the hull. Minor damage, several sections sealed.</source>
+        <translation>Un essaim de micrométéorites frappe la coque. Dégâts mineurs, plusieurs sections condamnées.</translation>
+    </message>
+    <message>
+        <source>Fuel leak</source>
+        <translation>Fuite de carburant</translation>
+    </message>
+    <message>
+        <source>A leak is detected in the FTL circuit. The next charge will take longer.</source>
+        <translation>Une fuite est détectée dans le circuit FTL. La prochaine charge sera plus longue.</translation>
+    </message>
+    <message>
+        <source>Drone attack</source>
+        <translation>Attaque de drones</translation>
+    </message>
+    <message>
+        <source>Automated drones target the Destiny. Defensive combat engaged, heavy losses.</source>
+        <translation>Des drones automatisés ciblent le Destiny. Combat défensif engagé, lourdes pertes.</translation>
+    </message>
+    <message>
+        <source>FTL chamber explosion</source>
+        <translation>Explosion d&apos;une chambre FTL</translation>
+    </message>
+    <message>
+        <source>An FTL chamber explodes during the transit. Critical damage, emergency stop.</source>
+        <translation>Une chambre FTL explose pendant le transit. Dégâts critiques, arrêt d&apos;urgence.</translation>
+    </message>
+    <message>
+        <source>Hull breach</source>
+        <translation>Brèche dans la coque</translation>
+    </message>
+    <message>
+        <source>A breach opens in section E. Partial depressurisation. Casualties.</source>
+        <translation>Une brèche s&apos;ouvre dans la section E. Dépressurisation partielle. Des victimes.</translation>
+    </message>
+    <message>
+        <source>Nominal transit</source>
+        <translation>Transit sans incident</translation>
+    </message>
+    <message>
+        <source>No incident reported during the FTL transit.</source>
+        <translation>Aucun incident signalé pendant le transit FTL.</translation>
     </message>
 </context>
 <context>

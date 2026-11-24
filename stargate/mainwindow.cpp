@@ -6,12 +6,16 @@
 
 #include <QStackedWidget>
 
+#ifndef APP_VERSION
+#define APP_VERSION "dev"     // set by stargate.pro from git
+#endif
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle(tr("Stargate - Beyond the Universe"));
+    setWindowTitle(tr("Stargate - Beyond the Universe") + QStringLiteral(" " APP_VERSION));
 
     // Screens: the title screen and the game (3D battle view + HUD +
     // command console). The game is the first screen; quitting the game

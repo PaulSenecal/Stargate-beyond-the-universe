@@ -1,0 +1,32 @@
+name: Build and test
+description: Installs Qt, builds the game and runs the unit tests (macOS)
+
+runs:
+  using: composite
+  steps:
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.12.1'
+        host: mac
+        target: desktop
+        arch: clang_64
+        modules: qtmultimedia
+        cache: true
+
+    - name: Build the game
+      shell: bash
+      run: |
+        mkdir -p build && cd build
+        qmake ../stargate/stargate.pro CONFIG+=release
+        make -j"$(sysctl -n hw.ncpu)"
+
+    - name: Run the unit tests
+      shell: bash
+      env:
+        QT_QPA_PLATFORM: offscreen
+      run: |
+        mkdir -p build-tests && cd build-tests
+        qmake ../tests/tests.pro
+        make -j"$(sysctl -n hw.ncpu)"
+        ./stargate_tests

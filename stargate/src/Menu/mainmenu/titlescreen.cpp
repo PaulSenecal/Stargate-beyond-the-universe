@@ -10,6 +10,10 @@
 #include "src/Menu/menustyle.h"
 #include "src/Menu/setting/settingspanel.h"
 
+#ifndef APP_VERSION
+#define APP_VERSION "dev"     // set by stargate.pro from git
+#endif
+
 TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     : QWidget(parent)
     , m_background(":/images/background/destinyPlan.jpg")
@@ -47,6 +51,10 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     panelLayout->setContentsMargins(36, 28, 36, 28);
     panelLayout->addWidget(m_pages);
 
+    auto *version = new QLabel(QStringLiteral(APP_VERSION), this);
+    version->setObjectName("note");
+    version->setAlignment(Qt::AlignRight);
+
     auto *layout = new QVBoxLayout(this);
     layout->addStretch(2);
     layout->addWidget(title);
@@ -54,6 +62,7 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     layout->addSpacing(28);
     layout->addWidget(panel, 0, Qt::AlignHCenter);
     layout->addStretch(3);
+    layout->addWidget(version);
 
     connect(play, &QPushButton::clicked, this, &TitleScreen::playRequested);
     connect(quit, &QPushButton::clicked, this, &TitleScreen::quitRequested);

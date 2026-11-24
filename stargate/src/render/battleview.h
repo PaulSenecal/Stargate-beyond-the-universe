@@ -63,6 +63,10 @@ struct WeaponReadiness {
     int hangar = 0, hangarMax = 0;
     int fightersOut = 0;
     int allies = 0;
+    // Energy
+    bool turretsOn = true, railgunsOn = true;
+    int freePower = 0;
+    QString priority;           // balanced | shields | weapons
     // Railguns (point defense)
     float railgunReach = 0;
     int interceptions = 0;
@@ -151,6 +155,19 @@ public:
     // Conquest technologies: damage of the Destiny's shots, shield recharge
     void setDamageBonus(float factor) { m_damageBonus = factor; }
     void setShieldRegenBonus(float factor) { m_shieldRegenBonus = factor; }
+
+    // --- Energy: the power core gives 100; every active system draws its
+    // share, the rest boosts the shields or the weapon recharge
+    enum class PowerPriority { Balanced, Shields, Weapons };
+    void setTurretsActive(bool on);             // secondary towers auto-fire
+    void setRailgunsActive(bool on);            // point defense
+    void setPowerPriority(PowerPriority priority);
+    bool turretsActive() const { return m_turretsOn; }
+    bool railgunsActive() const { return m_railgunsOn; }
+    int freePower() const;
+    float shieldPowerBoost() const;
+    float weaponPowerBoost() const;
+    QString powerReport() const;
     // Fleet of any faction of the library (bosses excluded), even ships
     // that never come in survival waves (Tau'ri…)
     bool spawnFleet(const QString &faction, int motherships, int fighters);
@@ -356,6 +373,9 @@ private:
     bool m_autoWaves = true;
     float m_damageBonus = 1.0f;
     float m_shieldRegenBonus = 1.0f;
+    bool m_turretsOn = true;
+    bool m_railgunsOn = true;
+    PowerPriority m_priority = PowerPriority::Balanced;
     QStringList m_navigationLines;
     PlanetLook m_planetLook;
     QStringList m_objectiveLines;

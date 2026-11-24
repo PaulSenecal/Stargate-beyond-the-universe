@@ -186,6 +186,12 @@ constexpr float kWaveDelay = 15.0f;            // seconds between cleared sector
 constexpr float kDiveSpeed = 9.0f;
 constexpr int kMaxContacts = 12;               // launches stop above this
 constexpr int kMaxAllies = 12;                  // friendly ships at once
+constexpr int kCorePower = 100;                 // energy of the power core
+constexpr int kMainTowerPower = 20;
+constexpr int kEnginePower = 15;
+constexpr int kTurretPower = 15;
+constexpr int kRailgunPower = 15;
+constexpr int kShieldPower = 25;
 constexpr float kFireOnAllies = 0.45f;          // share of enemy fire aimed at friendly ships
 constexpr float kHangarRefill = 20.0f;          // seconds per fighter rebuilt out of battle
 constexpr float kAllyFighterSpeed = 15.0f;
@@ -657,7 +663,7 @@ void BattleView::step(float dt)
 
     // Secondary towers auto-fire, slower when the weapons are damaged
     m_autoFireTimer -= dt;
-    if (m_autoFireTimer <= 0.0f) {
+    if (m_autoFireTimer <= 0.0f && m_turretsOn) {
         const float efficiency = std::max(0.25f, subsystemHealth("weapons") / 100.0f);
         m_autoFireTimer = 0.45f / efficiency;
         if (const Enemy *t = pickTarget()) {
@@ -668,17 +674,20 @@ void BattleView::step(float dt)
         }
     }
 
-    fireRailguns(dt);
+    if (m_railgunsOn)
+        fireRailguns(dt);
 
-    m_mainCooldown = std::max(0.0f, m_mainCooldown - dt);
-    m_pulseCooldown = std::max(0.0f, m_pulseCooldown - dt);
-    m_secondaryCooldown = std::max(0.0f, m_secondaryCooldown - dt);
+    const float recharge = dt * weaponPowerBoost();         // spare power speeds up the recharge
+    m_mainCooldown = std::max(0.0f, m_mainCooldown - recharge);
+    m_pulseCooldown = std::max(0.0f, m_pulseCooldown - recharge);
+    m_secondaryCooldown = std::max(0.0f, m_secondaryCooldown - recharge);
     m_shieldFlash = std::max(0.0f, m_shieldFlash - dt * 2.0f);
 
     // Shield regeneration (slower while under fire)
     if (m_shieldOrdered) {
         const float base = m_time - m_lastShieldHit > 1.5f ? 6.0f : 3.0f;
-        const float rate = base * m_shieldRegenBonus * std::max(0.2f, subsystemHealth("shields") / 100.0f);
+        const float rate = base * m_shieldRegenBonus * shieldPowerBoost()
+                         * std::max(0.2f, subsystemHealth("shields") / 100.0f);
         m_shieldStrength = std::min(100.0f, m_shieldStrength + rate * dt);
         if (m_shieldCollapsed && m_shieldStrength >= 35.0f) {
             m_shieldCollapsed = false;
@@ -1119,6 +1128,69 @@ void BattleView::drawAllies()
         // Engine glow in friendly blue
         drawGlow(a.pos - a.facing * a.radius * 0.95f, a.radius * 0.35f, QVector3D(0.35f, 0.7f, 1.0f), 0.8f);
     }
+}
+
+// ================================================================
+//  Energy
+// ================================================================
+
+void BattleView::setTurretsActive(bool on)
+{
+    m_turretsOn = on;
+    emit logMessage(on ? tr("Secondary towers: auto-fire on") : tr("Secondary towers: auto-fire off (+%1 power)").arg(kTurretPower),
+                    LogLevel::Info);
+}
+
+void BattleView::setRailgunsActive(bool on)
+{
+    m_railgunsOn = on;
+    emit logMessage(on ? tr("Railguns: point defense on") : tr("Railguns: point defense off (+%1 power)").arg(kRailgunPower),
+                    on ? LogLevel::Info : LogLevel::Warning);
+}
+
+void BattleView::setPowerPriority(PowerPriority priority)
+{
+    m_priority = priority;
+    emit logMessage(powerReport(), LogLevel::Info);
+}
+
+// Power left once every active system took its share
+int BattleView::freePower() const
+{
+    int used = kMainTowerPower + kEnginePower;
+    if (m_turretsOn)
+        used += kTurretPower;
+    if (m_railgunsOn)
+        used += kRailgunPower;
+    if (m_shieldOrdered)
+        used += kShieldPower;
+    return std::max(0, kCorePower - used);
+}
+
+float BattleView::shieldPowerBoost() const
+{
+    const float share = m_priority == PowerPriority::Shields ? 1.0f : m_priority == PowerPriority::Balanced ? 0.5f : 0.0f;
+    return 1.0f + share * freePower() / 40.0f;
+}
+
+float BattleView::weaponPowerBoost() const
+{
+    const float share = m_priority == PowerPriority::Weapons ? 1.0f : m_priority == PowerPriority::Balanced ? 0.5f : 0.0f;
+    return 1.0f + share * freePower() / 40.0f;
+}
+
+QString BattleView::powerReport() const
+{
+    const QString priority = m_priority == PowerPriority::Shields   ? tr("shields")
+                           : m_priority == PowerPriority::Weapons ? tr("weapons")
+                                                                  : tr("balanced");
+    return tr("Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5) - towers %6, railguns %7")
+        .arg(kCorePower)
+        .arg(freePower())
+        .arg(priority)
+        .arg(shieldPowerBoost(), 0, 'f', 2)
+        .arg(weaponPowerBoost(), 0, 'f', 2)
+        .arg(m_turretsOn ? tr("on") : tr("off"), m_railgunsOn ? tr("on") : tr("off"));
 }
 
 // Blue-white window of a ship dropping out of (or entering) hyperspace
@@ -1650,6 +1722,12 @@ WeaponReadiness BattleView::weaponReadiness() const
     w.hangarMax = m_hangarCapacity;
     w.fightersOut = int(std::count_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return a.group == -1 && a.alive; }));
     w.allies = allyCount();
+    w.turretsOn = m_turretsOn;
+    w.railgunsOn = m_railgunsOn;
+    w.freePower = freePower();
+    w.priority = m_priority == PowerPriority::Shields   ? QStringLiteral("shields")
+               : m_priority == PowerPriority::Weapons ? QStringLiteral("weapons")
+                                                      : QStringLiteral("balanced");
     w.incomingMissiles = int(std::count_if(m_projectiles.begin(), m_projectiles.end(), [](const Projectile &p) {
         return !p.dead && !p.fromDestiny && p.kind == Projectile::Kind::Missile;
     }));

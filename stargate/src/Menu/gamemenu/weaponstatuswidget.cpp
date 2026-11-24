@@ -129,8 +129,10 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     };
     cooldown(tr("MAIN TOWER"), tr("attack <n> / maintower"), w.mainCooldown, w.mainMax, tr("READY"));
     cooldown(tr("PULSE"), tr("pulseweapon"), w.pulseCooldown, w.pulseMax, tr("READY"));
-    cooldown(tr("TOWERS"), tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency)),
-             w.burstCooldown, w.burstMax, tr("AUTO"));
+    cooldown(tr("TOWERS"),
+             w.turretsOn ? tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency))
+                         : tr("auto-fire OFF ('turrets on') - burst: secondarytower"),
+             w.burstCooldown, w.burstMax, w.turretsOn ? tr("AUTO") : tr("OFF"));
 
     // Railguns: point defense, always on
     p.setFont(font);
@@ -144,9 +146,9 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         p.setBrush(healthColor(w.efficiency));
         p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * std::clamp(w.efficiency, 0.0f, 100.0f) / 100, bar.height()));
         const bool alarm = w.incomingMissiles > 0;
-        p.setPen(alarm && (m_frame / 3) % 2 == 0 ? kCritical : kOk);
+        p.setPen(!w.railgunsOn ? kCritical : alarm && (m_frame / 3) % 2 == 0 ? kCritical : kOk);
         p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
-                   alarm ? tr("%1 MSL").arg(w.incomingMissiles) : tr("PD ON"));
+                   !w.railgunsOn ? tr("OFF") : alarm ? tr("%1 MSL").arg(w.incomingMissiles) : tr("PD ON"));
     }
     y += line;
     p.setFont(small);
@@ -154,6 +156,15 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
                tr("point defense %1 km - %2 missiles shot down - vs fighters x2.5")
                    .arg(qRound(w.railgunReach * 10)).arg(w.interceptions));
+    y += smallLine + 4;
+
+    // Energy: power left for the shields / weapon recharge
+    p.setFont(small);
+    p.setPen(w.freePower > 10 ? kOk : kDim);
+    p.drawText(QRectF(left, y, right - left, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
+               tr("POWER free %1 - priority %2 ('power shields|weapons|balanced')")
+                   .arg(w.freePower)
+                   .arg(w.priority == "shields" ? tr("shields") : w.priority == "weapons" ? tr("weapons") : tr("balanced")));
     y += smallLine + 4;
 
     // Hangar: fighters to launch ('launch'), friendly ships in the battle

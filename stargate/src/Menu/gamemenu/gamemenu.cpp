@@ -151,7 +151,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu" << "launch";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu" << "launch" << "turrets" << "railguns" << "power";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -163,7 +163,8 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
                                          QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
                                          QStringLiteral("sound"), QStringLiteral("music"),
-                                         QStringLiteral("menu"), QStringLiteral("launch")})
+                                         QStringLiteral("menu"), QStringLiteral("launch"), QStringLiteral("turrets"),
+                                         QStringLiteral("railguns"), QStringLiteral("power")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -272,6 +273,22 @@ void GameMenu::onCommandEntered(const QString &command)
         showLibrary(command.section(' ', 1, -1, QString::SectionSkipEmpty));
         return;
     }
+    if (first == "turrets" || first == "railguns" || first == "power") {
+        const QString arg = command.section(' ', 1, 1, QString::SectionSkipEmpty).toLower();
+        if (first == "turrets")
+            m_battle->setTurretsActive(arg != "off");
+        else if (first == "railguns")
+            m_battle->setRailgunsActive(arg != "off");
+        else if (arg.startsWith("shield"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Shields);
+        else if (arg.startsWith("weapon"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Weapons);
+        else if (arg.startsWith("bal"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Balanced);
+        else
+            m_console->appendLine(m_battle->powerReport());
+        return;
+    }
     if (first == "launch") {
         const QString count = command.section(' ', 1, 1, QString::SectionSkipEmpty);
         m_battle->launchFighters(count.isEmpty() ? -1 : std::max(1, count.toInt()));
@@ -364,6 +381,7 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Music: music (status), music on, music off, music <0-100> (volume)"));
     m_console->appendLine(tr("Menu: menu or Esc - pause, save, settings, quit"));
     m_console->appendLine(tr("Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle"));
+    m_console->appendLine(tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 

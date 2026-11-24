@@ -288,6 +288,7 @@ private:
     // fromHyperspace: appears far away in a flash, then flies to its orbit
     Enemy &spawnEnemy(int classIndex, bool fromHyperspace = false);
     void hyperspaceWindow(const QVector3D &pos, float size);
+    void preferLineShips(QList<int> &motherships) const;
     int classIndexOf(const QString &name) const;
     const ShipClass &classOf(const Enemy &e) const { return m_classes[e.classIndex]; }
     QStringList hostileFactions() const;

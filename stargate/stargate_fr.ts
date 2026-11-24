@@ -490,14 +490,6 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Esclavage : naquadah x1,6 et chantiers x1,25, mais les mondes sans flotte en orbite peuvent connaître des révoltes jaffa.</translation>
     </message>
     <message>
-        <source>Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral neighbours may join, the flagship rallies worlds twice as fast.</source>
-        <translation>Technologie des Anciens : +8 % de puissance des flottes par site des Anciens (max +40 %). Diplomatie : les voisins neutres peuvent vous rejoindre, le vaisseau amiral rallie les mondes deux fois plus vite.</translation>
-    </message>
-    <message>
-        <source>Smuggling: fighters built x1.4 faster. Raids: every world taken steals naquadah from its owner.</source>
-        <translation>Contrebande : chasseurs construits x1,4 plus vite. Raids : chaque monde pris vole du naquadah à son propriétaire.</translation>
-    </message>
-    <message>
         <source>Shipyard (fast repairs)</source>
         <translation>Chantier naval (réparations rapides)</translation>
     </message>
@@ -682,6 +674,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Alliance avec les %1 rompue</translation>
     </message>
     <message>
+        <source>Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral neighbours may join, the flagship rallies worlds twice as fast. Shipyards x1.1.</source>
+        <translation>Technologie des Anciens : +8 % de puissance des flottes par site des Anciens (max +40 %). Diplomatie : les voisins neutres peuvent vous rejoindre, le vaisseau amiral rallie les mondes deux fois plus vite. Chantiers x1,1.</translation>
+    </message>
+    <message>
+        <source>Smuggling: fighters built x1.25 faster. Raids: every world taken steals naquadah from its owner.</source>
+        <translation>Contrebande : chasseurs construits x1,25 plus vite. Raids : chaque monde pris vole du naquadah à son propriétaire.</translation>
+    </message>
+    <message>
+        <source>Advanced technology: research twice as fast and 25% cheaper, fleets +15%; but shipyards x0.7 - the Asgard are few.</source>
+        <translation>Technologie avancée : recherche deux fois plus rapide et 25 % moins chère, flottes +15 % ; mais chantiers x0,7 - les Asgard sont peu nombreux.</translation>
+    </message>
+    <message>
+        <source>Knowledge of the Ancients: Ancient sites give 200 naquadah, drone defenses (stronger garrisons); but shipyards x0.8.</source>
+        <translation>Savoir des Anciens : les sites des Anciens rapportent 200 naquadah, défenses à drones (garnisons renforcées) ; mais chantiers x0,8.</translation>
+    </message>
+    <message>
+        <source>Crusade: conquered worlds keep most of their people, who grow faster; the Priors convert neutral neighbours; fleets +10%; but the crusade builds slowly (shipyards x0.85).</source>
+        <translation>Croisade : les mondes conquis gardent l&apos;essentiel de leur population, qui croît plus vite ; les Prieurs convertissent les voisins neutres ; flottes +10 % ; mais la croisade construit lentement (chantiers x0,85).</translation>
+    </message>
+    <message>
         <source>%1 fortified: defense %2/5</source>
         <translation>%1 fortifiée : défense %2/5</translation>
     </message>
@@ -750,12 +762,20 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les Wraith prélèvent la population de %1</translation>
     </message>
     <message>
+        <source>Ancient site on %1: +%2 naquadah from its archives</source>
+        <translation>Site des Anciens sur %1 : +%2 naquadah tirés de ses archives</translation>
+    </message>
+    <message>
         <source>Allied victory: only you and your allies remain</source>
         <translation>Victoire de l&apos;alliance : il ne reste que vous et vos alliés</translation>
     </message>
     <message>
         <source>Jaffa revolt on %1: the world breaks free from the Goa&apos;uld</source>
         <translation>Révolte jaffa sur %1 : le monde se libère des Goa&apos;uld</translation>
+    </message>
+    <message>
+        <source>The Priors convert %1 to Origin</source>
+        <translation>Les Prieurs convertissent %1 à l&apos;Origine</translation>
     </message>
     <message>
         <source>%1 joins the Tau&apos;ri through diplomacy</source>
@@ -844,10 +864,6 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Hull breached: the flagship retreats from %1 to %2</source>
         <translation>Coque percée : le vaisseau amiral se replie de %1 vers %2</translation>
-    </message>
-    <message>
-        <source>Ancient site on %1: +100 naquadah from its archives</source>
-        <translation>Site des Anciens sur %1 : +100 naquadah tirés de ses archives</translation>
     </message>
     <message>
         <source>The %1 have lost their last world</source>
@@ -1484,6 +1500,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Ruche alimentée par un E2PZ : elle grandit, se régénère et lance des essaims infinis de Darts.</translation>
     </message>
     <message>
+        <source>Line ship of the Asgard fleet: few in number, but shielded and armed far beyond the younger races.</source>
+        <translation>Vaisseau de ligne de la flotte asgard : peu nombreux, mais protégés et armés bien au-delà des jeunes races.</translation>
+    </message>
+    <message>
+        <source>Small Asgard escort ship with an ion cannon.</source>
+        <translation>Petit vaisseau d&apos;escorte asgard armé d&apos;un canon ionique.</translation>
+    </message>
+    <message>
+        <source>Ancient warship of the Lantean fleet, launching drones and firing energy batteries.</source>
+        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, lanceur de drones et de batteries d&apos;énergie.</translation>
+    </message>
+    <message>
+        <source>Ori crusade mothership, powered by the Ori themselves. Its main beam crosses any shield.</source>
+        <translation>Vaisseau-mère de la croisade ori, alimenté par les Ori eux-mêmes. Son rayon principal traverse tous les boucliers.</translation>
+    </message>
+    <message>
+        <source>Small Ori attack craft escorting the warships of the crusade.</source>
+        <translation>Petit appareil d&apos;attaque ori escortant les vaisseaux de guerre de la croisade.</translation>
+    </message>
+    <message>
         <source>Main tower</source>
         <translation>Tour principale</translation>
     </message>
@@ -1614,6 +1650,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Endless swarm</source>
         <translation>Essaim sans fin</translation>
+    </message>
+    <message>
+        <source>Ion bolts</source>
+        <translation>Rayons ioniques</translation>
+    </message>
+    <message>
+        <source>Ion bolt</source>
+        <translation>Rayon ionique</translation>
+    </message>
+    <message>
+        <source>Ori main beam</source>
+        <translation>Rayon principal ori</translation>
+    </message>
+    <message>
+        <source>Plasma batteries</source>
+        <translation>Batteries à plasma</translation>
+    </message>
+    <message>
+        <source>Plasma bolt</source>
+        <translation>Rayon de plasma</translation>
     </message>
     <message>
         <source>Heavy shot from the main tower on the locked target (command &apos;maintower&apos;).</source>
@@ -1754,6 +1810,22 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Releases five Darts.</source>
         <translation>Libère cinq Darts.</translation>
+    </message>
+    <message>
+        <source>Pair of ion bolts.</source>
+        <translation>Paire de rayons ioniques.</translation>
+    </message>
+    <message>
+        <source>Light ion bolt.</source>
+        <translation>Rayon ionique léger.</translation>
+    </message>
+    <message>
+        <source>Three homing Ancient drones.</source>
+        <translation>Trois drones des Anciens à tête chercheuse.</translation>
+    </message>
+    <message>
+        <source>The main beam of the crusade: half of its energy goes through shields.</source>
+        <translation>Le rayon principal de la croisade : la moitié de son énergie traverse les boucliers.</translation>
     </message>
 </context>
 <context>
@@ -2902,6 +2974,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Grande - 40 planètes, 3 factions ennemies (1 h 30 et plus)</translation>
     </message>
     <message>
+        <source>Huge - 56 planets, every other faction (6 enemies)</source>
+        <translation>Immense - 56 planètes, toutes les autres factions (6 ennemies)</translation>
+    </message>
+    <message>
         <source>Start a new conquest</source>
         <translation>Nouvelle conquête</translation>
     </message>
@@ -2924,6 +3000,18 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Hive ships, cruisers and swarms of Darts.</source>
         <translation>Vaisseaux-ruches, croiseurs et essaims de Darts.</translation>
+    </message>
+    <message>
+        <source>The oldest allies of Earth: few ships, but far ahead in technology.</source>
+        <translation>Les plus anciens alliés de la Terre : peu de vaisseaux, mais très en avance technologiquement.</translation>
+    </message>
+    <message>
+        <source>The builders of the Stargates: Lantean warships, drones and Puddle Jumpers.</source>
+        <translation>Les bâtisseurs des portes des étoiles : vaisseaux de guerre lantiens, drones et Puddle Jumpers.</translation>
+    </message>
+    <message>
+        <source>The crusade of Origin: Ori warships, fighters and Priors.</source>
+        <translation>La croisade de l&apos;Origine : vaisseaux de guerre ori, chasseurs et Prieurs.</translation>
     </message>
     <message>
         <source>Smugglers and mercenaries: stolen Ha&apos;taks and Gliders.</source>

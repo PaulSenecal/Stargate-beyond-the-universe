@@ -25,7 +25,7 @@
 
 namespace Conquest {
 
-enum class Size { Small, Medium, Large };
+enum class Size { Small, Medium, Large, Huge };
 
 enum class Bonus { None, Shipyard, NaquadahMine, TriniumMine, AncientSite };
 
@@ -212,6 +212,8 @@ public:
 
     // --- Technologies (phase 4)
     bool hasTech(int faction, const QString &tech) const;
+    double researchCost(int faction, const Conquest::TechInfo &tech) const;     // Asgard: cheaper
+    double researchTime(int faction, const Conquest::TechInfo &tech) const;     // Asgard: faster
     bool canResearch(int faction, const QString &tech, QString *why = nullptr) const;
     bool startResearch(const QString &tech, QString *error = nullptr);     // for the player
     int findTech(const QString &nameOrNumber) const;                       // index in techInfos(), -1

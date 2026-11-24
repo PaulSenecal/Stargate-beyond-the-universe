@@ -177,7 +177,8 @@ void TechTreeWidget::paintEvent(QPaintEvent *)
             p.drawText(bottom, Qt::AlignLeft | Qt::AlignVCenter, tr("RESEARCHED"));
         } else {
             p.setPen(available ? kGold : kDim);
-            const QString cost = tr("%1 naquadah - %2 s").arg(t.cost).arg(t.seconds);
+            const int player = m_game->playerIndex();
+            const QString cost = tr("%1 naquadah - %2 s").arg(m_game->researchCost(player, t)).arg(m_game->researchTime(player, t));
             p.drawText(bottom, Qt::AlignLeft | Qt::AlignVCenter,
                        available ? tr("%1 - click to research").arg(cost)
                                  : why.isEmpty() ? cost : cost + QStringLiteral(" - ") + why);

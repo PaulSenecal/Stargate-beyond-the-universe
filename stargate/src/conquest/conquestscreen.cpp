@@ -691,7 +691,9 @@ void ConquestScreen::listTechs()
             state = tr("in progress %1%").arg(qRound(me.researchProgress * 100));
             tone = CommandConsole::Tone::Warning;
         } else {
-            state = tr("%1 naquadah, %2 s").arg(t.cost).arg(t.seconds);
+            state = tr("%1 naquadah, %2 s")
+                        .arg(m_game->researchCost(m_game->playerIndex(), t))
+                        .arg(m_game->researchTime(m_game->playerIndex(), t));
         }
         m_console->appendLine(QStringLiteral("%1  %2 %3  %4 - %5 [%6]")
                                   .arg(i + 1)

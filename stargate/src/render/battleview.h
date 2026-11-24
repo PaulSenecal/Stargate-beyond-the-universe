@@ -12,10 +12,12 @@
 #include <QPointF>
 #include <QStringList>
 #include <QVector3D>
+#include <utility>
 #include <vector>
 
 #include "meshbuilder.h"
 #include "planetlook.h"
+#include "src/core/shipclass.h"
 
 class QPainter;
 class QTimer;
@@ -104,6 +106,12 @@ public:
     // anti-fighter) and "Energy Cannon" (tower auto-fire)
     void setWeaponProfiles(const QList<WeaponProfile> &profiles);
 
+    // Ship classes from the ship library (Ship_Type + Ship_Attack).
+    // Enemy waves are built from the hostile ones, one faction per
+    // wave. Replaces the current wave.
+    void setShipClasses(const QList<ShipClass> &classes);
+    QString waveFaction() const { return m_waveFaction; }
+
     // --- Save / restore
     float hull() const { return m_hull; }
     float shieldStrength() const { return m_shieldStrength; }
@@ -124,7 +132,8 @@ public:
     void restoreDefenses(float hull, float shield, bool shieldOn);
 
     // --- Navigation
-    void spawnWave(bool announce);
+    // `faction` empty = a random hostile faction
+    void spawnWave(bool announce, const QString &faction = QString());
     // FTL jump: every enemy is left behind; new contacts may show up
     // after `calmSeconds`
     void clearBattlefield(float calmSeconds);
@@ -169,13 +178,16 @@ private:
         float orbitRadius = 0, baseAngle = 0, angleAmp = 0, angleSpeed = 0;
         float height = 0, phase = 0;
         float fireCooldown = 0, hitFlash = 0;
-        float missileCooldown = 0;  // motherships only
+        int classIndex = 0;         // in m_classes
+        std::vector<float> attackTimers;    // one per attack of its class
+        bool diving = false;        // kamikaze run on the Destiny
+        QVector3D diveAim;          // ship-local impact point
         QVector3D pos, facing{1, 0, 0};
         bool alive = true;
     };
 
     struct Projectile {
-        enum class Kind { Bolt, Missile, Slug };
+        enum class Kind { Bolt, Missile, Slug, Beam };
         Kind kind = Kind::Bolt;
         int id = 0;
         int targetShot = -1;        // railgun slug: id of the missile it chases
@@ -207,6 +219,12 @@ private:
     void updateEnemy(Enemy &e, float dt);
     void updateProjectiles(float dt);
     void fireRailguns(float dt);
+    void performAttack(Enemy &e, const ShipAttack &attack);
+    void ram(Enemy &e);
+    Enemy &spawnEnemy(int classIndex);
+    int classIndexOf(const QString &name) const;
+    const ShipClass &classOf(const Enemy &e) const { return m_classes[e.classIndex]; }
+    QStringList hostileFactions() const;
     Projectile *findShot(int id);
     void hitEnemy(Enemy &e, const Projectile &p);
     void hitShield(const Projectile &p);
@@ -228,7 +246,7 @@ private:
     QVector3D destinyWorld(const QVector3D &local) const;
     bool insideShield(const QVector3D &world) const;
     bool shieldProtecting() const;
-    QString className(EnemyClass cls) const;
+    QString className(const Enemy &e) const;
 
     // Rendering
     void upload(Mesh &mesh, const MeshBuilder::VertexData &data);
@@ -289,6 +307,10 @@ private:
     float m_lastShieldHit = -10;
 
     float m_mainCooldown = 0, m_pulseCooldown = 0, m_secondaryCooldown = 0, m_autoFireTimer = 1;
+
+    QList<ShipClass> m_classes = ShipClass::fallbackRoster();
+    QString m_waveFaction;
+    std::vector<std::pair<int, QVector3D>> m_launches;     // class index, hangar position
 
     WeaponProfile m_railgun{"Railgun", "kinetic", 80, 60, 22};
     WeaponProfile m_cannon{"Energy Cannon", "energy", 120, 40, 45};

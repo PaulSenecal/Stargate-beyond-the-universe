@@ -1,0 +1,263 @@
+#include "shiplibraryrepository.h"
+
+#include <QHash>
+#include <QSet>
+#include <QVariant>
+#include <utility>
+
+#include "../databasemanager.h"
+
+namespace {
+
+struct ClassSeed
+{
+    const char *name, *role, *faction;
+    int hull;
+    bool hostile;
+    const char *color, *description;
+};
+
+struct AttackSeed
+{
+    const char *ship, *name, *kind;
+    double damage;
+    int shots;
+    double cooldown, chance;
+    const char *trigger, *payload;
+    bool special;
+    const char *description;
+};
+
+// Ship classes. Balance reference: the Destiny's secondary towers deal
+// ~7 per bolt, its main tower 160; railguns x2.5 against small ships.
+// Mothership fire rates were tuned with BattleView::simulate(): idle for
+// 2 min (10 runs) the Destiny keeps 85-98 % hull against every faction.
+// The shield is a tipping point: a few tenths of a second on a cooldown
+// decide whether it holds or collapses.
+const ClassSeed kClasses[] = {
+    {"Destiny", "MotherShip", "Ancients", 1000, false, "#8a8478",
+     "Ancient seed ship launched millions of years ago, crossing the universe ahead of the Stargate "
+     "builders. Powered by stars, it drops out of FTL on its own schedule."},
+    {"Ha'tak", "MotherShip", "Goa'uld", 420, true, "#9e8047",
+     "Goa'uld pyramid mothership. Heavy staff cannon batteries and a hangar of Death Gliders."},
+    {"Death Glider", "Fighter", "Goa'uld", 60, true, "#736b61",
+     "Two-seat Goa'uld attack fighter armed with twin staff cannons."},
+    {"Lucian Ha'tak", "MotherShip", "Lucian Alliance", 380, true, "#7d6a52",
+     "Ha'tak taken over by the Lucian Alliance and refitted with naquadah-enhanced missile racks."},
+    {"Glider", "Fighter", "Lucian Alliance", 55, true, "#6e665c",
+     "Stolen Death Glider flown by Alliance mercenaries."},
+    {"Wraith Hive Ship", "MotherShip", "Wraith", 520, true, "#4b3a5c",
+     "Organic Wraith flagship. Self-repairing hull, energy batteries and swarms of Darts."},
+    {"Wraith Dart", "Fighter", "Wraith", 45, true, "#5d4d6b",
+     "Light Wraith interceptor. Badly damaged Darts dive into their target."},
+    {"Drone Command Ship", "MotherShip", "Drones", 600, true, "#5e6670",
+     "Automated control ship of the Berserker drones. Destroying it does not stop its drones."},
+    {"Drone", "Automated", "Drones", 40, true, "#7a838c",
+     "Small automated attack drone, fast and relentless, firing twin plasma bolts."},
+    {"Daedalus", "MotherShip", "Tau'ri", 500, false, "#8c949c",
+     "BC-304 battlecruiser of the Tau'ri, upgraded with Asgard shields and the Asgard plasma beam."},
+    {"F-302", "Fighter", "Tau'ri", 70, false, "#9aa2aa",
+     "Tau'ri interceptor carried by the BC-304s. Railguns and air-to-air missiles."},
+};
+
+const AttackSeed kAttacks[] = {
+    // Destiny (reference values of the battle view)
+    {"Destiny", "Main tower", "bolt", 160, 1, 4.0, 1.0, "always", "", false,
+     "Heavy shot from the main tower on the locked target (command 'maintower')."},
+    {"Destiny", "Pulse volley", "bolt", 22, 3, 8.0, 1.0, "always", "", false,
+     "Three bolts on every contact at once (command 'pulseweapon')."},
+    {"Destiny", "Secondary towers", "bolt", 7, 1, 0.45, 1.0, "always", "", false,
+     "Automatic fire of the secondary towers, slower when the weapons are damaged."},
+    {"Destiny", "Railguns", "slug", 8, 1, 0.3, 1.0, "always", "", false,
+     "Automatic point defense: shoots down missiles and diving ships, otherwise shreds fighters."},
+
+    {"Ha'tak", "Staff cannon barrage", "bolt", 2.5, 2, 3.4, 1.0, "always", "", false,
+     "Pair of heavy plasma bolts from the hull batteries."},
+    {"Ha'tak", "Glider launch", "launch", 0, 2, 30, 0.5, "always", "Death Glider", true,
+     "Opens its hangar and launches two Death Gliders."},
+    {"Death Glider", "Staff cannon", "bolt", 1.2, 1, 2.4, 1.0, "always", "", false,
+     "Light plasma bolt."},
+
+    {"Lucian Ha'tak", "Staff cannon barrage", "bolt", 2.5, 2, 3.3, 1.0, "always", "", false,
+     "Pair of heavy plasma bolts from the hull batteries."},
+    {"Lucian Ha'tak", "Naquadah missile", "missile", 14, 1, 6.5, 0.85, "always", "", false,
+     "Slow homing missile. Railguns can shoot it down."},
+    {"Lucian Ha'tak", "Missile salvo", "missile", 12, 3, 30, 0.4, "always", "", true,
+     "Three missiles at once to saturate the point defense."},
+    {"Glider", "Staff cannon", "bolt", 1.2, 1, 2.6, 1.0, "always", "", false,
+     "Light plasma bolt."},
+
+    {"Wraith Hive Ship", "Energy barrage", "bolt", 2.0, 3, 2.7, 1.0, "always", "", false,
+     "Three energy bolts from the organic batteries."},
+    {"Wraith Hive Ship", "Dart swarm", "launch", 0, 3, 22, 0.55, "always", "Wraith Dart", true,
+     "Releases three Darts."},
+    {"Wraith Dart", "Energy bolt", "bolt", 1.0, 1, 2.2, 1.0, "always", "", false,
+     "Light energy bolt."},
+    {"Wraith Dart", "Kamikaze dive", "kamikaze", 22, 1, 4.0, 0.35, "damaged", "", true,
+     "Below half hull, may dive into the Destiny. Railguns can stop it on the way."},
+
+    {"Drone Command Ship", "Plasma barrage", "bolt", 3.0, 2, 2.7, 1.0, "always", "", false,
+     "Pair of heavy plasma bolts."},
+    {"Drone Command Ship", "Drone launch", "launch", 0, 2, 18, 0.7, "always", "Drone", true,
+     "Launches two new drones."},
+    {"Drone", "Twin plasma", "bolt", 0.7, 2, 2.6, 1.0, "always", "", false,
+     "Two light plasma bolts."},
+
+    {"Daedalus", "Railgun barrage", "slug", 1.5, 4, 2.0, 1.0, "always", "", false,
+     "Four railgun slugs."},
+    {"Daedalus", "Mark VIII missile", "missile", 30, 1, 10, 0.7, "always", "", false,
+     "Nuclear-tipped missile, can be shot down."},
+    {"Daedalus", "Asgard plasma beam", "beam", 40, 1, 20, 0.6, "always", "", true,
+     "Asgard beam weapon: half of its energy goes through shields."},
+    {"F-302", "Railgun", "slug", 1.0, 2, 2.0, 1.0, "always", "", false,
+     "Two railgun slugs."},
+    {"F-302", "AIM-120 missile", "missile", 8, 1, 9, 0.5, "always", "", false,
+     "Light air-to-air missile."},
+};
+
+QSet<QString> columns(const QString &table)
+{
+    QSet<QString> names;
+    QSqlQuery q = DatabaseManager::instance().query(QStringLiteral("PRAGMA table_info(%1)").arg(table));
+    if (q.exec())
+        while (q.next())
+            names.insert(q.value(1).toString());
+    return names;
+}
+
+} // namespace
+
+bool ShipLibraryRepository::migrate()
+{
+    DatabaseManager &db = DatabaseManager::instance();
+    if (!db.isOpen())
+        return false;
+
+    const QSet<QString> existing = columns("Ship_Type");
+    const std::pair<const char *, const char *> added[] = {
+        {"faction", "TEXT"}, {"description", "TEXT"}, {"hull", "INTEGER NOT NULL DEFAULT 100"},
+        {"hostile", "BOOLEAN NOT NULL DEFAULT 0"}, {"color", "TEXT"},
+    };
+    for (const auto &[name, type] : added)
+        if (!existing.contains(name)
+            && !db.exec(QStringLiteral("ALTER TABLE Ship_Type ADD COLUMN %1 %2").arg(name, type)))
+            return false;
+
+    if (!db.exec("CREATE TABLE IF NOT EXISTS Ship_Attack ("
+                 " id           INTEGER PRIMARY KEY AUTOINCREMENT,"
+                 " ship_type_id INTEGER NOT NULL REFERENCES Ship_Type(id) ON DELETE CASCADE,"
+                 " name         TEXT    NOT NULL,"
+                 " kind         TEXT    NOT NULL,"          // bolt | slug | missile | beam | kamikaze | launch
+                 " damage       REAL    NOT NULL DEFAULT 0,"
+                 " shots        INTEGER NOT NULL DEFAULT 1,"
+                 " cooldown     REAL    NOT NULL DEFAULT 3,"
+                 " chance       REAL    NOT NULL DEFAULT 1,"
+                 " use_when     TEXT    NOT NULL DEFAULT 'always',"
+                 " payload      TEXT,"
+                 " special      BOOLEAN NOT NULL DEFAULT 0,"
+                 " description  TEXT,"
+                 " UNIQUE (ship_type_id, name))"))
+        return false;
+
+    db.beginTransaction();
+    for (const ClassSeed &c : kClasses) {
+        // Existing rows (Destiny, Drone, Glider…) only get the missing data
+        QSqlQuery insert = db.query("INSERT INTO Ship_Type (name, type) SELECT :name, :role "
+                                    "WHERE NOT EXISTS (SELECT 1 FROM Ship_Type WHERE name = :name2)");
+        insert.bindValue(":name", c.name);
+        insert.bindValue(":role", c.role);
+        insert.bindValue(":name2", c.name);
+        QSqlQuery update = db.query("UPDATE Ship_Type SET faction = :faction, description = :desc, hull = :hull, "
+                                    "hostile = :hostile, color = :color WHERE name = :name AND faction IS NULL");
+        update.bindValue(":faction", c.faction);
+        update.bindValue(":desc", c.description);
+        update.bindValue(":hull", c.hull);
+        update.bindValue(":hostile", c.hostile);
+        update.bindValue(":color", c.color);
+        update.bindValue(":name", c.name);
+        if (!insert.exec() || !update.exec()) {
+            qWarning() << "[DB] Ship library seed failed for" << c.name;
+            db.rollback();
+            return false;
+        }
+    }
+    for (const AttackSeed &a : kAttacks) {
+        QSqlQuery q = db.query(
+            "INSERT OR IGNORE INTO Ship_Attack "
+            "(ship_type_id, name, kind, damage, shots, cooldown, chance, use_when, payload, special, description) "
+            "SELECT id, :name, :kind, :damage, :shots, :cooldown, :chance, :trigger, :payload, :special, :desc "
+            "FROM Ship_Type WHERE name = :ship");
+        q.bindValue(":name", a.name);
+        q.bindValue(":kind", a.kind);
+        q.bindValue(":damage", a.damage);
+        q.bindValue(":shots", a.shots);
+        q.bindValue(":cooldown", a.cooldown);
+        q.bindValue(":chance", a.chance);
+        q.bindValue(":trigger", a.trigger);
+        q.bindValue(":payload", *a.payload ? QVariant(a.payload) : QVariant());
+        q.bindValue(":special", a.special);
+        q.bindValue(":desc", a.description);
+        q.bindValue(":ship", a.ship);
+        if (!q.exec()) {
+            qWarning() << "[DB] Ship attack seed failed:" << a.ship << a.name << q.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+    return db.commit();
+}
+
+QList<ShipClass> ShipLibraryRepository::all()
+{
+    QList<ShipClass> classes;
+    DatabaseManager &db = DatabaseManager::instance();
+
+    QSqlQuery q = db.query(
+        "SELECT id, name, COALESCE(type, ''), COALESCE(faction, 'Unknown'), COALESCE(description, ''), "
+        "hull, hostile, COALESCE(color, '#808080') FROM Ship_Type "
+        "ORDER BY faction, CASE type WHEN 'MotherShip' THEN 0 ELSE 1 END, name");
+    if (!q.exec()) {
+        qWarning() << "[DB] ShipLibraryRepository::all:" << q.lastError().text();
+        return classes;
+    }
+    QHash<int, int> indexOf;
+    while (q.next()) {
+        ShipClass c;
+        c.id = q.value(0).toInt();
+        c.name = q.value(1).toString();
+        c.role = q.value(2).toString();
+        c.faction = q.value(3).toString();
+        c.description = q.value(4).toString();
+        c.hull = q.value(5).toInt();
+        c.hostile = q.value(6).toBool();
+        c.color = q.value(7).toString();
+        indexOf.insert(c.id, int(classes.size()));
+        classes << c;
+    }
+
+    QSqlQuery a = db.query(
+        "SELECT ship_type_id, name, kind, damage, shots, cooldown, chance, use_when, COALESCE(payload, ''), "
+        "special, COALESCE(description, '') FROM Ship_Attack ORDER BY ship_type_id, special, id");
+    if (!a.exec()) {
+        qWarning() << "[DB] ShipLibraryRepository::all (attacks):" << a.lastError().text();
+        return classes;
+    }
+    while (a.next()) {
+        const auto it = indexOf.constFind(a.value(0).toInt());
+        if (it == indexOf.constEnd())
+            continue;
+        ShipAttack attack;
+        attack.name = a.value(1).toString();
+        attack.kind = a.value(2).toString();
+        attack.damage = a.value(3).toFloat();
+        attack.shots = a.value(4).toInt();
+        attack.cooldown = a.value(5).toFloat();
+        attack.chance = a.value(6).toFloat();
+        attack.trigger = a.value(7).toString();
+        attack.payload = a.value(8).toString();
+        attack.special = a.value(9).toBool();
+        attack.description = a.value(10).toString();
+        classes[*it].attacks << attack;
+    }
+    return classes;
+}

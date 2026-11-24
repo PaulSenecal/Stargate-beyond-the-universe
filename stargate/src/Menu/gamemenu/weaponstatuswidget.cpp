@@ -203,8 +203,10 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
 
     const qreal textLeft = box.left() + 38;
     p.setPen(kCritical);
-    p.drawText(QRectF(textLeft, box.top() + 4, box.right() - textLeft - 8, line), Qt::AlignLeft | Qt::AlignVCenter,
-               tr("TARGET T%1  %2").arg(w.targetIndex + 1).arg(w.targetClass.toUpper()));
+    const QRectF nameRect(textLeft, box.top() + 4, box.right() - textLeft - 8, line);
+    p.drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter,
+               QFontMetricsF(p.font()).elidedText(tr("TARGET T%1  %2").arg(w.targetIndex + 1).arg(w.targetClass.toUpper()),
+                                                  Qt::ElideRight, nameRect.width()));
     const QRectF hp(textLeft, box.top() + 6 + line, box.right() - textLeft - 60, 6);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(60, 60, 60));

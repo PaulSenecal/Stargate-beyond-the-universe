@@ -18,6 +18,7 @@ SOURCES += \
     src/Menu/gamemenu/hudimagepanel.cpp \
     src/Menu/gamemenu/radarwidget.cpp \
     src/Menu/gamemenu/routemapwidget.cpp \
+    src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
     src/core/commandmanager.cpp \
@@ -29,6 +30,7 @@ SOURCES += \
     src/db/repositories/questrepository.cpp \
     src/db/repositories/resourcerepository.cpp \
     src/db/repositories/saverepository.cpp \
+    src/db/repositories/shiplibraryrepository.cpp \
     src/db/repositories/shiprepository.cpp \
     src/db/repositories/worldrepository.cpp \
     src/db/repositories/zonerepository.cpp \
@@ -50,17 +52,20 @@ HEADERS += \
     src/Menu/gamemenu/hudimagepanel.h \
     src/Menu/gamemenu/radarwidget.h \
     src/Menu/gamemenu/routemapwidget.h \
+    src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
     src/core/commandmanager.h \
     src/core/destinystate.h \
     src/core/questsystem.h \
+    src/core/shipclass.h \
     src/db/databasemanager.h \
     src/db/repositories/characterrepository.h \
     src/db/repositories/componentrepository.h \
     src/db/repositories/questrepository.h \
     src/db/repositories/resourcerepository.h \
     src/db/repositories/saverepository.h \
+    src/db/repositories/shiplibraryrepository.h \
     src/db/repositories/shiprepository.h \
     src/db/repositories/worldrepository.h \
     src/db/repositories/zonerepository.h \

@@ -25,6 +25,7 @@ SOURCES += \
     $$GAME/src/db/repositories/questrepository.cpp \
     $$GAME/src/db/repositories/resourcerepository.cpp \
     $$GAME/src/db/repositories/saverepository.cpp \
+    $$GAME/src/db/repositories/shiplibraryrepository.cpp \
     $$GAME/src/db/repositories/shiprepository.cpp \
     $$GAME/src/db/repositories/worldrepository.cpp \
     $$GAME/src/world/destinyroute.cpp \

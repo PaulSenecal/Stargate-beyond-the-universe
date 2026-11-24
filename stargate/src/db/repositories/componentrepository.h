@@ -18,6 +18,11 @@ struct ComponentInfo
     QString category;   // SYSTEM | WEAPON | UTILITY
     int maxHp = 0;
     int energyCost = 0;
+    // Weapons only (0 / empty otherwise)
+    int damage = 0;
+    int penetration = 0;
+    QString munitionType;   // kinetic | energy | missile
+    int reach = 0;          // range in world units
 };
 
 struct RepairCost

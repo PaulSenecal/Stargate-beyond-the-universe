@@ -35,6 +35,15 @@ class QTimer;
 //  Mouse: drag = orbit the camera, wheel = zoom.
 // ================================================================
 
+// A Destiny weapon as described in the database (table Component)
+struct WeaponProfile {
+    QString name;
+    QString munition;           // kinetic | energy | missile
+    float damage = 0;
+    float penetration = 0;
+    float reach = 0;            // world units
+};
+
 // Weapons state for the weapon panel
 struct WeaponReadiness {
     float mainCooldown = 0, mainMax = 1;
@@ -47,6 +56,10 @@ struct WeaponReadiness {
     float targetHealth = 0;     // percent
     int hostiles = 0;
     int kills = 0;
+    // Railguns (point defense)
+    float railgunReach = 0;
+    int interceptions = 0;
+    int incomingMissiles = 0;
 };
 
 // A recent impact on the Destiny, in ship-local coordinates
@@ -83,6 +96,14 @@ public:
     void setSubsystemHealth(const QString &key, float health);
     float systemHealth(const QString &key) const;   // also accepts "hull"
 
+    // Advances the battle by `seconds` at 60 steps per second, without
+    // rendering (balance measurements, tests)
+    void simulate(float seconds);
+
+    // Destiny weapons from the database: "Railgun" (point defense,
+    // anti-fighter) and "Energy Cannon" (tower auto-fire)
+    void setWeaponProfiles(const QList<WeaponProfile> &profiles);
+
     // --- Save / restore
     float hull() const { return m_hull; }
     float shieldStrength() const { return m_shieldStrength; }
@@ -97,7 +118,7 @@ public:
 
     // Radar feed, in ship-local coordinates (x forward, z starboard)
     struct RadarBlip { QVector3D local; int index; bool mothership; bool locked; float health; };
-    struct RadarShot { QVector3D local; bool fromDestiny; };
+    struct RadarShot { QVector3D local; bool fromDestiny; bool missile; };
     QList<RadarBlip> radarContacts() const;
     QList<RadarShot> radarShots() const;
     void restoreDefenses(float hull, float shield, bool shieldOn);
@@ -148,11 +169,17 @@ private:
         float orbitRadius = 0, baseAngle = 0, angleAmp = 0, angleSpeed = 0;
         float height = 0, phase = 0;
         float fireCooldown = 0, hitFlash = 0;
+        float missileCooldown = 0;  // motherships only
         QVector3D pos, facing{1, 0, 0};
         bool alive = true;
     };
 
     struct Projectile {
+        enum class Kind { Bolt, Missile, Slug };
+        Kind kind = Kind::Bolt;
+        int id = 0;
+        int targetShot = -1;        // railgun slug: id of the missile it chases
+        bool dead = false;
         bool fromDestiny = true;
         int targetId = -1;          // -1 = the Destiny
         QVector3D pos, vel;
@@ -179,6 +206,8 @@ private:
     void step(float dt);
     void updateEnemy(Enemy &e, float dt);
     void updateProjectiles(float dt);
+    void fireRailguns(float dt);
+    Projectile *findShot(int id);
     void hitEnemy(Enemy &e, const Projectile &p);
     void hitShield(const Projectile &p);
     void hitHull(const Projectile &p);
@@ -260,6 +289,13 @@ private:
     float m_lastShieldHit = -10;
 
     float m_mainCooldown = 0, m_pulseCooldown = 0, m_secondaryCooldown = 0, m_autoFireTimer = 1;
+
+    WeaponProfile m_railgun{"Railgun", "kinetic", 80, 60, 22};
+    WeaponProfile m_cannon{"Energy Cannon", "energy", 120, 40, 45};
+    float m_railgunTimer = 0;
+    int m_nextShotId = 1;
+    int m_interceptions = 0;
+    float m_lastMissileLog = -100;
 };
 
 #endif // BATTLEVIEW_H

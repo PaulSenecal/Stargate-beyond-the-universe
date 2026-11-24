@@ -130,7 +130,30 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     cooldown(tr("PULSE"), tr("pulseweapon"), w.pulseCooldown, w.pulseMax, tr("READY"));
     cooldown(tr("TOWERS"), tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency)),
              w.burstCooldown, w.burstMax, tr("AUTO"));
-    y += 2;
+
+    // Railguns: point defense, always on
+    p.setFont(font);
+    p.setPen(kText);
+    p.drawText(QRectF(left, y, labelWidth, line), Qt::AlignLeft | Qt::AlignVCenter, tr("RAILGUNS"));
+    {
+        const QRectF bar(barLeft, y + line / 2 - 4, barWidth, 8);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60));
+        p.drawRect(bar);
+        p.setBrush(healthColor(w.efficiency));
+        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * std::clamp(w.efficiency, 0.0f, 100.0f) / 100, bar.height()));
+        const bool alarm = w.incomingMissiles > 0;
+        p.setPen(alarm && (m_frame / 3) % 2 == 0 ? kCritical : kOk);
+        p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
+                   alarm ? tr("%1 MSL").arg(w.incomingMissiles) : tr("PD ON"));
+    }
+    y += line;
+    p.setFont(small);
+    p.setPen(kDim);
+    p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
+               tr("point defense %1 km - %2 missiles shot down - vs fighters x2.5")
+                   .arg(qRound(w.railgunReach * 10)).arg(w.interceptions));
+    y += smallLine + 4;
 
     // --- Weapon components
     p.setFont(small);

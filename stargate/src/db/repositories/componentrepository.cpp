@@ -8,14 +8,16 @@ QList<ComponentInfo> ComponentRepository::all()
 {
     QList<ComponentInfo> components;
     QSqlQuery q = DatabaseManager::instance().query(
-        "SELECT id, name, category, max_hp, energy_cost FROM Component ORDER BY id");
+        "SELECT id, name, category, max_hp, energy_cost, COALESCE(damage, 0), COALESCE(penetration, 0), "
+        "COALESCE(munition_type, ''), COALESCE(reach, 0) FROM Component ORDER BY id");
     if (!q.exec()) {
         qWarning() << "[DB] ComponentRepository::all:" << q.lastError().text();
         return components;
     }
     while (q.next())
         components.append({q.value(0).toInt(), q.value(1).toString(), q.value(2).toString(),
-                           q.value(3).toInt(), q.value(4).toInt()});
+                           q.value(3).toInt(), q.value(4).toInt(), q.value(5).toInt(), q.value(6).toInt(),
+                           q.value(7).toString(), q.value(8).toInt()});
     return components;
 }
 

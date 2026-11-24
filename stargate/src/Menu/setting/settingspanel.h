@@ -46,6 +46,7 @@ private:
     QCheckBox *m_fullScreen = nullptr;
     QComboBox *m_language = nullptr;
     QComboBox *m_textures = nullptr;
+    QCheckBox *m_assist = nullptr;
     QLabel *m_soundStatus = nullptr;
     int m_lastVolume = 70;
     int m_lastMusic = 40;

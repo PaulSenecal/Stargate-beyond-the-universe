@@ -191,6 +191,11 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         data.hull = m_battle->hull();
         data.shield = m_battle->shieldStrength();
         data.shieldUp = m_battle->shieldActive();
+        const BattleView::Schematic schematic = m_battle->schematic();
+        data.silhouette = schematic.silhouette;
+        data.silhouetteRect = schematic.rect;
+        data.shieldCenter = schematic.shieldCenter;
+        data.shieldRadii = schematic.shieldRadii;
         for (const ShipComponent &c : m_destiny.components()) {
             const QString key = m_destiny.systemKeyOf(c.name);
             data.components.append({c.name, c.currentHp, c.maxHp,

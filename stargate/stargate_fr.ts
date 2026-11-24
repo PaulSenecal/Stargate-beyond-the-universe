@@ -279,6 +279,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>T%1</translation>
     </message>
     <message>
+        <source>Main tower</source>
+        <translation>Tour principale</translation>
+    </message>
+    <message>
+        <source>Pulse</source>
+        <translation>Impulsion</translation>
+    </message>
+    <message>
+        <source>Towers</source>
+        <translation>Tours</translation>
+    </message>
+    <message>
+        <source>Beam</source>
+        <translation>Rayon</translation>
+    </message>
+    <message>
+        <source>Drones</source>
+        <translation>Drones</translation>
+    </message>
+    <message>
+        <source>Missiles</source>
+        <translation>Missiles</translation>
+    </message>
+    <message>
+        <source>Railguns</source>
+        <translation>Railguns</translation>
+    </message>
+    <message>
         <source>HULL</source>
         <translation>COQUE</translation>
     </message>
@@ -2848,6 +2876,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Textures of the mod ship models (if the mod folder is installed)</source>
         <translation>Textures des modèles de vaisseaux du mod (si le dossier du mod est installé)</translation>
+    </message>
+    <message>
+        <source>Combat assist (health bars of the ships, damage callouts on the hull)</source>
+        <translation>Aide au combat (barres de vie des vaisseaux, repères de dégâts sur la coque)</translation>
+    </message>
+    <message>
+        <source>Off: watch the ship status panels of the HUD to know your damage</source>
+        <translation>Désactivée : surveille les panneaux d'état du HUD pour connaître tes dégâts</translation>
     </message>
     <message>
         <source>Back</source>

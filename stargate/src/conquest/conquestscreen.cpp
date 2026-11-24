@@ -779,6 +779,11 @@ void ConquestScreen::setupHud()
         data.hull = m_battle->hull();
         data.shield = m_battle->shieldStrength();
         data.shieldUp = m_battle->shieldActive();
+        const BattleView::Schematic schematic = m_battle->schematic();
+        data.silhouette = schematic.silhouette;
+        data.silhouetteRect = schematic.rect;
+        data.shieldCenter = schematic.shieldCenter;
+        data.shieldRadii = schematic.shieldRadii;
         for (const Part &part : kParts)
             data.components.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
         for (const QVector3D &f : m_battle->fireSpots())

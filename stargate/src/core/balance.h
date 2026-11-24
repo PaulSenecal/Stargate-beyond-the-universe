@@ -79,6 +79,10 @@ inline float shipShieldShare(const QString &faction, bool mothership)
         return 0.25f;                           // Ha'tak récupérés, mal entretenus
     return 0.0f;                                // Wraith (coque organique), Drones
 }
+// Missiles et drones : munitions limitées (nombre de salves par vaisseau).
+// Les drones des Anciens traversent les boucliers : arme très forte, donc rare.
+constexpr int kMissileSalvos = 6;
+constexpr int kDroneSalvos = 3;
 constexpr float kShipShieldRegen = 0.05f;       // part du bouclier rechargée par seconde…
 constexpr float kShipShieldDelay = 4.0f;        // …après tant de secondes sans être touché
 

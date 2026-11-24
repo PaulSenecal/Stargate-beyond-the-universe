@@ -1,7 +1,10 @@
 #ifndef MODMESH_H
 #define MODMESH_H
 
+#include <QImage>
+#include <QRectF>
 #include <QString>
+#include <QVector3D>
 
 #include <vector>
 
@@ -23,6 +26,14 @@ namespace ModMesh {
 
 constexpr int kFloatsPerVertex = 12;   // position, normal, uv, tangent + sign
 
+// A named attach point of the model (weapon.main-0, exhaust.2,
+// child.<turret>...), in the normalized model space
+struct AttachPoint
+{
+    QString name;
+    QVector3D pos;
+};
+
 struct Model
 {
     std::vector<float> vertices;        // triangles, kFloatsPerVertex floats per vertex
@@ -30,9 +41,18 @@ struct Model
     QString maskPath;                   // lights (blue channel)
     QString ormPath;                    // occlusion, roughness, metallic
     QString normalPath;                 // normal map (BC5)
+    std::vector<AttachPoint> points;    // weapons, exhausts, hangars...
+    std::vector<QVector3D> engines;     // exhausts, or glowing spots found at the rear
+    QVector3D halfExtents;              // half size of the hull (normalized space)
+    QVector3D center;                   // normalization of the file: center and length
+    float length = 0;
+    QImage silhouette;                  // seen from above (x right, z down), for the status schematic
+    QRectF silhouetteRect;              // area it covers, in normalized (x, z)
 };
 
-Model load(const QString &path);
+// frame: normalize with the center and length of another model (the
+// shield model of a ship must fit the ship itself)
+Model load(const QString &path, const Model *frame = nullptr);
 
 } // namespace ModMesh
 

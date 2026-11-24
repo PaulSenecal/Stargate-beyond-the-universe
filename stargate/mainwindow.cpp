@@ -50,7 +50,6 @@ void MainWindow::changeLanguage(const QString &code)
     // Later: the request comes from a widget that is about to be deleted
     QTimer::singleShot(0, this, [this] {
         const bool inGame = m_game && m_screens->currentWidget() == m_game;
-        setWindowTitle(tr("Stargate - Beyond the Universe"));
         delete m_title;
         createTitle();
         if (inGame) {

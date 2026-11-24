@@ -1,6 +1,7 @@
 #include "weaponstatuswidget.h"
 #include "src/db/dbtext.h"
 
+#include <QCoreApplication>
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPainterPath>
@@ -127,14 +128,20 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         p.drawText(QRectF(left + 8, y - 2, labelWidth + barWidth, smallLine), Qt::AlignLeft | Qt::AlignVCenter, command);
         y += smallLine + 2;
     };
-    cooldown(tr("MAIN TOWER"), tr("attack <n> / maintower"), w.mainCooldown, w.mainMax, tr("READY"));
-    cooldown(tr("PULSE"), tr("pulseweapon"), w.pulseCooldown, w.pulseMax, tr("READY"));
-    cooldown(tr("TOWERS"),
-             w.turretsOn ? tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency))
-                         : tr("auto-fire OFF ('turrets on') - burst: secondarytower"),
-             w.burstCooldown, w.burstMax, w.turretsOn ? tr("AUTO") : tr("OFF"));
+    const QString mainName = w.mainName.isEmpty()
+        ? tr("MAIN TOWER")
+        : QCoreApplication::translate("Balance", w.mainName.toLatin1().constData()).toUpper();
+    cooldown(mainName, tr("attack <n> / maintower"), w.mainCooldown, w.mainMax, tr("READY"));
+    if (w.hasPulse)
+        cooldown(tr("PULSE"), tr("pulseweapon"), w.pulseCooldown, w.pulseMax, tr("READY"));
+    if (w.hasTowers)
+        cooldown(tr("TOWERS"),
+                 w.turretsOn ? tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency))
+                             : tr("auto-fire OFF ('turrets on') - burst: secondarytower"),
+                 w.burstCooldown, w.burstMax, w.turretsOn ? tr("AUTO") : tr("OFF"));
 
-    // Railguns: point defense, always on
+    // Railguns: point defense
+    if (w.hasRailguns) {
     p.setFont(font);
     p.setPen(kText);
     p.drawText(QRectF(left, y, labelWidth, line), Qt::AlignLeft | Qt::AlignVCenter, tr("RAILGUNS"));
@@ -157,6 +164,7 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
                tr("point defense %1 km - %2 missiles shot down - vs fighters x2.5")
                    .arg(qRound(w.railgunReach * 10)).arg(w.interceptions));
     y += smallLine + 4;
+    }
 
     // Energy: power left for the shields / weapon recharge
     p.setFont(small);

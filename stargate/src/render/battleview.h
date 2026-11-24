@@ -11,6 +11,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWidget>
 #include "modmesh.h"
+#include "src/core/balance.h"
 #include <QPoint>
 #include <QPointF>
 #include <QStringList>
@@ -65,6 +66,9 @@ struct WeaponReadiness {
     // Hangar fighters and friendly ships
     int hangar = 0, hangarMax = 0;
     int drones = 0, dronesMax = 0;      // drone salvos (Ancient flagship)
+    // Weapons of the flagship (Balance::flagshipLoadout)
+    QString mainName;                   // untranslated, context "Balance"
+    bool hasPulse = true, hasTowers = true, hasRailguns = true;
     int fightersOut = 0;
     int allies = 0;
     // Energy
@@ -183,6 +187,7 @@ public:
     void removeAllyGroup(int group, bool jumpOut);  // a fleet leaves the orbit
     void setHangar(const QString &fighterClass, int capacity);
     void setDroneBay(int salvos);               // 0 = no drones (only the Ancients have some)
+    void setLoadout(const Balance::FlagshipLoadout &loadout);   // weapons of the flagship
     bool fireDrones(int enemyIndex = -1);       // a salvo through the shields, -1 = current target
     int launchFighters(int count = -1);         // how many took off
     int hangarFighters() const { return m_hangar; }
@@ -419,6 +424,7 @@ private:
     QString m_hangarClass;
     int m_hangar = 0, m_hangarCapacity = 0;
     int m_drones = 0, m_droneBay = 0;
+    Balance::FlagshipLoadout m_loadout = Balance::flagshipLoadout(QString());
     float m_droneRefill = 0;
     float m_hangarRefill = 0;
     std::vector<Projectile> m_projectiles;

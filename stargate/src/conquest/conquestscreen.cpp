@@ -252,9 +252,12 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     if (!loaded)
         m_game->start(setup);
     m_battle->restoreDefenses(float(m_game->flagshipHull()), 100.0f, true);
-    m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), 4);
+    // Weapons, hangar and drones of the flagship of the faction (balance.h)
+    const Balance::FlagshipLoadout loadout = Balance::flagshipLoadout(m_game->player().id);
+    m_battle->setLoadout(loadout);
+    m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), loadout.hangar);
     m_battle->setFlagshipStyle(m_game->player().id);
-    m_battle->setDroneBay(m_game->player().id == "Ancients" ? Balance::kPlayerDroneSalvos : 0);
+    m_battle->setDroneBay(loadout.drones);
     m_wasTravelling = m_game->travelling();
     m_end = new ConquestEndScreen(this);
     connect(m_end, &ConquestEndScreen::titleRequested, this, &ConquestScreen::quitToTitleRequested);

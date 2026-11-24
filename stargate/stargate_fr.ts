@@ -1,6 +1,33 @@
 <?xml version='1.0' encoding='utf-8'?>
 <TS version="2.1" language="fr_FR">
 <context>
+    <name>Balance</name>
+    <message>
+        <source>Asgard beam</source>
+        <translation>Rayon asgard</translation>
+    </message>
+    <message>
+        <source>Staff cannons</source>
+        <translation>Canons à plasma</translation>
+    </message>
+    <message>
+        <source>Energy cannons</source>
+        <translation>Canons à énergie</translation>
+    </message>
+    <message>
+        <source>Energy weapons</source>
+        <translation>Armes à énergie</translation>
+    </message>
+    <message>
+        <source>Ori beam</source>
+        <translation>Rayon ori</translation>
+    </message>
+    <message>
+        <source>Main tower</source>
+        <translation>Tour principale</translation>
+    </message>
+</context>
+<context>
     <name>BattleView</name>
     <message>
         <source>Engines</source>
@@ -55,6 +82,10 @@
         <translation>Salve de drones lancée sur T%1 (%2 restantes)</translation>
     </message>
     <message>
+        <source>No pulse weapons aboard this ship</source>
+        <translation>Pas d'armes à impulsion à bord de ce vaisseau</translation>
+    </message>
+    <message>
         <source>Pulse weapons recharging (%1 s)</source>
         <translation>Armes à impulsion en recharge (%1 s)</translation>
     </message>
@@ -65,6 +96,10 @@
     <message>
         <source>Pulse weapons: full volley on %1 targets</source>
         <translation>Armes à impulsion : salve complète sur %1 cibles</translation>
+    </message>
+    <message>
+        <source>No secondary towers aboard this ship</source>
+        <translation>Pas de tours secondaires à bord de ce vaisseau</translation>
     </message>
     <message>
         <source>Secondary towers recharging (%1 s)</source>
@@ -199,6 +234,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Tours secondaires : tir automatique coupé (+%1 d'énergie)</translation>
     </message>
     <message>
+        <source>No railguns aboard this ship</source>
+        <translation>Pas de railguns à bord de ce vaisseau</translation>
+    </message>
+    <message>
         <source>Railguns: point defense on</source>
         <translation>Railguns : défense rapprochée activée</translation>
     </message>
@@ -293,10 +332,6 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>T%1</source>
         <translation>T%1</translation>
-    </message>
-    <message>
-        <source>Main tower</source>
-        <translation>Tour principale</translation>
     </message>
     <message>
         <source>Pulse</source>

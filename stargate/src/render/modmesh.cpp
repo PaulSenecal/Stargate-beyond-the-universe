@@ -82,10 +82,11 @@ ModMesh::Model ModMesh::load(const QString &path)
 
     const quint32 vertexCount = qFromLittleEndian<quint32>(data + kCountOffset);
     const qsizetype indexOffset = kVertexOffset + qsizetype(vertexCount) * kVertexSize;
-    if (vertexCount == 0 || vertexCount > kMaxVertices || indexOffset + 4 > size)
+    if (vertexCount == 0 || vertexCount > kMaxVertices || indexOffset + 8 > size)
         return {};
+    // Index count, a u32 (always 0), then the indices
     const quint32 indexCount = qFromLittleEndian<quint32>(data + indexOffset);
-    const qsizetype tailOffset = indexOffset + 4 + qsizetype(indexCount) * 4;
+    const qsizetype tailOffset = indexOffset + 8 + qsizetype(indexCount) * 4;
     if (indexCount == 0 || indexCount % 3 != 0 || tailOffset > size)
         return {};
 
@@ -116,7 +117,7 @@ ModMesh::Model ModMesh::load(const QString &path)
     // Triangles unrolled (the battle view draws non-indexed vertices)
     Model model;
     model.vertices.reserve(size_t(indexCount) * kFloatsPerVertex);
-    const char *indices = data + indexOffset + 4;
+    const char *indices = data + indexOffset + 8;
     for (quint32 i = 0; i < indexCount; ++i) {
         const quint32 index = qFromLittleEndian<quint32>(indices + qsizetype(i) * 4);
         if (index >= vertexCount)

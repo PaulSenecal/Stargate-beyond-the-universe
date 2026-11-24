@@ -10,7 +10,7 @@
 //  Reads a ship model of the Stargate Reborn mod (Sins of a Solar
 //  Empire II .mesh, local assets): header (61 bytes, vertex count at
 //  0x35), vertices of 49 bytes (position, normal, tangent, sign, uv,
-//  flag), the triangle indices (count + uint32), then a block with
+//  flag), the triangle indices (count, a zero uint32, then uint32 each), then a block with
 //  attach points and the material names. The model is turned to the
 //  battle view axes (forward +X, up +Y), centered and scaled to a
 //  length of 1. Its textures come from its first material:

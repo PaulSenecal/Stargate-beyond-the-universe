@@ -13,6 +13,7 @@
 #include "radarwidget.h"
 #include "shiplibrarydialog.h"
 #include "shipstatuswidget.h"
+#include "src/audio/soundsystem.h"
 #include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
 #include "src/core/questsystem.h"
@@ -103,6 +104,8 @@ GameMenu::GameMenu(QWidget *parent)
     // --- Wiring
     connect(m_console, &CommandConsole::commandEntered, this, &GameMenu::onCommandEntered);
     connect(m_battle, &BattleView::logMessage, this, &GameMenu::onBattleLog);
+    m_sound = new SoundSystem(this);
+    connect(m_battle, &BattleView::sound, m_sound, &SoundSystem::play);
     connect(m_route, &DestinyRoute::notice, this, &GameMenu::onRouteNotice);
     connect(m_simTimer, &QTimer::timeout, this, &GameMenu::simulate);
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] { saveGame(false); });
@@ -111,7 +114,7 @@ GameMenu::GameMenu(QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint" << "library";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -121,7 +124,8 @@ GameMenu::GameMenu(QWidget *parent)
                 addresses << p.gateAddress();
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
-                                         QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library")})
+                                         QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
+                                         QStringLiteral("sound")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -229,6 +233,10 @@ void GameMenu::onCommandEntered(const QString &command)
         showLibrary(command.section(' ', 1, -1, QString::SectionSkipEmpty));
         return;
     }
+    if (first == "sound" || first == "volume") {
+        soundCommand(command.section(' ', 1, 1, QString::SectionSkipEmpty).toLower());
+        return;
+    }
     if (first == "hint") {
         const QString hint = m_quests->hint();
         m_console->appendLine(hint.isEmpty() ? tr("No hint right now") : tr("Hint: %1").arg(hint));
@@ -300,7 +308,30 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
     m_console->appendLine(tr("Game: quests, hint, save (also automatic every 30 s, after each jump and on exit), clear"));
     m_console->appendLine(tr("Library: library (all ships), library <ship> (e.g. library dart) - attacks and chances"));
+    m_console->appendLine(tr("Sound: sound (status), sound on, sound off, sound <0-100> (volume)"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
+}
+
+void GameMenu::soundCommand(const QString &arg)
+{
+    static int lastVolume = 70;
+    if (arg == "off" || arg == "mute") {
+        if (m_sound->volume() > 0)
+            lastVolume = m_sound->volume();
+        m_sound->setVolume(0);
+    } else if (arg == "on") {
+        m_sound->setVolume(m_sound->volume() > 0 ? m_sound->volume() : lastVolume);
+    } else if (!arg.isEmpty()) {
+        bool ok = false;
+        const int volume = arg.toInt(&ok);
+        if (!ok || volume < 0 || volume > 100) {
+            m_console->appendLine(tr("Usage: sound on | off | <0-100>"), CommandConsole::Tone::Warning);
+            return;
+        }
+        m_sound->setVolume(volume);
+    }
+    m_console->appendLine(m_sound->volume() == 0 ? tr("Sound: off") : m_sound->status(),
+                          m_sound->isActive() ? CommandConsole::Tone::Info : CommandConsole::Tone::Warning);
 }
 
 void GameMenu::showLibrary(const QString &ship)

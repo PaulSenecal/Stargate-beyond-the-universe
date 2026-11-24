@@ -17,6 +17,7 @@
 
 #include "meshbuilder.h"
 #include "planetlook.h"
+#include "src/audio/soundcue.h"
 #include "src/core/shipclass.h"
 
 class QPainter;
@@ -152,6 +153,8 @@ signals:
     void logMessage(const QString &text, BattleView::LogLevel level);
     void subsystemChanged(const QString &key, float health);
     void enemyDestroyed(bool mothership);
+    // delay: seconds before the sound starts (salvos)
+    void sound(SoundCue cue, const QString &faction, float delay);
 
 protected:
     void initializeGL() override;

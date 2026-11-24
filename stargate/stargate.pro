@@ -1,5 +1,5 @@
 QT       += core gui sql network
-QT += widgets opengl openglwidgets
+QT += widgets opengl openglwidgets multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -21,6 +21,7 @@ SOURCES += \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
+    src/audio/soundsystem.cpp \
     src/core/commandmanager.cpp \
     src/core/destinystate.cpp \
     src/core/questsystem.cpp \
@@ -55,6 +56,8 @@ HEADERS += \
     src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
+    src/audio/soundcue.h \
+    src/audio/soundsystem.h \
     src/core/commandmanager.h \
     src/core/destinystate.h \
     src/core/questsystem.h \

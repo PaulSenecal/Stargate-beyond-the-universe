@@ -15,6 +15,7 @@ class ShipStatusWidget;
 class RadarWidget;
 class WeaponStatusWidget;
 class ShipLibraryDialog;
+class SoundSystem;
 class QTimer;
 
 // ================================================================
@@ -52,6 +53,7 @@ private:
     void repair(const QString &system);
     void showResources();
     void showLibrary(const QString &ship);
+    void soundCommand(const QString &arg);
 
     // Exploration (DestinyRoute)
     void jumpFtl();
@@ -77,6 +79,7 @@ private:
     QuestSystem *m_quests = nullptr;
     QList<ShipClass> m_library = ShipClass::fallbackRoster();
     ShipLibraryDialog *m_libraryDialog = nullptr;
+    SoundSystem *m_sound = nullptr;
     CommandManager *m_commands = nullptr;
     DestinyState m_destiny;
     DestinyRoute *m_route = nullptr;

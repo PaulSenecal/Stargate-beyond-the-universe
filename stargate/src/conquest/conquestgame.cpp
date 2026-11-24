@@ -28,6 +28,9 @@ constexpr double kAttackRatio = 1.6;            // AI attacks only with that muc
 constexpr double kDefenseRebuild = 60.0;        // seconds per defense level rebuilt (up to 3, 5 for capitals)
 constexpr int kFlagshipPower = 12;              // AI estimate of the flagship strength
 constexpr double kBattleRate = 0.04;            // damage per second per point of power
+constexpr double kEventPeriod = 30.0;           // seconds between two faction events (revolts…)
+constexpr double kRevoltChance = 0.04;          // per weak Goa'uld world and period
+constexpr double kDiplomacyChance = 0.04;       // per neutral neighbour of the Tau'ri and period
 constexpr int kMaxBattleMotherships = 4;        // 3D battle limits (12 contacts)
 constexpr int kMaxBattleFighters = 8;
 
@@ -309,14 +312,46 @@ int ConquestGame::garrisonPower(const Planet &p)
     return p.defense * 3 + 4 * p.dockMotherships + p.dockFighters;
 }
 
-double ConquestGame::naquadahRate(const Planet &p)
+double ConquestGame::naquadahRate(const Planet &p) const
 {
-    return 0.02 * p.population * (p.bonus == Bonus::NaquadahMine ? 2.0 : 1.0);
+    const double slavery = hasTrait(p.owner, "Goa'uld") ? 1.6 : 1.0;
+    return 0.02 * p.population * (p.bonus == Bonus::NaquadahMine ? 2.0 : 1.0) * slavery;
 }
 
-double ConquestGame::triniumRate(const Planet &p)
+double ConquestGame::triniumRate(const Planet &p) const
 {
     return 0.01 * p.population * (p.bonus == Bonus::TriniumMine ? 2.0 : 1.0);
+}
+
+bool ConquestGame::hasTrait(int faction, const char *factionId) const
+{
+    return faction >= 0 && faction < m_factions.size() && m_factions[faction].id == QLatin1String(factionId);
+}
+
+double ConquestGame::powerMultiplier(int faction) const
+{
+    if (!hasTrait(faction, "Tau'ri"))
+        return 1.0;
+    const int sites = int(std::count_if(m_planets.cbegin(), m_planets.cend(), [faction](const Planet &p) {
+        return p.owner == faction && p.bonus == Bonus::AncientSite;
+    }));
+    return 1.0 + std::min(0.4, 0.08 * sites);
+}
+
+QString ConquestGame::traitSummary(const QString &factionId)
+{
+    if (factionId == "Wraith")
+        return tr("Culling: captured worlds lose half their population (it feeds the hives: naquadah) and never "
+                  "grow back; shipyards x1.6; fleets regrow fighters at home.");
+    if (factionId == "Goa'uld")
+        return tr("Slavery: naquadah x1.6 and shipyards x1.25, but worlds without a fleet in orbit may rise in "
+                  "Jaffa revolts.");
+    if (factionId == "Tau'ri")
+        return tr("Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral "
+                  "neighbours may join, the flagship rallies worlds twice as fast.");
+    if (factionId == "Lucian Alliance")
+        return tr("Smuggling: fighters built x1.4 faster. Raids: every world taken steals naquadah from its owner.");
+    return QString();
 }
 
 QString ConquestGame::bonusName(Bonus bonus)
@@ -556,7 +591,10 @@ void ConquestGame::tick(double seconds)
         Faction &f = m_factions[p.owner];
         f.naquadah += naquadahRate(p) * seconds;
         f.trinium += triniumRate(p) * seconds;
-        p.population += 0.02 * p.population * (1.0 - p.population / p.maxPopulation) * seconds;
+        if (hasTrait(p.owner, "Wraith"))
+            p.population = std::max(0.2 * p.maxPopulation, p.population - 0.002 * p.population * seconds);
+        else
+            p.population += 0.02 * p.population * (1.0 - p.population / p.maxPopulation) * seconds;
         // Garrisons are rebuilt little by little
         const int rebuiltMax = p.capital ? 5 : 3;
         if (p.defense < rebuiltMax && p.id != m_battlePlanet) {
@@ -569,6 +607,11 @@ void ConquestGame::tick(double seconds)
     }
 
     // Autonomous fleets of every faction
+    m_eventClock += seconds;
+    if (m_eventClock >= kEventPeriod) {
+        m_eventClock -= kEventPeriod;
+        factionEvents();
+    }
     produce(seconds);
     moveFleets(seconds);
     mergeFleets();
@@ -609,7 +652,8 @@ void ConquestGame::tick(double seconds)
     const Planet &here = m_planets[m_at];
     if (here.owner < 0) {
         // Neutral world: taken after a stay in orbit
-        m_capture += seconds / (kCaptureBase + kCapturePerDefense * here.defense);
+        const double rally = hasTrait(m_player, "Tau'ri") ? 2.0 : 1.0;
+        m_capture += rally * seconds / (kCaptureBase + kCapturePerDefense * here.defense);
         if (m_capture >= 1.0) {
             m_capture = 0;
             emit message(tr("%1 joins your faction").arg(here.name), Tone::Success);
@@ -794,6 +838,13 @@ void ConquestGame::capture(int planetId, int newOwner)
     const int previousOwner = p.owner;
     p.owner = newOwner;
     p.dockMotherships = p.dockFighters = 0;
+    if (hasTrait(newOwner, "Wraith") && previousOwner != newOwner) {
+        // Culling: half of the population feeds the hives (naquadah)
+        m_factions[newOwner].naquadah += 6.0 * p.population * 0.5;
+        p.population *= 0.5;
+        if (newOwner == m_player || previousOwner == m_player)
+            emit message(tr("The Wraith cull the population of %1").arg(p.name), Tone::Warning);
+    }
     p.fighterProgress = p.mothershipProgress = 0;
     if (p.bonus == Bonus::AncientSite && newOwner >= 0) {
         m_factions[newOwner].naquadah += 100;
@@ -825,14 +876,58 @@ void ConquestGame::checkVictory()
 //  Phase 2: production, fleets, AI, automatic battles
 // ================================================================
 
+// Periodic faction events: Jaffa revolts, Tau'ri diplomacy, Wraith regrowth
+void ConquestGame::factionEvents()
+{
+    auto quiet = [this](const Planet &p) {
+        if (skirmishAt(p.id) || p.id == m_battlePlanet || (p.id == m_at && !travelling()))
+            return false;
+        return std::none_of(m_fleets.cbegin(), m_fleets.cend(),
+                            [&p](const Fleet &f) { return f.at == p.id && !f.moving(); });
+    };
+    for (Planet &p : m_planets) {
+        // Jaffa revolt on a Goa'uld world left without a fleet
+        if (hasTrait(p.owner, "Goa'uld") && !p.capital && quiet(p)
+            && m_rng.generateDouble() < kRevoltChance) {
+            const int previous = p.owner;
+            p.owner = -1;
+            p.defense = 2;
+            p.dockMotherships = p.dockFighters = 0;
+            emit message(tr("Jaffa revolt on %1: the world breaks free from the Goa'uld").arg(p.name),
+                         previous == m_player ? Tone::Critical : Tone::Info);
+            emit planetChanged(p.id);
+            continue;
+        }
+        // Tau'ri diplomacy with a neutral neighbour
+        if (p.owner < 0 && quiet(p)) {
+            for (int n : p.lanes) {
+                const int f = m_planets[n].owner;
+                if (hasTrait(f, "Tau'ri") && m_rng.generateDouble() < kDiplomacyChance) {
+                    emit message(tr("%1 joins the Tau'ri through diplomacy").arg(p.name),
+                                 f == m_player ? Tone::Success : Tone::Info);
+                    capture(p.id, f);
+                    break;
+                }
+            }
+        }
+    }
+    // Wraith fleets regrow fighters on their worlds
+    for (Fleet &fleet : m_fleets)
+        if (hasTrait(fleet.owner, "Wraith") && !fleet.moving() && m_planets[fleet.at].owner == fleet.owner
+            && fleet.fighters < 12)
+            ++fleet.fighters;
+}
+
 void ConquestGame::produce(double seconds)
 {
     for (Planet &p : m_planets) {
         if (p.owner < 0 || !p.hasShipyard() || p.id == m_battlePlanet)
             continue;
-        const double rate = std::clamp(0.5 + p.population / 10.0, 0.6, 1.6) * seconds;
+        const double yard = hasTrait(p.owner, "Wraith") ? 1.6 : hasTrait(p.owner, "Goa'uld") ? 1.25 : 1.0;
+        const double rate = std::clamp(0.5 + p.population / 10.0, 0.6, 1.6) * seconds * yard;
+        const double smuggling = hasTrait(p.owner, "Lucian Alliance") ? 1.4 : 1.0;
         if (p.dockFighters < kDockFighters) {
-            p.fighterProgress += rate / kFighterBuild;
+            p.fighterProgress += rate * smuggling / kFighterBuild;
             if (p.fighterProgress >= 1.0) {
                 p.fighterProgress -= 1.0;
                 ++p.dockFighters;
@@ -915,17 +1010,9 @@ void ConquestGame::moveFleets(double seconds)
 void ConquestGame::think(Fleet &fleet)
 {
     const int me = fleet.owner;
-    const double power = fleet.power();
+    const double power = fleet.power() * powerMultiplier(me);
     double bestScore = 0.5;
     int bestTarget = -1;
-
-    auto fleetPowerAt = [this](int planetId, int owner) {
-        int power = 0;
-        for (const Fleet &f : m_fleets)
-            if (f.owner == owner && f.at == planetId && !f.moving())
-                power += f.power();
-        return power;
-    };
 
     for (const Planet &t : m_planets) {
         if (t.id == fleet.at)
@@ -937,7 +1024,7 @@ void ConquestGame::think(Fleet &fleet)
 
         if (t.owner != me) {
             // Attack: only where the fleet clearly outguns the defenders
-            double defense = garrisonPower(t) + (t.owner >= 0 ? fleetPowerAt(t.id, t.owner) : 0);
+            double defense = sidePower(t.id, t.owner);
             if (me != m_player && t.id == m_at && !travelling())
                 defense += kFlagshipPower;
             const double ratio = power / std::max(1.0, defense);
@@ -1037,7 +1124,7 @@ int ConquestGame::sidePower(int planetId, int owner) const
             power += fleet.power();
     if (owner == m_planets[planetId].owner)
         power += garrisonPower(m_planets[planetId]);
-    return power;
+    return int(std::round(power * powerMultiplier(owner)));
 }
 
 bool ConquestGame::observing() const
@@ -1198,6 +1285,13 @@ void ConquestGame::endSkirmish(int index, bool attackerWon)
             emit message(tr("%1 falls to the %2!").arg(name, attacker), Tone::Critical);
         else
             emit message(tr("The %1 take %2 from the %3").arg(attacker, name, defender), Tone::Info);
+        if (hasTrait(battle.attacker, "Lucian Alliance") && previous >= 0) {
+            const double loot = std::min(60.0, m_factions[previous].naquadah);
+            m_factions[previous].naquadah -= loot;
+            m_factions[battle.attacker].naquadah += loot;
+            if (previous == m_player || battle.attacker == m_player)
+                emit message(tr("Lucian raid on %1: %2 naquadah stolen").arg(name).arg(qRound(loot)), Tone::Warning);
+        }
         capture(battle.planet, battle.attacker);
     } else {
         p.defense = std::max(1, p.defense);
@@ -1267,7 +1361,7 @@ QJsonObject ConquestGame::toJson() const
                                       {"attackerPending", b.attackerPending}, {"defenderPending", b.defenderPending},
                                       {"elapsed", b.elapsed}});
     return {{"version", 3}, {"factions", factions}, {"planets", planets}, {"fleets", fleets},
-            {"skirmishes", skirmishes},
+            {"skirmishes", skirmishes}, {"eventClock", m_eventClock},
             {"nextFleet", m_nextFleetId}, {"at", m_at}, {"previous", m_previous}, {"route", route},
             {"leg", m_legProgress}, {"capture", m_capture}, {"hull", m_hull}, {"battle", m_battlePlanet},
             {"battleOwner", m_battleOwner}, {"over", m_over}};
@@ -1359,6 +1453,7 @@ bool ConquestGame::fromJson(const QJsonObject &json)
     m_planets = planets;
     m_fleets = fleets;
     m_skirmishes = skirmishes;
+    m_eventClock = std::clamp(json.value("eventClock").toDouble(), 0.0, kEventPeriod);
     m_nextFleetId = std::max(nextFleet, json.value("nextFleet").toInt(1));
     m_player = player;
     m_at = json.value("at").toInt();

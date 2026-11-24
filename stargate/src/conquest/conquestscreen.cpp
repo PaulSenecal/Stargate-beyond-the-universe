@@ -233,6 +233,8 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_battle->restoreDefenses(float(m_game->flagshipHull()), 100.0f, true);
     if (m_game->inBattle())
         onBattleStarted(m_game->battlePlanet(), m_game->battleFaction(), 2, 4);
+    m_console->appendLine(tr("Faction trait: %1").arg(ConquestGame::traitSummary(m_game->player().id)),
+                          CommandConsole::Tone::Info);
     m_console->appendLine(tr("Type 'help' for the conquest commands - double click a planet to travel there"));
     m_map->select(m_game->flagshipPlanet());
     updatePlanetLook();
@@ -352,8 +354,8 @@ QString ConquestScreen::planetSummary(int planetId) const
     html += tr("Defense %1").arg(pips) + "&nbsp;&nbsp;" + tr("Bonus: %1").arg(ConquestGame::bonusName(p.bonus))
             + "<br>";
     html += tr("Produces %1 naquadah and %2 trinium per minute")
-                .arg(ConquestGame::naquadahRate(p) * 60, 0, 'f', 0)
-                .arg(ConquestGame::triniumRate(p) * 60, 0, 'f', 0);
+                .arg(m_game->naquadahRate(p) * 60, 0, 'f', 0)
+                .arg(m_game->triniumRate(p) * 60, 0, 'f', 0);
     if (p.hasShipyard() && p.owner >= 0)
         html += "<br>" + tr("Shipyard: %1 mothership(s), %2 fighter(s) ready").arg(p.dockMotherships).arg(p.dockFighters);
     QStringList here;
@@ -492,6 +494,10 @@ void ConquestScreen::onCommand(const QString &command)
                                   .arg(int(me.trinium))
                                   .arg(qRound(m_battle->hull()))
                                   .arg(m_game->planets()[m_game->flagshipPlanet()].name));
+        m_console->appendLine(tr("Faction trait: %1").arg(ConquestGame::traitSummary(me.id)));
+        if (m_game->powerMultiplier(m_game->playerIndex()) > 1.0)
+            m_console->appendLine(tr("Ancient technology: fleet power +%1%")
+                                      .arg(qRound((m_game->powerMultiplier(m_game->playerIndex()) - 1.0) * 100)));
     } else if (name == "fortify") {
         const int id = planetArg();
         QString error;

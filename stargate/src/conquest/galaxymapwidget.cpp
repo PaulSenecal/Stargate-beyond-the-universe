@@ -21,6 +21,7 @@ const QColor kText(232, 226, 200);
 const QColor kNeutral(130, 130, 125);
 const QColor kLane(70, 76, 96);
 constexpr double kMargin = 14;
+constexpr double kLabelRoom = 90;     // names are written right of the planets
 
 QColor ownerColor(const ConquestGame *game, int owner)
 {
@@ -43,16 +44,12 @@ void GalaxyMapWidget::select(int planetId)
     update();
 }
 
-double GalaxyMapWidget::scale() const
-{
-    return std::min((width() - 2 * kMargin) / kMapWidth, (height() - 2 * kMargin) / kMapHeight);
-}
-
+// The map fills the widget (schematic: x and y scales may differ)
 QPointF GalaxyMapWidget::toScreen(const QPointF &map) const
 {
-    const double s = scale();
-    const QPointF origin((width() - kMapWidth * s) / 2, (height() - kMapHeight * s) / 2);
-    return origin + map * s;
+    const double sx = std::max(0.1, (width() - 2 * kMargin - kLabelRoom) / kMapWidth);
+    const double sy = std::max(0.1, (height() - 2 * kMargin) / kMapHeight);
+    return QPointF(kMargin + map.x() * sx, kMargin + map.y() * sy);
 }
 
 int GalaxyMapWidget::planetAt(const QPointF &pos) const

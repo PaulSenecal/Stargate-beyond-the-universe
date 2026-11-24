@@ -34,7 +34,6 @@ protected:
 private:
     QPointF toScreen(const QPointF &map) const;
     int planetAt(const QPointF &pos) const;
-    double scale() const;
 
     const ConquestGame *m_game = nullptr;
     int m_selected = -1;

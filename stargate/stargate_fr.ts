@@ -459,6 +459,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Pause, sauvegarde, réglages, quitter (Échap)</translation>
     </message>
     <message>
+        <source>HUD</source>
+        <translation>HUD</translation>
+    </message>
+    <message>
+        <source>Show or hide the radar, ship and weapon panels (&apos;hud on|off&apos;)</source>
+        <translation>Afficher ou masquer le radar et les panneaux du vaisseau et des armes (&apos;hud on|off&apos;)</translation>
+    </message>
+    <message>
         <source>Conquest restored: %1 - %2 planet(s) of %3</source>
         <translation>Conquête restaurée : %1 - %2 planète(s) sur %3</translation>
     </message>
@@ -577,6 +585,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Battle: attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</source>
         <translation>Combat : attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</translation>
+    </message>
+    <message>
+        <source>Display: hud on|off (radar, ship and weapon panels), or the HUD button</source>
+        <translation>Affichage : hud on|off (radar, panneaux du vaisseau et des armes), ou le bouton HUD</translation>
     </message>
     <message>
         <source>Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet.</source>

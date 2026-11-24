@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QSettings>
 #include <QShortcut>
 #include <QSplitter>
 #include <QStandardPaths>
@@ -16,6 +17,9 @@
 
 #include "galaxymapwidget.h"
 #include "src/Menu/gamemenu/commandconsole.h"
+#include "src/Menu/gamemenu/radarwidget.h"
+#include "src/Menu/gamemenu/shipstatuswidget.h"
+#include "src/Menu/gamemenu/weaponstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
 #include "src/audio/musicplayer.h"
 #include "src/audio/soundsystem.h"
@@ -82,11 +86,25 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     left->addWidget(m_info, 1);
 
     m_battle = new BattleView(topArea);
+
+    // Tactical panels of the campaign (optional)
+    m_hud = new QWidget(topArea);
+    auto *hudLayout = new QVBoxLayout(m_hud);
+    hudLayout->setContentsMargins(0, 0, 0, 0);
+    hudLayout->setSpacing(8);
+    m_radar = new RadarWidget(m_hud);
+    m_shipStatus = new ShipStatusWidget(m_hud);
+    m_weapons = new WeaponStatusWidget(m_hud);
+    hudLayout->addWidget(m_radar, 1);
+    hudLayout->addWidget(m_shipStatus, 1);
+    hudLayout->addWidget(m_weapons, 1);
+
     auto *top = new QHBoxLayout(topArea);
     top->setContentsMargins(0, 0, 0, 0);
     top->setSpacing(12);
-    top->addLayout(left, 45);
-    top->addWidget(m_battle, 55);
+    top->addLayout(left, 34);
+    top->addWidget(m_battle, 46);
+    top->addWidget(m_hud, 20);
 
     m_console = new CommandConsole(this);
     auto *splitter = new QSplitter(Qt::Vertical, this);
@@ -150,7 +168,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     });
 
     // --- Console
-    m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "attack",
+    m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "attack",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -182,7 +200,16 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
         "QPushButton:hover { color: #e2bf3e; border-color: #e2bf3e; }");
     m_menuButton->adjustSize();
     connect(m_menuButton, &QPushButton::clicked, this, &ConquestScreen::openPauseMenu);
+    m_hudButton = new QPushButton(tr("HUD"), m_battle);
+    m_hudButton->setFocusPolicy(Qt::NoFocus);
+    m_hudButton->setCursor(Qt::PointingHandCursor);
+    m_hudButton->setToolTip(tr("Show or hide the radar, ship and weapon panels ('hud on|off')"));
+    m_hudButton->setStyleSheet(m_menuButton->styleSheet());
+    m_hudButton->adjustSize();
+    connect(m_hudButton, &QPushButton::clicked, this, [this] { setHudVisible(!m_hud->isVisible()); });
     m_battle->installEventFilter(this);
+    setupHud();
+    setHudVisible(QSettings("Stargate", "stargate").value("conquest/hud", true).toBool());
 
     // --- Start or continue
     bool loaded = false;
@@ -442,6 +469,9 @@ void ConquestScreen::onCommand(const QString &command)
             warn(tr("No repairs during a battle"));
         else if (!m_game->repairFlagship(&error))
             warn(tr("Cannot repair: %1").arg(error));
+    } else if (name == "hud") {
+        const QString state = arg.toLower();
+        setHudVisible(state.isEmpty() ? !m_hud->isVisible() : state != "off" && state != "hide");
     } else if (name == "attack" || name == "maintower") {
         const int target = name == "attack" ? arg.toInt() - 1 : -1;
         m_battle->fireMainWeapon(target);
@@ -467,6 +497,7 @@ void ConquestScreen::showHelp()
         tr("Economy: fortify <planet> (+1 defense, %1 naquadah), repair (flagship hull, trinium)")
             .arg(ConquestGame::kFortifyCost),
         tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
+        tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
         tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
         tr("Win by taking every planet of the enemy factions. Menu: Esc or 'menu'."),
     };
@@ -492,6 +523,70 @@ void ConquestScreen::listPlanets()
 // ================================================================
 //  Pause
 // ================================================================
+
+// ================================================================
+//  Tactical panels (same widgets as the campaign)
+// ================================================================
+
+void ConquestScreen::setHudVisible(bool visible)
+{
+    m_hud->setVisible(visible);
+    QSettings("Stargate", "stargate").setValue("conquest/hud", visible);
+}
+
+void ConquestScreen::setupHud()
+{
+    // The flagship has no component table: its parts follow the battle systems
+    struct Part
+    {
+        const char *name;
+        const char *system;
+        bool weapon;
+    };
+    static const Part kParts[] = {
+        {"Life Support", "lifesupport", false}, {"Shield Generator", "shields", false},
+        {"Power Core", "", false},              {"FTL Drive", "engines", false},
+        {"Sublight Engine", "engines", false},  {"Energy Cannon", "weapons", true},
+        {"Railgun", "weapons", true},           {"Missile Bay", "weapons", true},
+    };
+    auto health = [this](const char *system) {
+        return *system ? qRound(m_battle->subsystemHealth(QString::fromLatin1(system))) : 100;
+    };
+    auto hit = [this](const char *system) {
+        return *system && m_battle->secondsSinceHit(QString::fromLatin1(system)) < 1.5f;
+    };
+
+    m_shipStatus->setProvider([this, health, hit] {
+        ShipStatusData data;
+        data.hull = m_battle->hull();
+        data.shield = m_battle->shieldStrength();
+        data.shieldUp = m_battle->shieldActive();
+        for (const Part &part : kParts)
+            data.components.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
+        for (const QVector3D &f : m_battle->fireSpots())
+            data.fires << QPointF(f.x(), f.z());
+        for (const HitMark &h : m_battle->recentHits())
+            data.hits.append({QPointF(h.local.x(), h.local.z()), h.age, h.shield});
+        return data;
+    });
+    m_radar->setProvider([this] {
+        RadarPicture picture;
+        picture.shieldUp = m_battle->shieldActive() && m_battle->shieldStrength() > 0.0f;
+        for (const BattleView::RadarBlip &b : m_battle->radarContacts())
+            picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health});
+        for (const BattleView::RadarShot &s : m_battle->radarShots())
+            picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny, s.missile});
+        return picture;
+    });
+    m_weapons->setProvider([this, health, hit] {
+        WeaponStatusData data;
+        data.readiness = m_battle->weaponReadiness();
+        for (const Part &part : kParts)
+            if (part.weapon)
+                data.weapons.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
+        return data;
+    });
+}
 
 void ConquestScreen::openPauseMenu()
 {
@@ -521,7 +616,9 @@ void ConquestScreen::setPaused(bool paused)
 
 bool ConquestScreen::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == m_battle && event->type() == QEvent::Resize)
+    if (watched == m_battle && event->type() == QEvent::Resize) {
         m_menuButton->move(m_battle->width() - m_menuButton->width() - 10, 10);
+        m_hudButton->move(m_menuButton->x() - m_hudButton->width() - 8, 10);
+    }
     return QWidget::eventFilter(watched, event);
 }

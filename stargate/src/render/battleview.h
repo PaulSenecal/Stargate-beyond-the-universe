@@ -125,6 +125,7 @@ public:
     QList<HitMark> recentHits() const;
     QList<QVector3D> fireSpots() const { return QList<QVector3D>(m_fires.begin(), m_fires.end()); }
     float secondsSinceHit(const QString &key) const;     // system key, large if never hit
+    float subsystemHealth(const QString &key) const;     // 0..100, 100 if unknown
     WeaponReadiness weaponReadiness() const;
 
     // Radar feed, in ship-local coordinates (x forward, z starboard)
@@ -255,7 +256,6 @@ private:
     const Enemy *findEnemy(int id) const;
     const Enemy *pickTarget();
     Subsystem *subsystem(const QString &key);
-    float subsystemHealth(const QString &key) const;
     QVector3D destinyWorld(const QVector3D &local) const;
     bool insideShield(const QVector3D &world) const;
     bool shieldProtecting() const;

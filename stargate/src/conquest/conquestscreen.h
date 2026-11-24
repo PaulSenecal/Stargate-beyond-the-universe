@@ -12,13 +12,18 @@ class PauseMenu;
 class QLabel;
 class QPushButton;
 class QTimer;
+class RadarWidget;
+class ShipStatusWidget;
+class WeaponStatusWidget;
 class SoundSystem;
 
 // ================================================================
 //  ConquestScreen
 //  Conquest mode screen: galaxy map and planet panel (left), the 3D
-//  battle view (right) where the flagship fights the planet fleets,
-//  and the command console (bottom). Escape / MENU opens the pause
+//  battle view (center) where the flagship fights the planet fleets,
+//  the tactical panels of the campaign - radar, ship damage, weapons -
+//  (right, optional: HUD button or 'hud on|off') and the command
+//  console (bottom). Escape / MENU opens the pause
 //  menu. The game is saved in conquest.json (data folder) when
 //  leaving, and can be continued from the title screen.
 // ================================================================
@@ -59,6 +64,8 @@ private:
     void setPaused(bool paused);
     void openPauseMenu();
     void updatePlanetLook();
+    void setHudVisible(bool visible);
+    void setupHud();
 
     SoundSystem *m_sound = nullptr;
     ConquestGame *m_game = nullptr;
@@ -68,6 +75,11 @@ private:
     CommandConsole *m_console = nullptr;
     PauseMenu *m_pauseMenu = nullptr;
     QPushButton *m_menuButton = nullptr;
+    QPushButton *m_hudButton = nullptr;
+    QWidget *m_hud = nullptr;
+    RadarWidget *m_radar = nullptr;
+    ShipStatusWidget *m_shipStatus = nullptr;
+    WeaponStatusWidget *m_weapons = nullptr;
     QTimer *m_timer = nullptr;
     int m_lookPlanet = -1;
     int m_calmSeconds = 0;

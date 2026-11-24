@@ -1,12 +1,14 @@
 #ifndef CONQUESTSCREEN_H
 #define CONQUESTSCREEN_H
 
+#include <QHash>
 #include <QWidget>
 
 #include "conquestgame.h"
 
 class BattleView;
 class CommandConsole;
+class ConquestEndScreen;
 class GalaxyMapWidget;
 class PauseMenu;
 class QLabel;
@@ -68,6 +70,9 @@ private:
     void updatePlanetLook();
     void setHudVisible(bool visible);
     void setupHud();
+    void joinFriendlyFleets();      // own and allied fleets at the battle fight in 3D
+    void reportAllySurvivors();     // their losses go back to the fleets
+    void showEnd(bool victory);
 
     SoundSystem *m_sound = nullptr;
     ConquestGame *m_game = nullptr;
@@ -84,6 +89,13 @@ private:
     WeaponStatusWidget *m_weapons = nullptr;
     QTimer *m_timer = nullptr;
     int m_lookPlanet = -1;
+    ConquestEndScreen *m_end = nullptr;
+    struct Joined { int spawnedMotherships, spawnedFighters, motherships, fighters; };
+    QHash<int, Joined> m_joined;        // fleet id -> ships sent into the 3D battle
+    double m_playSeconds = 0;
+    int m_battlesWon = 0;
+    int m_battlesLost = 0;
+    bool m_wasTravelling = false;
     int m_calmSeconds = 0;
     double m_musicClock = 0;
 };

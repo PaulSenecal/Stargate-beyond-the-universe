@@ -879,6 +879,19 @@ private slots:
         QVERIFY(game.hostile(0, 1));
     }
 
+    void fleetLossesAfterBattle()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withFleets({{0, 2, 8, 0}, {0, 1, 3, 1}})));
+        game.setFleetStrength(1, 1, 5);         // survivors of a 3D battle
+        QCOMPARE(game.fleets()[0].motherships, 1);
+        QCOMPARE(game.fleets()[0].fighters, 5);
+        game.setFleetStrength(2, 0, 0);         // wiped out
+        QCOMPARE(game.fleetCount(0), 1);
+        QCOMPARE(ConquestGame::hangarFighter("Wraith"), QStringLiteral("Wraith Dart"));
+        QCOMPARE(ConquestGame::hangarFighter("Tau'ri"), QStringLiteral("F-302"));
+    }
+
     void orderedFleet()
     {
         ConquestGame game;

@@ -98,9 +98,11 @@ void RadarWidget::paintEvent(QPaintEvent *)
     p.setFont(font);
     p.setPen(kText);
     p.drawText(QRectF(left, y, right - left, line), Qt::AlignLeft | Qt::AlignVCenter, tr("RADAR"));
-    p.setPen(m_picture.contacts.isEmpty() ? kScope : kEnemy);
+    const qsizetype hostileCount = std::count_if(m_picture.contacts.cbegin(), m_picture.contacts.cend(),
+                                                 [](const RadarPicture::Contact &c) { return !c.ally; });
+    p.setPen(hostileCount == 0 ? kScope : kEnemy);
     p.drawText(QRectF(left, y, right - left, line), Qt::AlignRight | Qt::AlignVCenter,
-               m_picture.contacts.isEmpty() ? tr("NO CONTACT") : tr("%1 CONTACT(S)").arg(m_picture.contacts.size()));
+               hostileCount == 0 ? tr("NO CONTACT") : tr("%1 CONTACT(S)").arg(hostileCount));
     y += line + 2;
 
     p.setFont(small);
@@ -196,6 +198,11 @@ void RadarWidget::paintEvent(QPaintEvent *)
         }
         const qreal size = c.mothership ? 5.5 : 3.5;
         p.setPen(Qt::NoPen);
+        if (c.ally) {
+            p.setBrush(QColor(90, 170, 255, outOfRange ? 140 : 255));
+            p.drawEllipse(at, size * 0.8, size * 0.8);
+            continue;
+        }
         p.setBrush(outOfRange ? QColor(kEnemy.red(), kEnemy.green(), kEnemy.blue(), 140) : kEnemy);
         drawTriangle(p, at, -offset, size);   // points toward the Destiny
         if (c.locked) {

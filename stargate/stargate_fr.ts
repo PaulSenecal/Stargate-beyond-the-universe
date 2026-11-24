@@ -152,6 +152,30 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Nouveaux contacts hostiles (%1) : %2</translation>
     </message>
     <message>
+        <source>Friendly %1 ships join the battle</source>
+        <translation>Des vaisseaux %1 amis rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>No hangar aboard</source>
+        <translation>Pas de hangar à bord</translation>
+    </message>
+    <message>
+        <source>Hangar empty - fighters are rebuilt out of battle</source>
+        <translation>Hangar vide - les chasseurs sont reconstruits hors combat</translation>
+    </message>
+    <message>
+        <source>%1 %2 launched</source>
+        <translation>%1 %2 lancé(s)</translation>
+    </message>
+    <message>
+        <source>Your %1 is shot down</source>
+        <translation>Votre %1 est abattu</translation>
+    </message>
+    <message>
+        <source>Friendly %1 destroyed</source>
+        <translation>%1 ami détruit</translation>
+    </message>
+    <message>
         <source>%1 fires a salvo of %2 missiles</source>
         <translation>%1 tire une salve de %2 missiles</translation>
     </message>
@@ -311,6 +335,33 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Valid command: %1</source>
         <translation>Commande valide : %1</translation>
+    </message>
+</context>
+<context>
+    <name>ConquestEndScreen</name>
+    <message>
+        <source>Back to the title screen</source>
+        <translation>Retour à l&apos;écran titre</translation>
+    </message>
+    <message>
+        <source>Quit game</source>
+        <translation>Quitter le jeu</translation>
+    </message>
+    <message>
+        <source>VICTORY</source>
+        <translation>VICTOIRE</translation>
+    </message>
+    <message>
+        <source>DEFEAT</source>
+        <translation>DÉFAITE</translation>
+    </message>
+    <message>
+        <source>The galaxy belongs to the %1</source>
+        <translation>La galaxie appartient aux %1</translation>
+    </message>
+    <message>
+        <source>The %1 have no world left</source>
+        <translation>Les %1 n&apos;ont plus aucun monde</translation>
     </message>
 </context>
 <context>
@@ -967,6 +1018,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
     </message>
     <message>
+        <source>Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle</source>
+        <translation>Hangar : launch [n] - vos chasseurs combattent à vos côtés ; vos flottes et vos alliés en orbite rejoignent la bataille</translation>
+    </message>
+    <message>
         <source>Research: research (tree), research &lt;n&gt; - weapons, defense and industry, 3 tiers each</source>
         <translation>Recherche : research (arbre), research &lt;n&gt; - armes, défense et industrie, 3 niveaux chacune</translation>
     </message>
@@ -1037,6 +1092,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>yours</source>
         <translation>à vous</translation>
+    </message>
+    <message>
+        <source>Your fleet %1 joins the battle</source>
+        <translation>Votre flotte %1 rejoint la bataille</translation>
+    </message>
+    <message>
+        <source>Allied %1 ships join the battle</source>
+        <translation>Des vaisseaux %1 alliés rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>Worlds held: %1 of %2</source>
+        <translation>Mondes contrôlés : %1 sur %2</translation>
+    </message>
+    <message>
+        <source>Fleets: %1</source>
+        <translation>Flottes : %1</translation>
+    </message>
+    <message>
+        <source>Flagship battles: %1 won, %2 lost</source>
+        <translation>Batailles du vaisseau amiral : %1 gagnées, %2 perdues</translation>
+    </message>
+    <message>
+        <source>Technologies: %1 of %2</source>
+        <translation>Technologies : %1 sur %2</translation>
+    </message>
+    <message>
+        <source>Time of this session: %1 min %2 s</source>
+        <translation>Durée de cette session : %1 min %2 s</translation>
     </message>
 </context>
 <context>
@@ -1844,6 +1927,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Menu: menu or Esc - pause, save, settings, quit</source>
         <translation>Menu : menu ou Échap - pause, sauvegarde, réglages, quitter</translation>
+    </message>
+    <message>
+        <source>Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle</source>
+        <translation>Hangar : launch [n] - les Puddle Jumpers combattent à vos côtés et rentrent après la bataille</translation>
     </message>
     <message>
         <source>Repairs use resources (showressource); &lt;n&gt; = target number shown as T1, T2…</source>
@@ -2746,6 +2833,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>point defense %1 km - %2 missiles shot down - vs fighters x2.5</source>
         <translation>défense rapprochée %1 km - %2 missiles abattus - contre chasseurs x2,5</translation>
+    </message>
+    <message>
+        <source>HANGAR</source>
+        <translation>HANGAR</translation>
+    </message>
+    <message>
+        <source>launch [n] - %1 fighter(s) out, %2 friendly ship(s) in battle</source>
+        <translation>launch [n] - %1 chasseur(s) dehors, %2 vaisseau(x) ami(s) au combat</translation>
     </message>
     <message>
         <source>HIT </source>

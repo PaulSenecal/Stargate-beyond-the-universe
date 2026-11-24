@@ -1,4 +1,6 @@
 #include "battleview.h"
+#include "modmesh.h"
+#include "src/core/assets.h"
 #include "src/db/dbtext.h"
 
 #include <QDebug>
@@ -294,6 +296,11 @@ BattleView::~BattleView()
         m->vao.destroy();
         m->vbo.destroy();
     }
+    for (auto &[key, mesh] : m_modMeshes)
+        if (mesh) {
+            mesh->vao.destroy();
+            mesh->vbo.destroy();
+        }
     m_starVao.destroy();
     m_starVbo.destroy();
     doneCurrent();
@@ -1125,6 +1132,10 @@ void BattleView::drawAllies()
         const float flash = a.hitFlash * 0.5f;
         const QVector3D tint = colorOf(classOf(a).color);
         const QVector3D dark = tint * 0.5f;
+        if (drawModShip(meshKeyOf(classOf(a)), m, a.cls == EnemyClass::Mothership ? 9.0f : 2.6f, tint, flash)) {
+            drawGlow(a.pos - a.facing * a.radius * 0.95f, a.radius * 0.35f, QVector3D(0.35f, 0.7f, 1.0f), 0.8f);
+            continue;
+        }
         if (a.cls == EnemyClass::Mothership) {
             drawMesh(m_ring, m, dark, flash, 1.0f, ModeHull);
             QMatrix4x4 top = m;
@@ -2095,6 +2106,15 @@ void BattleView::drawDestiny()
 
     const QVector3D one(1, 1, 1);
 
+    // --- Model of the mod when installed (same size as the Destiny)
+    const QVector3D modelColor = m_flagshipStyle.isEmpty()                                   ? QVector3D(0.6f, 0.6f, 0.64f)
+                               : m_flagshipStyle == "Wraith"                                ? QVector3D(0.3f, 0.34f, 0.28f)
+                               : m_flagshipStyle == "Asgard" || m_flagshipStyle == "Ancients" ? QVector3D(0.62f, 0.66f, 0.7f)
+                               : m_flagshipStyle == "Lucian Alliance"                       ? QVector3D(0.62f, 0.36f, 0.26f)
+                                                                                            : QVector3D(0.78f, 0.64f, 0.32f);
+    if (drawModShip(flagshipMeshKey(), m_destinyModel, 13.5f, modelColor * 1.3f, 0.0f))
+        return;
+
     // --- Conquest flagships of the other factions
     if (m_flagshipStyle == "Tau'ri") {
         // BC-304: long hull, two side hangar pods, bridge, engine blocks
@@ -2191,6 +2211,61 @@ void BattleView::drawDestiny()
         part(m_box, t, {0.28f, 0.22f, 0.28f}, 0, kHullDark);
 }
 
+// ================================================================
+//  Ship models of the mod
+// ================================================================
+
+BattleView::Mesh *BattleView::modMesh(const QString &key)
+{
+    if (key.isEmpty())
+        return nullptr;
+    auto it = m_modMeshes.find(key);
+    if (it == m_modMeshes.end()) {
+        const MeshBuilder::VertexData data = ModMesh::load(Assets::modFile(QStringLiteral("meshes/%1.mesh").arg(key)));
+        std::unique_ptr<Mesh> mesh;
+        if (!data.empty()) {
+            mesh = std::make_unique<Mesh>();
+            upload(*mesh, data);
+        }
+        it = m_modMeshes.emplace(key, std::move(mesh)).first;
+    }
+    return it->second.get();
+}
+
+QString BattleView::meshKeyOf(const ShipClass &shipClass)
+{
+    if (shipClass.picture == "ancients_destiny")
+        return QStringLiteral("ancientsdestiny");
+    return shipClass.picture;
+}
+
+QString BattleView::flagshipMeshKey() const
+{
+    if (m_flagshipStyle.isEmpty())
+        return QStringLiteral("ancientsdestiny");
+    if (m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance")
+        return QStringLiteral("goauld_cruiser_hatak");
+    if (m_flagshipStyle == "Wraith")
+        return QStringLiteral("wraith_titan_superhive");
+    if (m_flagshipStyle == "Asgard")
+        return QStringLiteral("asgard_capital_oneill");
+    if (m_flagshipStyle == "Ancients")
+        return QStringLiteral("ancients_aurora");
+    return QString();                   // Tau'ri, Ori: no model in the mod
+}
+
+bool BattleView::drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color,
+                             float flash)
+{
+    Mesh *mesh = modMesh(key);
+    if (!mesh)
+        return false;
+    QMatrix4x4 m = model;
+    m.scale(length);
+    drawMesh(*mesh, m, color, flash, 1.0f, ModeHull);
+    return true;
+}
+
 void BattleView::drawEnemies()
 {
     for (const Enemy &e : m_enemies) {
@@ -2203,6 +2278,9 @@ void BattleView::drawEnemies()
 
         const QVector3D tint = colorOf(classOf(e).color);
         const QVector3D dark = tint * 0.5f;
+        if (drawModShip(meshKeyOf(classOf(e)), m, e.cls == EnemyClass::Mothership ? 9.0f : 2.6f, tint,
+                        flash + (e.diving ? 0.4f : 0.0f)))
+            continue;
         if (e.cls == EnemyClass::Mothership) {
             drawMesh(m_ring, m, dark, flash, 1.0f, ModeHull);
             QMatrix4x4 top = m;

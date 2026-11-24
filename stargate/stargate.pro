@@ -58,6 +58,7 @@ HEADERS += \
     src/core/commandmanager.h \
     src/core/destinystate.h \
     src/core/questsystem.h \
+    src/core/assets.h \
     src/core/shipclass.h \
     src/db/databasemanager.h \
     src/db/repositories/characterrepository.h \
@@ -93,6 +94,11 @@ CONFIG += embed_translations
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+# Optional local assets of the Stargate Reborn mod (git-ignored, personal
+# use): pictures, sounds… The game works without them. Can be overridden
+# at run time with the STARGATE_ASSETS environment variable.
+DEFINES += STARGATE_ASSETS_DIR=\\\"$$PWD/src/autre\\\"
 
 RESOURCES += \
     ../rcs/ressources.qrc

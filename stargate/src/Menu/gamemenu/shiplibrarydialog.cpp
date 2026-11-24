@@ -3,9 +3,12 @@
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QListWidget>
+#include <QPixmap>
 #include <QPainter>
 #include <QRegularExpression>
 #include <algorithm>
+
+#include "src/core/assets.h"
 
 namespace {
 
@@ -64,6 +67,8 @@ public:
         m_ship = ship;
         m_maxHull = std::max(1, maxHull);
         m_valid = true;
+        const QString picture = Assets::shipPicture(ship.picture);
+        m_picture = picture.isEmpty() ? QPixmap() : QPixmap(picture);
         update();
     }
 
@@ -89,6 +94,22 @@ protected:
         const qreal width = this->width() - 2 * margin;
         qreal y = margin;
 
+        // Ship picture (optional mod assets) in the top-right corner;
+        // the header text keeps to its left
+        qreal headerWidth = width;
+        qreal pictureBottom = y;
+        if (!m_picture.isNull()) {
+            const qreal pw = std::min<qreal>(240, width * 0.42);
+            const qreal ph = pw * m_picture.height() / std::max(1, m_picture.width());
+            const QRectF target(margin + width - pw, y, pw, ph);
+            p.drawPixmap(target, m_picture, m_picture.rect());
+            p.setPen(QPen(QColor(70, 70, 70), 1));
+            p.setBrush(Qt::NoBrush);
+            p.drawRect(target);
+            headerWidth = width - pw - 14;
+            pictureBottom = target.bottom();
+        }
+
         // Header: color chip, name, faction / role
         const QColor tint(m_ship.color);
         p.setPen(Qt::NoPen);
@@ -109,7 +130,7 @@ protected:
         p.setFont(font);
         p.setPen(kText);
         p.drawText(QPointF(margin, y + 12), QObject::tr("HULL %1").arg(m_ship.hull));
-        const QRectF track(margin + 110, y + 3, width - 110, 10);
+        const QRectF track(margin + 110, y + 3, headerWidth - 110, 10);
         p.setPen(Qt::NoPen);
         p.setBrush(kTrack);
         p.drawRoundedRect(track, 3, 3);
@@ -120,10 +141,10 @@ protected:
         // Description
         p.setFont(small);
         p.setPen(kText);
-        const QRectF descRect(margin, y, width, 200);
+        const QRectF descRect(margin, y, headerWidth, 200);
         const QRectF used = p.boundingRect(descRect, Qt::TextWordWrap, m_ship.description);
         p.drawText(descRect, Qt::TextWordWrap, m_ship.description);
-        y += used.height() + 16;
+        y = std::max(y + used.height(), pictureBottom) + 16;
 
         // Attacks
         p.setFont(font);
@@ -193,6 +214,7 @@ protected:
 private:
     ShipClass m_ship;
     int m_maxHull = 1;
+    QPixmap m_picture;
     bool m_valid = false;
 };
 
@@ -206,7 +228,7 @@ ShipLibraryDialog::ShipLibraryDialog(QWidget *parent)
     , m_card(new ShipCardWidget(this))
 {
     setWindowTitle(tr("Ship library"));
-    resize(820, 600);
+    resize(900, 660);
 
     QPalette pal = palette();
     pal.setColor(QPalette::Window, kBackground);

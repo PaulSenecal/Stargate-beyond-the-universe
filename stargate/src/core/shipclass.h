@@ -44,6 +44,7 @@ struct ShipClass
     int hull = 100;             // hit points in battle
     bool hostile = false;       // can appear in an enemy wave
     QString color;              // "#rrggbb" hull tint
+    QString picture;            // picture key in the mod assets (see Assets::shipPicture)
     QList<ShipAttack> attacks;
 
     bool isMothership() const { return role.compare("MotherShip", Qt::CaseInsensitive) == 0; }

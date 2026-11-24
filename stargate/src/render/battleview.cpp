@@ -691,7 +691,9 @@ void BattleView::spawnWave(bool announce, const QString &faction)
     auto pick = [](const QList<int> &list) { return list[QRandomGenerator::global()->bounded(int(list.size()))]; };
 
     // Heavier motherships come in smaller numbers
-    const int heaviest = m_classes[big.first()].hull;
+    int heaviest = 0;
+    for (int i : big)
+        heaviest = std::max(heaviest, m_classes[i].hull);
     const int motherships = (heaviest >= 500 ? 1 : 2) + QRandomGenerator::global()->bounded(2);
     const int fighters = 4 + QRandomGenerator::global()->bounded(3);
     QMap<QString, int> counts;

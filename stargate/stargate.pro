@@ -31,6 +31,7 @@ SOURCES += \
     src/Menu/mainmenu/titlescreen.cpp \
     src/Menu/pause/pausemenu.cpp \
     src/Menu/setting/settingspanel.cpp \
+    src/audio/musicplayer.cpp \
     src/audio/soundsystem.cpp \
     src/core/commandmanager.cpp \
     src/core/language.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
     src/Menu/menustyle.h \
     src/Menu/pause/pausemenu.h \
     src/Menu/setting/settingspanel.h \
+    src/audio/musicplayer.h \
     src/audio/soundcue.h \
     src/audio/soundsystem.h \
     src/core/commandmanager.h \

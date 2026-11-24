@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "src/audio/musicplayer.h"
 #include "src/core/assets.h"
 
 // ================================================================
@@ -193,6 +194,7 @@ SoundSystem::SoundSystem(QObject *parent)
 {
     m_clock.start();
     m_volume = std::clamp(QSettings("Stargate", "stargate").value("audio/volume", 70).toInt(), 0, 100);
+    m_music = new MusicPlayer(this);
     openOutput();
     if (!m_sink)
         return;

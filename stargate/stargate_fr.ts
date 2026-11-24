@@ -447,12 +447,24 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Son : sound (état), sound on, sound off, sound &lt;0-100&gt; (volume)</translation>
     </message>
     <message>
+        <source>Music: music (status), music on, music off, music &lt;0-100&gt; (volume)</source>
+        <translation>Musique : music (état), music on, music off, music &lt;0-100&gt; (volume)</translation>
+    </message>
+    <message>
         <source>Menu: menu or Esc - pause, save, settings, quit</source>
         <translation>Menu : menu ou Échap - pause, sauvegarde, réglages, quitter</translation>
     </message>
     <message>
         <source>Repairs use resources (showressource); &lt;n&gt; = target number shown as T1, T2…</source>
         <translation>Les réparations coûtent des ressources (showressource) ; &lt;n&gt; = numéro de cible affiché T1, T2…</translation>
+    </message>
+    <message>
+        <source>Music: no audio output available</source>
+        <translation>Musique : aucune sortie audio disponible</translation>
+    </message>
+    <message>
+        <source>Usage: music on | off | &lt;0-100&gt;</source>
+        <translation>Usage : music on | off | &lt;0-100&gt;</translation>
     </message>
     <message>
         <source>Sound: no audio output available</source>
@@ -775,6 +787,25 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
 </context>
 <context>
+    <name>MusicPlayer</name>
+    <message>
+        <source>Music: no track (mod folder not found)</source>
+        <translation>Musique : aucune piste (dossier du mod introuvable)</translation>
+    </message>
+    <message>
+        <source>Music: off</source>
+        <translation>Musique : coupée</translation>
+    </message>
+    <message>
+        <source>Music: volume %1%</source>
+        <translation>Musique : volume %1%</translation>
+    </message>
+    <message>
+        <source>Music: volume %1% - %2</source>
+        <translation>Musique : volume %1% - %2</translation>
+    </message>
+</context>
+<context>
     <name>PauseMenu</name>
     <message>
         <source>GAME PAUSED</source>
@@ -1085,6 +1116,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Sound effects volume</source>
         <translation>Volume des effets sonores</translation>
+    </message>
+    <message>
+        <source>Music volume</source>
+        <translation>Volume de la musique</translation>
     </message>
     <message>
         <source>Mute</source>

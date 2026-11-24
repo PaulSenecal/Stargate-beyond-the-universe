@@ -14,6 +14,7 @@
 #include "src/audio/soundcue.h"
 
 class AudioMixer;
+class MusicPlayer;
 class QAudioDecoder;
 class QAudioSink;
 
@@ -42,6 +43,7 @@ public:
     void play(SoundCue cue, const QString &faction = QString(), float delay = 0.0f);
 
     bool isActive() const { return m_sink != nullptr; }
+    MusicPlayer *music() const { return m_music; }
     int volume() const { return m_volume; }
     void setVolume(int percent);
     QString status() const;
@@ -64,6 +66,7 @@ private:
     Sound *find(SoundCue cue, const QString &faction);
     static QString key(SoundCue cue, const QString &faction);
 
+    MusicPlayer *m_music = nullptr;
     AudioMixer *m_mixer = nullptr;
     QAudioSink *m_sink = nullptr;
     QAudioDecoder *m_decoder = nullptr;

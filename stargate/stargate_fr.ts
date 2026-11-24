@@ -176,6 +176,46 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 ami détruit</translation>
     </message>
     <message>
+        <source>Secondary towers: auto-fire on</source>
+        <translation>Tours secondaires : tir automatique activé</translation>
+    </message>
+    <message>
+        <source>Secondary towers: auto-fire off (+%1 power)</source>
+        <translation>Tours secondaires : tir automatique coupé (+%1 d&apos;énergie)</translation>
+    </message>
+    <message>
+        <source>Railguns: point defense on</source>
+        <translation>Railguns : défense rapprochée activée</translation>
+    </message>
+    <message>
+        <source>Railguns: point defense off (+%1 power)</source>
+        <translation>Railguns : défense rapprochée coupée (+%1 d&apos;énergie)</translation>
+    </message>
+    <message>
+        <source>shields</source>
+        <translation>boucliers</translation>
+    </message>
+    <message>
+        <source>weapons</source>
+        <translation>armes</translation>
+    </message>
+    <message>
+        <source>balanced</source>
+        <translation>équilibrée</translation>
+    </message>
+    <message>
+        <source>Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5) - towers %6, railguns %7</source>
+        <translation>Énergie %1 : libre %2 - priorité %3 (recharge du bouclier x%4, des armes x%5) - tours %6, railguns %7</translation>
+    </message>
+    <message>
+        <source>on</source>
+        <translation>actifs</translation>
+    </message>
+    <message>
+        <source>off</source>
+        <translation>coupés</translation>
+    </message>
+    <message>
         <source>%1 fires a salvo of %2 missiles</source>
         <translation>%1 tire une salve de %2 missiles</translation>
     </message>
@@ -1093,6 +1133,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Hangar : launch [n] - vos chasseurs combattent à vos côtés ; vos flottes et vos alliés en orbite rejoignent la bataille</translation>
     </message>
     <message>
+        <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
+        <translation>Énergie : turrets on|off, railguns on|off, power shields|weapons|balanced (power : bilan)</translation>
+    </message>
+    <message>
         <source>Research: research (tree), research &lt;n&gt; - weapons, defense and industry, 3 tiers each</source>
         <translation>Recherche : research (arbre), research &lt;n&gt; - armes, défense et industrie, 3 niveaux chacune</translation>
     </message>
@@ -2002,6 +2046,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle</source>
         <translation>Hangar : launch [n] - les Puddle Jumpers combattent à vos côtés et rentrent après la bataille</translation>
+    </message>
+    <message>
+        <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
+        <translation>Énergie : turrets on|off, railguns on|off, power shields|weapons|balanced (power : bilan)</translation>
     </message>
     <message>
         <source>Repairs use resources (showressource); &lt;n&gt; = target number shown as T1, T2…</source>
@@ -2929,6 +2977,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>tir auto %1% - rafale : secondarytower</translation>
     </message>
     <message>
+        <source>auto-fire OFF (&apos;turrets on&apos;) - burst: secondarytower</source>
+        <translation>tir auto COUPÉ (&apos;turrets on&apos;) - rafale : secondarytower</translation>
+    </message>
+    <message>
         <source>AUTO</source>
         <translation>AUTO</translation>
     </message>
@@ -2947,6 +2999,22 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>point defense %1 km - %2 missiles shot down - vs fighters x2.5</source>
         <translation>défense rapprochée %1 km - %2 missiles abattus - contre chasseurs x2,5</translation>
+    </message>
+    <message>
+        <source>POWER free %1 - priority %2 (&apos;power shields|weapons|balanced&apos;)</source>
+        <translation>ÉNERGIE libre %1 - priorité %2 (&apos;power shields|weapons|balanced&apos;)</translation>
+    </message>
+    <message>
+        <source>shields</source>
+        <translation>boucliers</translation>
+    </message>
+    <message>
+        <source>weapons</source>
+        <translation>armes</translation>
+    </message>
+    <message>
+        <source>balanced</source>
+        <translation>équilibrée</translation>
     </message>
     <message>
         <source>HANGAR</source>

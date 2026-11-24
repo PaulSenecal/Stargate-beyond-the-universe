@@ -433,7 +433,8 @@ void BattleView::setShipClasses(const QList<ShipClass> &classes)
                                        [](const Projectile &p) { return !p.fromDestiny || p.targetId >= 0; }),
                         m_projectiles.end());
     m_lockedId = -1;
-    spawnWave(false);
+    if (m_autoWaves)
+        spawnWave(false);
 }
 
 int BattleView::classIndexOf(const QString &name) const
@@ -672,7 +673,12 @@ void BattleView::step(float dt)
                     m_effects.end());
 
     // New wave a few seconds after the sector is cleared
-    if (aliveIds().empty()) {
+    if (aliveIds().empty() && !m_autoWaves) {
+        if (m_waveTimer < 0.0f) {
+            m_waveTimer = 0.0f;             // reported once per fleet
+            emit sectorCleared();
+        }
+    } else if (aliveIds().empty()) {
         if (m_waveTimer < 0.0f) {
             m_waveTimer = kWaveDelay;
             emit logMessage(tr("Sector clear"), LogLevel::Success);
@@ -726,6 +732,40 @@ void BattleView::spawnWave(bool announce, const QString &faction)
         emit logMessage(tr("New hostile contacts (%1): %2").arg(m_waveFaction, parts.join(", ")),
                         LogLevel::Warning);
     }
+}
+
+bool BattleView::spawnFleet(const QString &faction, int motherships, int fighters)
+{
+    constexpr int kBossHull = 900;
+    QList<int> big, small;
+    for (int pass = 0; pass < 2 && (big.isEmpty() || small.isEmpty()); ++pass) {
+        // Ships of survival waves first, then the others of the faction
+        for (int i = 0; i < m_classes.size(); ++i) {
+            const ShipClass &c = m_classes[i];
+            if (c.faction != faction || c.hull >= kBossHull || (pass == 0 && !c.hostile))
+                continue;
+            QList<int> &list = c.isMothership() ? big : small;
+            if (!list.contains(i))
+                list << i;
+        }
+    }
+    if (big.isEmpty() && small.isEmpty())
+        return false;
+    if (big.isEmpty())
+        big = small;
+    if (small.isEmpty())
+        small = big;
+
+    m_enemies.erase(std::remove_if(m_enemies.begin(), m_enemies.end(), [](const Enemy &e) { return !e.alive; }),
+                    m_enemies.end());
+    m_waveFaction = faction;
+    m_waveTimer = -1.0f;
+    auto pick = [](const QList<int> &list) { return list[QRandomGenerator::global()->bounded(int(list.size()))]; };
+    for (int i = 0; i < motherships; ++i)
+        spawnEnemy(pick(big));
+    for (int i = 0; i < fighters; ++i)
+        spawnEnemy(pick(small));
+    return true;
 }
 
 BattleView::Enemy &BattleView::spawnEnemy(int classIndex)
@@ -1156,6 +1196,7 @@ void BattleView::hitHull(const Projectile &p)
     }
     if (m_hull <= 0.0f) {
         m_hull = 35.0f;
+        emit hullBreached();
         emit logMessage(tr("Hull breach! Emergency repair teams deployed"), LogLevel::Critical);
     }
 }

@@ -140,6 +140,12 @@ public:
     // FTL jump: every enemy is left behind; new contacts may show up
     // after `calmSeconds`
     void clearBattlefield(float calmSeconds);
+    // Conquest: no automatic wave; fleets come from spawnFleet() and
+    // sectorCleared() tells when one is destroyed
+    void setAutoWaves(bool on) { m_autoWaves = on; }
+    // Fleet of any faction of the library (bosses excluded), even ships
+    // that never come in survival waves (Tau'ri…)
+    bool spawnFleet(const QString &faction, int motherships, int fighters);
     // Lines drawn in the bottom-right corner of the view
     void setNavigationLines(const QStringList &lines);
     void setPlanetLook(const PlanetLook &look);
@@ -155,6 +161,8 @@ signals:
     void logMessage(const QString &text, BattleView::LogLevel level);
     void subsystemChanged(const QString &key, float health);
     void enemyDestroyed(bool mothership);
+    void sectorCleared();               // last enemy destroyed (no auto waves)
+    void hullBreached();                // hull reached 0 (emergency repairs follow)
     // delay: seconds before the sound starts (salvos)
     void sound(SoundCue cue, const QString &faction, float delay);
 
@@ -300,6 +308,7 @@ private:
     int m_lockedId = -1;
     int m_kills = 0;
     float m_waveTimer = -1;
+    bool m_autoWaves = true;
     QStringList m_navigationLines;
     PlanetLook m_planetLook;
     QStringList m_objectiveLines;

@@ -8,9 +8,12 @@
 //  database, never on the player's save.
 // ================================================================
 
+#include <QJsonArray>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include "src/conquest/conquestgame.h"
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
 #include "src/core/questsystem.h"
@@ -453,6 +456,155 @@ private slots:
     }
 };
 
+
+// ================================================================
+//  Conquest mode logic
+// ================================================================
+
+class ConquestTest : public QObject
+{
+    Q_OBJECT
+
+    // Three planets in a row: player capital - neutral - enemy capital
+    static QJsonObject smallGalaxy()
+    {
+        auto planet = [](const char *name, double x, int owner, int defense, bool capital, QJsonArray lanes) {
+            return QJsonObject{{"name", name}, {"x", x}, {"y", 100.0}, {"owner", owner}, {"population", 5.0},
+                               {"maxPopulation", 8.0}, {"bonus", 0}, {"defense", defense},
+                               {"capital", capital}, {"lanes", lanes}};
+        };
+        return {{"version", 1},
+                {"factions", QJsonArray{QJsonObject{{"id", "Tau'ri"}, {"player", true}, {"naquadah", 100.0},
+                                                    {"trinium", 50.0}},
+                                        QJsonObject{{"id", "Goa'uld"}, {"player", false}, {"naquadah", 100.0},
+                                                    {"trinium", 50.0}}}},
+                {"planets", QJsonArray{planet("Earth", 100, 0, 5, true, {1}),
+                                       planet("Abydos", 240, -1, 1, false, {0, 2}),
+                                       planet("Chulak", 380, 1, 5, true, {1})}},
+                {"at", 0}, {"previous", 0}, {"route", QJsonArray()}, {"hull", 100.0}};
+    }
+
+    static void run(ConquestGame &game, double seconds)
+    {
+        for (double t = 0; t < seconds; t += 0.1)
+            game.tick(0.1);
+    }
+
+private slots:
+    void generation_data()
+    {
+        QTest::addColumn<int>("size");
+        QTest::addColumn<int>("planets");
+        QTest::addColumn<int>("factions");
+        QTest::newRow("small") << int(Conquest::Size::Small) << 12 << 2;
+        QTest::newRow("medium") << int(Conquest::Size::Medium) << 24 << 3;
+        QTest::newRow("large") << int(Conquest::Size::Large) << 40 << 4;
+    }
+
+    void generation()
+    {
+        QFETCH(int, size);
+        QFETCH(int, planets);
+        QFETCH(int, factions);
+        for (quint32 seed : {1u, 7u, 42u, 1234u}) {
+            ConquestGame game;
+            game.start({QStringLiteral("Wraith"), Conquest::Size(size), seed});
+            QCOMPARE(game.planets().size(), planets);
+            QCOMPARE(game.factions().size(), factions);
+            QCOMPARE(game.player().id, QStringLiteral("Wraith"));
+            // Every planet reachable, one capital per faction, the flagship at home
+            for (const Conquest::Planet &p : game.planets())
+                QVERIFY(p.id == game.flagshipPlanet() || !game.path(game.flagshipPlanet(), p.id).isEmpty());
+            int capitals = 0;
+            for (const Conquest::Planet &p : game.planets())
+                capitals += p.capital ? 1 : 0;
+            QCOMPARE(capitals, factions);
+            QCOMPARE(game.planets()[game.flagshipPlanet()].owner, game.playerIndex());
+            for (int f = 0; f < factions; ++f)
+                QVERIFY(game.planetCount(f) >= 1);
+        }
+        // Same seed, same galaxy
+        ConquestGame a, b;
+        a.start({QStringLiteral("Tau'ri"), Conquest::Size(size), 99});
+        b.start({QStringLiteral("Tau'ri"), Conquest::Size(size), 99});
+        QCOMPARE(a.toJson(), b.toJson());
+    }
+
+    void captureAndVictory()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        QSignalSpy over(&game, &ConquestGame::gameOver);
+
+        // Neutral world: taken after a stay in orbit (4 + 3 x defense s)
+        QVERIFY(game.orderTravel(1));
+        run(game, 2.5);                         // 140 units at 70/s
+        QCOMPARE(game.flagshipPlanet(), 1);
+        QCOMPARE(game.planets()[1].owner, -1);
+        run(game, 7.5);
+        QCOMPARE(game.planets()[1].owner, 0);
+
+        // Enemy world: battle, then capture and victory
+        QVERIFY(game.orderTravel(2));
+        run(game, 2.5);
+        QCOMPARE(battles.size(), 1);
+        QCOMPARE(battles[0][1].toString(), QStringLiteral("Goa'uld"));
+        QCOMPARE(battles[0][2].toInt(), 3);     // defense 5 -> 3 motherships
+        QVERIFY(game.inBattle());
+        QVERIFY(!game.orderTravel(0));          // no escape during a battle
+        game.battleWon();
+        QCOMPARE(game.planets()[2].owner, 0);
+        QCOMPARE(over.size(), 1);
+        QCOMPARE(over[0][0].toBool(), true);
+    }
+
+    void retreatAfterDefeat()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QVERIFY(game.orderTravel(2));           // through the neutral world
+        run(game, 5.0);
+        QVERIFY(game.inBattle());
+        game.battleLost();
+        QVERIFY(!game.inBattle());
+        QCOMPARE(game.flagshipPlanet(), 1);     // back where it came from
+        QCOMPARE(game.planets()[2].owner, 1);
+    }
+
+    void ordersAndEconomy()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QVERIFY(!game.fortify(0));              // capital already at 5
+        QVERIFY(!game.fortify(2));              // not ours
+        QVERIFY(!game.repairFlagship());        // intact hull
+        game.setFlagshipHull(60);
+        QVERIFY(game.repairFlagship());         // 40 points = 20 trinium
+        QCOMPARE(qRound(game.flagshipHull()), 100);
+        QCOMPARE(qRound(game.player().trinium), 30);
+
+        const double before = game.player().naquadah;
+        run(game, 10);
+        QVERIFY(game.player().naquadah > before);
+        QCOMPARE(game.findPlanet("abyd"), 1);
+        QCOMPARE(game.findPlanet("3"), 2);
+        QCOMPARE(game.findPlanet("nowhere"), -1);
+    }
+
+    void saveRoundTrip()
+    {
+        ConquestGame game;
+        game.start({QStringLiteral("Goa'uld"), Conquest::Size::Medium, 5});
+        game.orderTravel(game.planets()[game.flagshipPlanet()].lanes.first());
+        run(game, 0.5);
+        ConquestGame copy;
+        QVERIFY(copy.fromJson(game.toJson()));
+        QCOMPARE(copy.toJson(), game.toJson());
+        QVERIFY(!copy.fromJson(QJsonObject{{"version", 2}}));
+    }
+};
+
 // ================================================================
 
 int main(int argc, char *argv[])
@@ -469,6 +621,10 @@ int main(int argc, char *argv[])
     }
     {
         DatabaseTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        ConquestTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

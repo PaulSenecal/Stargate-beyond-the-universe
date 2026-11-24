@@ -314,6 +314,288 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
 </context>
 <context>
+    <name>ConquestGame</name>
+    <message>
+        <source>Conquest begins: %1 planets, %2 enemy faction(s). Your flagship orbits %3.</source>
+        <translation>La conquête commence : %1 planètes, %2 faction(s) ennemie(s). Votre vaisseau amiral est en orbite de %3.</translation>
+    </message>
+    <message>
+        <source>Take every planet of the enemy factions. Neutral worlds join you after a stay in orbit.</source>
+        <translation>Prenez toutes les planètes des factions ennemies. Les mondes neutres vous rejoignent après un séjour en orbite.</translation>
+    </message>
+    <message>
+        <source>Shipyard (fast repairs)</source>
+        <translation>Chantier naval (réparations rapides)</translation>
+    </message>
+    <message>
+        <source>Naquadah mine (x2)</source>
+        <translation>Mine de naquadah (x2)</translation>
+    </message>
+    <message>
+        <source>Trinium mine (x2)</source>
+        <translation>Mine de trinium (x2)</translation>
+    </message>
+    <message>
+        <source>Ancient site</source>
+        <translation>Site des Anciens</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Aucun</translation>
+    </message>
+    <message>
+        <source>the game is over</source>
+        <translation>la partie est terminée</translation>
+    </message>
+    <message>
+        <source>the flagship is in battle - win it first</source>
+        <translation>le vaisseau amiral est en combat - gagnez-le d&apos;abord</translation>
+    </message>
+    <message>
+        <source>unknown planet</source>
+        <translation>planète inconnue</translation>
+    </message>
+    <message>
+        <source>the flagship is already there</source>
+        <translation>le vaisseau amiral y est déjà</translation>
+    </message>
+    <message>
+        <source>no route to that planet</source>
+        <translation>aucune route vers cette planète</translation>
+    </message>
+    <message>
+        <source>Course set for %1 (%2 jump(s))</source>
+        <translation>Cap sur %1 (%2 saut(s))</translation>
+    </message>
+    <message>
+        <source>%1 is not yours</source>
+        <translation>%1 ne vous appartient pas</translation>
+    </message>
+    <message>
+        <source>%1 already has the strongest defenses</source>
+        <translation>%1 a déjà les défenses les plus fortes</translation>
+    </message>
+    <message>
+        <source>%1 naquadah needed (%2 available)</source>
+        <translation>%1 naquadah nécessaires (%2 disponibles)</translation>
+    </message>
+    <message>
+        <source>%1 fortified: defense %2/5</source>
+        <translation>%1 fortifiée : défense %2/5</translation>
+    </message>
+    <message>
+        <source>the hull is intact</source>
+        <translation>la coque est intacte</translation>
+    </message>
+    <message>
+        <source>not enough trinium (%1 per hull point)</source>
+        <translation>pas assez de trinium (%1 par point de coque)</translation>
+    </message>
+    <message>
+        <source>Flagship repaired: hull %1% (-%2 trinium)</source>
+        <translation>Vaisseau amiral réparé : coque %1% (-%2 trinium)</translation>
+    </message>
+    <message>
+        <source>%1 joins your faction</source>
+        <translation>%1 rejoint votre faction</translation>
+    </message>
+    <message>
+        <source>%1 is defended by the %2 fleet: battle!</source>
+        <translation>%1 est défendue par la flotte %2 : combat !</translation>
+    </message>
+    <message>
+        <source>In orbit of %1: the planet joins you in %2 s if you stay</source>
+        <translation>En orbite de %1 : la planète vous rejoint dans %2 s si vous restez</translation>
+    </message>
+    <message>
+        <source>Arrived at %1</source>
+        <translation>Arrivée à %1</translation>
+    </message>
+    <message>
+        <source>%1 taken from the %2</source>
+        <translation>%1 prise aux %2</translation>
+    </message>
+    <message>
+        <source>Hull breached: the flagship retreats from %1 to %2</source>
+        <translation>Coque percée : le vaisseau amiral se replie de %1 vers %2</translation>
+    </message>
+    <message>
+        <source>Ancient site on %1: +100 naquadah from its archives</source>
+        <translation>Site des Anciens sur %1 : +100 naquadah tirés de ses archives</translation>
+    </message>
+    <message>
+        <source>The %1 have lost their last world</source>
+        <translation>Les %1 ont perdu leur dernier monde</translation>
+    </message>
+</context>
+<context>
+    <name>ConquestScreen</name>
+    <message>
+        <source>VICTORY - the galaxy is yours. &apos;menu&apos; to go back to the title screen.</source>
+        <translation>VICTOIRE - la galaxie est à vous. &apos;menu&apos; pour revenir à l&apos;écran titre.</translation>
+    </message>
+    <message>
+        <source>DEFEAT - your faction has no world left.</source>
+        <translation>DÉFAITE - votre faction n&apos;a plus aucun monde.</translation>
+    </message>
+    <message>
+        <source>Cannot go there: %1</source>
+        <translation>Impossible d&apos;y aller : %1</translation>
+    </message>
+    <message>
+        <source>Conquest saved</source>
+        <translation>Conquête sauvegardée</translation>
+    </message>
+    <message>
+        <source>Save failed</source>
+        <translation>Échec de la sauvegarde</translation>
+    </message>
+    <message>
+        <source>MENU</source>
+        <translation>MENU</translation>
+    </message>
+    <message>
+        <source>Pause, save, settings, quit (Esc)</source>
+        <translation>Pause, sauvegarde, réglages, quitter (Échap)</translation>
+    </message>
+    <message>
+        <source>Conquest restored: %1 - %2 planet(s) of %3</source>
+        <translation>Conquête restaurée : %1 - %2 planète(s) sur %3</translation>
+    </message>
+    <message>
+        <source>No valid conquest save - a new galaxy is generated</source>
+        <translation>Aucune sauvegarde de conquête valide - une nouvelle galaxie est générée</translation>
+    </message>
+    <message>
+        <source>Type &apos;help&apos; for the conquest commands - double click a planet to travel there</source>
+        <translation>Tapez &apos;help&apos; pour les commandes de conquête - double-cliquez sur une planète pour y aller</translation>
+    </message>
+    <message>
+        <source>No %1 fleet available - the planet surrenders</source>
+        <translation>Aucune flotte %1 disponible - la planète se rend</translation>
+    </message>
+    <message>
+        <source>%1 mothership(s) and %2 fighter(s) - shields up, fire at will (&apos;attack &lt;n&gt;&apos;, &apos;pulseweapon&apos;)</source>
+        <translation>%1 vaisseau(x)-mère(s) et %2 chasseur(s) - boucliers levés, feu à volonté (&apos;attack &lt;n&gt;&apos;, &apos;pulseweapon&apos;)</translation>
+    </message>
+    <message>
+        <source>Neutral</source>
+        <translation>Neutre</translation>
+    </message>
+    <message>
+        <source>You (%1)</source>
+        <translation>Vous (%1)</translation>
+    </message>
+    <message>
+        <source> — capital</source>
+        <translation> — capitale</translation>
+    </message>
+    <message>
+        <source>Population %1 M / %2 M</source>
+        <translation>Population %1 M / %2 M</translation>
+    </message>
+    <message>
+        <source>Defense %1</source>
+        <translation>Défense %1</translation>
+    </message>
+    <message>
+        <source>Bonus: %1</source>
+        <translation>Bonus : %1</translation>
+    </message>
+    <message>
+        <source>Produces %1 naquadah and %2 trinium per minute</source>
+        <translation>Produit %1 naquadah et %2 trinium par minute</translation>
+    </message>
+    <message>
+        <source>Your flagship is here</source>
+        <translation>Votre vaisseau amiral est ici</translation>
+    </message>
+    <message>
+        <source>%1 jump(s) - double click or &apos;goto %2&apos; to travel</source>
+        <translation>%1 saut(s) - double-clic ou &apos;goto %2&apos; pour y aller</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;%1&lt;/b&gt; - naquadah %2 - trinium %3 - planets %4/%5 - hull %6%</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt; - naquadah %2 - trinium %3 - planètes %4/%5 - coque %6%</translation>
+    </message>
+    <message>
+        <source>BATTLE FOR %1</source>
+        <translation>BATAILLE POUR %1</translation>
+    </message>
+    <message>
+        <source>IN HYPERSPACE - %1 jump(s) to go</source>
+        <translation>EN HYPERESPACE - encore %1 saut(s)</translation>
+    </message>
+    <message>
+        <source>TAKING CONTROL OF %1: %2%</source>
+        <translation>PRISE DE CONTRÔLE DE %1 : %2%</translation>
+    </message>
+    <message>
+        <source>NAQUADAH %1   TRINIUM %2</source>
+        <translation>NAQUADAH %1   TRINIUM %2</translation>
+    </message>
+    <message>
+        <source>Unknown planet &apos;%1&apos; - type &apos;planets&apos; for the list</source>
+        <translation>Planète inconnue &apos;%1&apos; - tapez &apos;planets&apos; pour la liste</translation>
+    </message>
+    <message>
+        <source>%1 %2 - population %3 M, defense %4/5, %5</source>
+        <translation>%1 %2 - population %3 M, défense %4/5, %5</translation>
+    </message>
+    <message>
+        <source>%1: %2 planet(s) of %3, naquadah %4, trinium %5, flagship hull %6% at %7</source>
+        <translation>%1 : %2 planète(s) sur %3, naquadah %4, trinium %5, coque du vaisseau amiral %6% à %7</translation>
+    </message>
+    <message>
+        <source>Cannot fortify: %1</source>
+        <translation>Fortification impossible : %1</translation>
+    </message>
+    <message>
+        <source>No repairs during a battle</source>
+        <translation>Pas de réparation pendant un combat</translation>
+    </message>
+    <message>
+        <source>Cannot repair: %1</source>
+        <translation>Réparation impossible : %1</translation>
+    </message>
+    <message>
+        <source>Unknown command &apos;%1&apos; - type &apos;help&apos;</source>
+        <translation>Commande inconnue &apos;%1&apos; - tapez &apos;help&apos;</translation>
+    </message>
+    <message>
+        <source>Travel: goto &lt;planet&gt; (number or name), or double click it on the map</source>
+        <translation>Voyage : goto &lt;planète&gt; (numéro ou nom), ou double-clic sur la carte</translation>
+    </message>
+    <message>
+        <source>Planets: planets (list), info &lt;planet&gt;, status</source>
+        <translation>Planètes : planets (liste), info &lt;planète&gt;, status</translation>
+    </message>
+    <message>
+        <source>Economy: fortify &lt;planet&gt; (+1 defense, %1 naquadah), repair (flagship hull, trinium)</source>
+        <translation>Économie : fortify &lt;planète&gt; (+1 défense, %1 naquadah), repair (coque du vaisseau amiral, trinium)</translation>
+    </message>
+    <message>
+        <source>Battle: attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</source>
+        <translation>Combat : attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</translation>
+    </message>
+    <message>
+        <source>Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet.</source>
+        <translation>Les mondes neutres vous rejoignent après un séjour en orbite ; les mondes ennemis se prennent en détruisant leur flotte.</translation>
+    </message>
+    <message>
+        <source>Win by taking every planet of the enemy factions. Menu: Esc or &apos;menu&apos;.</source>
+        <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
+    </message>
+    <message>
+        <source>neutral</source>
+        <translation>neutre</translation>
+    </message>
+    <message>
+        <source>yours</source>
+        <translation>à vous</translation>
+    </message>
+</context>
+<context>
     <name>Database</name>
     <message>
         <source>First Contact</source>
@@ -1887,8 +2169,76 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>BEYOND THE UNIVERSE</translation>
     </message>
     <message>
-        <source>Continue the game</source>
-        <translation>Continuer la partie</translation>
+        <source>Campaign</source>
+        <translation>Campagne</translation>
+    </message>
+    <message>
+        <source>Survival aboard the Destiny - continues your journey</source>
+        <translation>Survie à bord du Destiny - reprend votre voyage</translation>
+    </message>
+    <message>
+        <source>Conquest</source>
+        <translation>Conquête</translation>
+    </message>
+    <message>
+        <source>Pick a faction and conquer a galaxy</source>
+        <translation>Choisissez une faction et conquérez une galaxie</translation>
+    </message>
+    <message>
+        <source>CONQUEST</source>
+        <translation>CONQUÊTE</translation>
+    </message>
+    <message>
+        <source>Your faction</source>
+        <translation>Votre faction</translation>
+    </message>
+    <message>
+        <source>Galaxy size</source>
+        <translation>Taille de la galaxie</translation>
+    </message>
+    <message>
+        <source>Small - 12 planets, 1 enemy faction (about 20 min)</source>
+        <translation>Petite - 12 planètes, 1 faction ennemie (environ 20 min)</translation>
+    </message>
+    <message>
+        <source>Medium - 24 planets, 2 enemy factions (about 45 min)</source>
+        <translation>Moyenne - 24 planètes, 2 factions ennemies (environ 45 min)</translation>
+    </message>
+    <message>
+        <source>Large - 40 planets, 3 enemy factions (1 h 30 and more)</source>
+        <translation>Grande - 40 planètes, 3 factions ennemies (1 h 30 et plus)</translation>
+    </message>
+    <message>
+        <source>Start a new conquest</source>
+        <translation>Nouvelle conquête</translation>
+    </message>
+    <message>
+        <source>Continue the conquest</source>
+        <translation>Continuer la conquête</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation>Retour</translation>
+    </message>
+    <message>
+        <source>Earth&apos;s forces: Daedalus battlecruisers and F-302 fighters.</source>
+        <translation>Les forces de la Terre : croiseurs Daedalus et chasseurs F-302.</translation>
+    </message>
+    <message>
+        <source>The System Lords: Ha&apos;tak motherships, Al&apos;kesh and Death Gliders.</source>
+        <translation>Les Grands Maîtres : vaisseaux-mères Ha&apos;tak, Al&apos;kesh et planeurs de la mort.</translation>
+    </message>
+    <message>
+        <source>Hive ships, cruisers and swarms of Darts.</source>
+        <translation>Vaisseaux-ruches, croiseurs et essaims de Darts.</translation>
+    </message>
+    <message>
+        <source>Smugglers and mercenaries: stolen Ha&apos;taks and Gliders.</source>
+        <translation>Contrebandiers et mercenaires : Ha&apos;tak et planeurs volés.</translation>
+    </message>
+    <message>
+        <source>Faction traits (culling, slavery, technology) come in a later step.</source>
+        <translation>Les traits de faction (prélèvement, esclavage, technologie) arriveront dans une prochaine étape.</translation>
     </message>
     <message>
         <source>Settings</source>

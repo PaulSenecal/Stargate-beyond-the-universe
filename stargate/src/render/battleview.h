@@ -17,6 +17,7 @@
 
 #include "meshbuilder.h"
 #include "planetlook.h"
+#include "src/audio/soundcue.h"
 #include "src/core/shipclass.h"
 
 class QPainter;
@@ -101,6 +102,8 @@ public:
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
     void simulate(float seconds);
+    // Stops the real-time battle (pause menu)
+    void setPaused(bool paused);
 
     // Destiny weapons from the database: "Railgun" (point defense,
     // anti-fighter) and "Energy Cannon" (tower auto-fire)
@@ -122,6 +125,7 @@ public:
     QList<HitMark> recentHits() const;
     QList<QVector3D> fireSpots() const { return QList<QVector3D>(m_fires.begin(), m_fires.end()); }
     float secondsSinceHit(const QString &key) const;     // system key, large if never hit
+    float subsystemHealth(const QString &key) const;     // 0..100, 100 if unknown
     WeaponReadiness weaponReadiness() const;
 
     // Radar feed, in ship-local coordinates (x forward, z starboard)
@@ -137,6 +141,12 @@ public:
     // FTL jump: every enemy is left behind; new contacts may show up
     // after `calmSeconds`
     void clearBattlefield(float calmSeconds);
+    // Conquest: no automatic wave; fleets come from spawnFleet() and
+    // sectorCleared() tells when one is destroyed
+    void setAutoWaves(bool on) { m_autoWaves = on; }
+    // Fleet of any faction of the library (bosses excluded), even ships
+    // that never come in survival waves (Tau'ri…)
+    bool spawnFleet(const QString &faction, int motherships, int fighters);
     // Lines drawn in the bottom-right corner of the view
     void setNavigationLines(const QStringList &lines);
     void setPlanetLook(const PlanetLook &look);
@@ -152,6 +162,10 @@ signals:
     void logMessage(const QString &text, BattleView::LogLevel level);
     void subsystemChanged(const QString &key, float health);
     void enemyDestroyed(bool mothership);
+    void sectorCleared();               // last enemy destroyed (no auto waves)
+    void hullBreached();                // hull reached 0 (emergency repairs follow)
+    // delay: seconds before the sound starts (salvos)
+    void sound(SoundCue cue, const QString &faction, float delay);
 
 protected:
     void initializeGL() override;
@@ -242,7 +256,6 @@ private:
     const Enemy *findEnemy(int id) const;
     const Enemy *pickTarget();
     Subsystem *subsystem(const QString &key);
-    float subsystemHealth(const QString &key) const;
     QVector3D destinyWorld(const QVector3D &local) const;
     bool insideShield(const QVector3D &world) const;
     bool shieldProtecting() const;
@@ -295,6 +308,7 @@ private:
     int m_lockedId = -1;
     int m_kills = 0;
     float m_waveTimer = -1;
+    bool m_autoWaves = true;
     QStringList m_navigationLines;
     PlanetLook m_planetLook;
     QStringList m_objectiveLines;

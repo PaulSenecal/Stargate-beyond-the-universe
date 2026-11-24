@@ -1,9 +1,16 @@
 QT       += core gui sql network
-QT += widgets opengl openglwidgets
+QT += widgets opengl openglwidgets multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
+
+# Game version: the last vX.Y.Z tag (set by the release workflow on
+# master), plus the commits since then; "dev" outside a git checkout.
+# Re-run qmake to refresh it.
+APP_VERSION = $$system(git -C $$shell_quote($$PWD) describe --tags --always --match "v*" 2>/dev/null)
+isEmpty(APP_VERSION): APP_VERSION = dev
+DEFINES += APP_VERSION=\\\"$$APP_VERSION\\\"
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -21,7 +28,16 @@ SOURCES += \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
+    src/Menu/mainmenu/titlescreen.cpp \
+    src/Menu/pause/pausemenu.cpp \
+    src/Menu/setting/settingspanel.cpp \
+    src/audio/musicplayer.cpp \
+    src/conquest/conquestgame.cpp \
+    src/conquest/conquestscreen.cpp \
+    src/conquest/galaxymapwidget.cpp \
+    src/audio/soundsystem.cpp \
     src/core/commandmanager.cpp \
+    src/core/language.cpp \
     src/core/destinystate.cpp \
     src/core/questsystem.cpp \
     src/db/databasemanager.cpp \
@@ -55,11 +71,25 @@ HEADERS += \
     src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
+    src/Menu/mainmenu/titlescreen.h \
+    src/Menu/menustyle.h \
+    src/Menu/pause/pausemenu.h \
+    src/Menu/setting/settingspanel.h \
+    src/audio/musicplayer.h \
+    src/conquest/conquestgame.h \
+    src/conquest/conquestscreen.h \
+    src/conquest/galaxymapwidget.h \
+    src/audio/soundcue.h \
+    src/audio/soundsystem.h \
     src/core/commandmanager.h \
+    src/core/language.h \
     src/core/destinystate.h \
     src/core/questsystem.h \
+    src/core/assets.h \
     src/core/shipclass.h \
     src/db/databasemanager.h \
+    src/db/dbtext.h \
+    src/db/dbtexts_i18n.h \
     src/db/repositories/characterrepository.h \
     src/db/repositories/componentrepository.h \
     src/db/repositories/questrepository.h \
@@ -85,7 +115,7 @@ FORMS += \
     src/Menu/campaign/campaign.ui
 
 TRANSLATIONS += \
-    stargate_fr_FR.ts
+    stargate_fr.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 
@@ -93,6 +123,11 @@ CONFIG += embed_translations
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+# Optional local assets of the Stargate Reborn mod (git-ignored, personal
+# use): pictures, sounds… The game works without them. Can be overridden
+# at run time with the STARGATE_ASSETS environment variable.
+DEFINES += STARGATE_ASSETS_DIR=\\\"$$PWD/src/autre\\\"
 
 RESOURCES += \
     ../rcs/ressources.qrc

@@ -17,6 +17,7 @@ DEFINES += COMMANDS_JSON=\\\"$$PWD/../rcs/commands.json\\\" \
 
 SOURCES += \
     tst_game.cpp \
+    $$GAME/src/conquest/conquestgame.cpp \
     $$GAME/src/core/commandmanager.cpp \
     $$GAME/src/core/destinystate.cpp \
     $$GAME/src/core/questsystem.cpp \
@@ -33,6 +34,7 @@ SOURCES += \
     $$GAME/src/world/planetgenerator.cpp
 
 HEADERS += \
+    $$GAME/src/conquest/conquestgame.h \
     $$GAME/src/core/commandmanager.h \
     $$GAME/src/core/questsystem.h \
     $$GAME/src/world/destinyroute.h

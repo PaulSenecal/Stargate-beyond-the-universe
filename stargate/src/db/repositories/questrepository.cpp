@@ -4,6 +4,7 @@
 #include <QtMath>
 
 #include "../databasemanager.h"
+#include "src/db/dbtext.h"
 
 bool QuestRepository::migrate()
 {
@@ -49,8 +50,9 @@ QList<QuestData> QuestRepository::load(int playerId)
         QuestData quest;
         quest.id = q.value(0).toInt();
         quest.playerQuestId = q.value(1).toInt();
-        quest.title = q.value(2).toString();
-        quest.description = q.value(3).toString();
+        // Shown only: translated here (current language)
+        quest.title = DbText::tr(q.value(2).toString());
+        quest.description = DbText::tr(q.value(3).toString());
         quest.prerequisite = q.value(4).toInt();
         quest.status = q.value(5).toString();
         quests << quest;
@@ -69,7 +71,7 @@ QList<QuestData> QuestRepository::load(int playerId)
         o.bindValue(":quest", quest.id);
         if (o.exec()) {
             while (o.next())
-                quest.objectives << QuestObjective{o.value(0).toInt(), o.value(1).toString(), o.value(2).toString(),
+                quest.objectives << QuestObjective{o.value(0).toInt(), DbText::tr(o.value(1).toString()), o.value(2).toString(),
                                                    o.value(3).toString(), o.value(4).toInt(), o.value(5).toInt(),
                                                    o.value(6).toBool()};
         }

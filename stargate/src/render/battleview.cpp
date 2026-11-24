@@ -1,4 +1,5 @@
 #include "battleview.h"
+#include "src/db/dbtext.h"
 
 #include <QDebug>
 #include <QFontDatabase>
@@ -265,6 +266,16 @@ BattleView::BattleView(QWidget *parent)
     m_timer->start(16);
 }
 
+void BattleView::setPaused(bool paused)
+{
+    if (paused) {
+        m_timer->stop();
+    } else if (!m_timer->isActive()) {
+        m_clock.restart();
+        m_timer->start(16);
+    }
+}
+
 BattleView::~BattleView()
 {
     makeCurrent();
@@ -326,6 +337,7 @@ bool BattleView::fireMainWeapon(int enemyIndex)
     shoot(true, destinyWorld(kMainTowerLocal), target->id, {}, 160.0f, 48.0f,
           QVector3D(0.7f, 0.92f, 1.0f), 3.2f, 0.32f);
     m_mainCooldown = kMainCooldown;
+    emit sound(SoundCue::DestinyMainGun, {}, 0.0f);
     emit logMessage(tr("Main tower fired at T%1").arg(indexOfId(target->id) + 1), LogLevel::Success);
     return true;
 }
@@ -350,6 +362,8 @@ bool BattleView::firePulseVolley()
         }
     }
     m_pulseCooldown = kPulseCooldown;
+    for (int i = 0; i < 4; ++i)
+        emit sound(SoundCue::DestinyTurret, {}, i * 0.15f);
     emit logMessage(tr("Pulse weapons: full volley on %1 targets").arg(ids.size()), LogLevel::Success);
     return true;
 }
@@ -372,6 +386,8 @@ bool BattleView::fireSecondaryBurst()
               randRange(0.0f, 0.5f));
     }
     m_secondaryCooldown = kSecondaryCooldown;
+    for (int i = 0; i < 4; ++i)
+        emit sound(SoundCue::DestinyTurret, {}, i * 0.12f);
     emit logMessage(tr("Secondary towers: burst on T%1").arg(indexOfId(target->id) + 1), LogLevel::Success);
     return true;
 }
@@ -417,7 +433,8 @@ void BattleView::setShipClasses(const QList<ShipClass> &classes)
                                        [](const Projectile &p) { return !p.fromDestiny || p.targetId >= 0; }),
                         m_projectiles.end());
     m_lockedId = -1;
-    spawnWave(false);
+    if (m_autoWaves)
+        spawnWave(false);
 }
 
 int BattleView::classIndexOf(const QString &name) const
@@ -621,6 +638,7 @@ void BattleView::step(float dt)
             const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
             shoot(true, destinyWorld(turret), t->id, {}, m_cannon.damage / 17.0f * efficiency, 38.0f,
                   kDestinyBolt, 1.0f, 0.09f);
+            emit sound(SoundCue::DestinyTurret, {}, 0.0f);
         }
     }
 
@@ -655,7 +673,12 @@ void BattleView::step(float dt)
                     m_effects.end());
 
     // New wave a few seconds after the sector is cleared
-    if (aliveIds().empty()) {
+    if (aliveIds().empty() && !m_autoWaves) {
+        if (m_waveTimer < 0.0f) {
+            m_waveTimer = 0.0f;             // reported once per fleet
+            emit sectorCleared();
+        }
+    } else if (aliveIds().empty()) {
         if (m_waveTimer < 0.0f) {
             m_waveTimer = kWaveDelay;
             emit logMessage(tr("Sector clear"), LogLevel::Success);
@@ -691,7 +714,9 @@ void BattleView::spawnWave(bool announce, const QString &faction)
     auto pick = [](const QList<int> &list) { return list[QRandomGenerator::global()->bounded(int(list.size()))]; };
 
     // Heavier motherships come in smaller numbers
-    const int heaviest = m_classes[big.first()].hull;
+    int heaviest = 0;
+    for (int i : big)
+        heaviest = std::max(heaviest, m_classes[i].hull);
     const int motherships = (heaviest >= 500 ? 1 : 2) + QRandomGenerator::global()->bounded(2);
     const int fighters = 4 + QRandomGenerator::global()->bounded(3);
     QMap<QString, int> counts;
@@ -707,6 +732,40 @@ void BattleView::spawnWave(bool announce, const QString &faction)
         emit logMessage(tr("New hostile contacts (%1): %2").arg(m_waveFaction, parts.join(", ")),
                         LogLevel::Warning);
     }
+}
+
+bool BattleView::spawnFleet(const QString &faction, int motherships, int fighters)
+{
+    constexpr int kBossHull = 900;
+    QList<int> big, small;
+    for (int pass = 0; pass < 2 && (big.isEmpty() || small.isEmpty()); ++pass) {
+        // Ships of survival waves first, then the others of the faction
+        for (int i = 0; i < m_classes.size(); ++i) {
+            const ShipClass &c = m_classes[i];
+            if (c.faction != faction || c.hull >= kBossHull || (pass == 0 && !c.hostile))
+                continue;
+            QList<int> &list = c.isMothership() ? big : small;
+            if (!list.contains(i))
+                list << i;
+        }
+    }
+    if (big.isEmpty() && small.isEmpty())
+        return false;
+    if (big.isEmpty())
+        big = small;
+    if (small.isEmpty())
+        small = big;
+
+    m_enemies.erase(std::remove_if(m_enemies.begin(), m_enemies.end(), [](const Enemy &e) { return !e.alive; }),
+                    m_enemies.end());
+    m_waveFaction = faction;
+    m_waveTimer = -1.0f;
+    auto pick = [](const QList<int> &list) { return list[QRandomGenerator::global()->bounded(int(list.size()))]; };
+    for (int i = 0; i < motherships; ++i)
+        spawnEnemy(pick(big));
+    for (int i = 0; i < fighters; ++i)
+        spawnEnemy(pick(small));
+    return true;
 }
 
 BattleView::Enemy &BattleView::spawnEnemy(int classIndex)
@@ -807,6 +866,9 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
             shoot(false, from, -1, randomHullPoint(), attack.damage, slug ? 45.0f : big ? 22.0f : 28.0f,
                   slug ? kSlug : boltColor(sc.faction), big ? 1.6f : 1.1f, slug ? 0.05f : big ? 0.14f : 0.1f,
                   i * 0.15f);
+            if (i < 3)
+                emit sound(slug ? SoundCue::DestinyRailgun : big ? SoundCue::EnemyHeavyFire : SoundCue::EnemyLightFire,
+                           sc.faction, i * 0.15f);
         }
     } else if (attack.kind == "missile") {
         for (int i = 0; i < attack.shots; ++i) {
@@ -814,13 +876,15 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
                   i * 0.4f);
             m_projectiles.back().kind = Projectile::Kind::Missile;
             m_projectiles.back().life = 14.0f;
+            emit sound(SoundCue::EnemyMissile, sc.faction, i * 0.4f);
         }
         if (attack.shots > 1)
             emit logMessage(tr("%1 fires a salvo of %2 missiles").arg(sc.name).arg(attack.shots), LogLevel::Warning);
     } else if (attack.kind == "beam") {
         shoot(false, e.pos, -1, randomHullPoint(), attack.damage, 90.0f, kBeamColor, 6.0f, 0.3f);
         m_projectiles.back().kind = Projectile::Kind::Beam;
-        emit logMessage(tr("%1: %2 fired").arg(sc.name, attack.name), LogLevel::Warning);
+        emit sound(SoundCue::EnemyBeam, sc.faction, 0.0f);
+        emit logMessage(tr("%1: %2 fired").arg(sc.name, DbText::tr(attack.name)), LogLevel::Warning);
     } else if (attack.kind == "kamikaze") {
         e.diving = true;
         e.diveAim = randomHullPoint();
@@ -835,6 +899,7 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
         for (int i = 0; i < count; ++i)
             m_launches.push_back({payload, e.pos});
         m_effects.push_back({e.pos, boltColor(sc.faction), 0.0f, 0.6f, 2.5f});
+        emit sound(SoundCue::Launch, sc.faction, 0.0f);
         emit logMessage(tr("%1 launches %2 %3").arg(sc.name).arg(count).arg(attack.payload), LogLevel::Warning);
     }
 }
@@ -858,6 +923,7 @@ void BattleView::ram(Enemy &e)
     else
         hitHull(impact);
     m_effects.push_back({e.pos, kExplosion, 0.0f, 0.9f, 2.6f});
+    emit sound(SoundCue::Explosion, {}, 0.0f);
 
     e.alive = false;
     if (m_lockedId == e.id)
@@ -921,6 +987,7 @@ void BattleView::fireRailguns(float dt)
         shoot(true, from, diver->id, {}, damage, kSlugSpeed, kSlug, 1.2f, 0.05f);
         m_projectiles.back().kind = Projectile::Kind::Slug;
         m_projectiles.back().life = 1.5f;
+        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
         return;
     }
 
@@ -947,6 +1014,7 @@ void BattleView::fireRailguns(float dt)
         slug.targetShot = missileId;
         slug.life = 1.5f;
         slug.vel = (missilePos - from).normalized() * kSlugSpeed;
+        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
         return;
     }
 
@@ -966,6 +1034,7 @@ void BattleView::fireRailguns(float dt)
         shoot(true, from, target->id, {}, damage, kSlugSpeed, kSlug, 1.2f, 0.05f);
         m_projectiles.back().kind = Projectile::Kind::Slug;
         m_projectiles.back().life = 1.5f;
+        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
     }
 }
 
@@ -999,6 +1068,7 @@ void BattleView::updateProjectiles(float dt)
                     p.dead = true;
                     ++m_interceptions;
                     m_effects.push_back({missile->pos, QVector3D(1.0f, 0.8f, 0.5f), 0.0f, 0.35f, 0.9f});
+                    emit sound(SoundCue::HullHit, {}, 0.0f);
                     continue;
                 }
                 if (distance > 1e-3f)
@@ -1080,6 +1150,7 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     const bool big = e.cls == EnemyClass::Mothership;
     m_effects.push_back({e.pos, kExplosion, 0.0f, big ? 1.6f : 0.9f, big ? 6.0f : 2.2f});
     m_effects.push_back({e.pos, QVector3D(1.0f, 0.9f, 0.7f), 0.0f, big ? 0.6f : 0.35f, big ? 3.0f : 1.2f});
+    emit sound(big ? SoundCue::BigExplosion : SoundCue::Explosion, {}, 0.0f);
     if (m_lockedId == e.id)
         m_lockedId = -1;
     emit logMessage(tr("T%1 %2 destroyed").arg(index + 1).arg(className(e)), LogLevel::Success);
@@ -1093,6 +1164,7 @@ void BattleView::hitShield(const Projectile &p)
     m_shieldFlash = 1.0f;
     m_lastShieldHit = m_time;
     m_effects.push_back({p.pos, kShieldColor, 0.0f, 0.3f, 0.9f});
+    emit sound(SoundCue::ShieldHit, {}, 0.0f);
     m_hits.push_back({m_destinyInverse.map(p.pos), {m_time, true}});
 
     if (m_shieldStrength <= 0.0f && !m_shieldCollapsed) {
@@ -1107,6 +1179,7 @@ void BattleView::hitHull(const Projectile &p)
     m_hull = std::max(0.0f, m_hull - p.damage);
     const bool missile = p.kind == Projectile::Kind::Missile;
     m_effects.push_back({p.pos, kExplosion, 0.0f, missile ? 0.8f : 0.45f, missile ? 2.2f : 0.9f});
+    emit sound(missile ? SoundCue::Explosion : SoundCue::HullHit, {}, 0.0f);
     if (missile && m_time - m_lastMissileLog > 4.0f) {
         m_lastMissileLog = m_time;
         emit logMessage(tr("Missile impact on the hull (-%1)").arg(qRound(p.damage)), LogLevel::Warning);
@@ -1123,6 +1196,7 @@ void BattleView::hitHull(const Projectile &p)
     }
     if (m_hull <= 0.0f) {
         m_hull = 35.0f;
+        emit hullBreached();
         emit logMessage(tr("Hull breach! Emergency repair teams deployed"), LogLevel::Critical);
     }
 }
@@ -1739,7 +1813,7 @@ void BattleView::drawOverlay()
 
     // --- Contacts (top right) and hint (bottom left)
     p.setPen(ids.empty() ? QColor(70, 230, 100) : red);
-    p.drawText(QRectF(0, 14, width() - 14, 18), Qt::AlignRight,
+    p.drawText(QRectF(0, 46, width() - 14, 18), Qt::AlignRight,     // below the MENU button
                ids.empty() ? tr("NO CONTACT") : tr("HOSTILES: %1").arg(ids.size()));
     // --- Quest objectives (top center)
     if (!m_objectiveLines.isEmpty()) {

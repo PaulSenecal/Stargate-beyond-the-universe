@@ -92,6 +92,44 @@ constexpr float kShipShieldRegen = 0.05f;       // part du bouclier rechargée p
 constexpr float kShipShieldDelay = 4.0f;        // …après tant de secondes sans être touché
 
 // ----------------------------------------------------------------
+//  4b. ARMEMENT DU VAISSEAU AMIRAL, PAR FACTION (conquête)
+//  Chaque vaisseau a ses armes : pas d'arme = la commande est refusée
+//  et le système ne consomme pas d'énergie.
+// ----------------------------------------------------------------
+
+struct FlagshipLoadout
+{
+    const char *mainName;       // nom de l'arme principale ('attack <n>')
+    float mainDamage;           // dégâts d'un tir principal (Destiny : 160)
+    bool pulse;                 // salve à impulsion ('pulseweapon')
+    bool towers;                // tours secondaires (tir auto + 'secondarytower')
+    bool railguns;              // défense rapprochée contre missiles et chasseurs
+    int hangar;                 // chasseurs dans le hangar ('launch')
+    int drones;                 // salves de drones ('drones <n>')
+    float hullRegen;            // % de coque réparé par seconde en combat (organique)
+};
+
+inline FlagshipLoadout flagshipLoadout(const QString &faction)
+{
+    if (faction == "Tau'ri")            // BC-304 : railguns, missiles, F-302
+        return {QT_TRANSLATE_NOOP("Balance", "Asgard beam"), 150.0f, false, true, true, 4, 0, 0.0f};
+    if (faction == "Goa'uld")           // Ha'tak : canons à plasma, beaucoup de planeurs
+        return {QT_TRANSLATE_NOOP("Balance", "Staff cannons"), 140.0f, true, true, false, 10, 0, 0.0f};
+    if (faction == "Lucian Alliance")   // Ha'tak récupéré, moins bien armé
+        return {QT_TRANSLATE_NOOP("Balance", "Staff cannons"), 120.0f, false, true, false, 8, 0, 0.0f};
+    if (faction == "Wraith")            // Ruche : nuées de Darts, coque organique qui se régénère
+        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.4f};
+    if (faction == "Asgard")            // O'Neill : rayons très puissants, peu de chasseurs
+        return {QT_TRANSLATE_NOOP("Balance", "Asgard beam"), 230.0f, true, false, false, 2, 0, 0.0f};
+    if (faction == "Ancients")          // Aurora : armes à énergie et drones
+        return {QT_TRANSLATE_NOOP("Balance", "Energy weapons"), 160.0f, true, true, false, 4, kPlayerDroneSalvos, 0.0f};
+    if (faction == "Ori")               // Vaisseau ori : rayon dévastateur
+        return {QT_TRANSLATE_NOOP("Balance", "Ori beam"), 240.0f, false, true, false, 4, 0, 0.0f};
+    // Destiny
+    return {QT_TRANSLATE_NOOP("Balance", "Main tower"), 160.0f, true, true, true, 4, 0, 0.0f};
+}
+
+// ----------------------------------------------------------------
 //  5. VAGUES (campagne), ALLIES ET HANGAR
 // ----------------------------------------------------------------
 

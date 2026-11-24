@@ -5,6 +5,7 @@
 #include "src/core/balance.h"
 #include "src/db/dbtext.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFontDatabase>
 #include <QHash>
@@ -400,12 +401,19 @@ bool BattleView::fireMainWeapon(int enemyIndex)
         m_lockedId = target->id;
     }
 
-    shoot(true, destinyWorld(kMainTowerLocal), target->id, {}, 160.0f, 48.0f,
+    shoot(true, destinyWorld(kMainTowerLocal), target->id, {}, m_loadout.mainDamage, 48.0f,
           QVector3D(0.7f, 0.92f, 1.0f), 3.2f, 0.32f);
     m_mainCooldown = kMainCooldown;
     emit sound(SoundCue::DestinyMainGun, {}, 0.0f);
     emit logMessage(tr("Main tower fired at T%1").arg(indexOfId(target->id) + 1), LogLevel::Success);
     return true;
+}
+
+void BattleView::setLoadout(const Balance::FlagshipLoadout &loadout)
+{
+    m_loadout = loadout;
+    m_turretsOn = loadout.towers;
+    m_railgunsOn = loadout.railguns;
 }
 
 void BattleView::setDroneBay(int salvos)
@@ -452,6 +460,10 @@ bool BattleView::fireDrones(int enemyIndex)
 
 bool BattleView::firePulseVolley()
 {
+    if (!m_loadout.pulse) {
+        emit logMessage(tr("No pulse weapons aboard this ship"), LogLevel::Warning);
+        return false;
+    }
     if (m_pulseCooldown > 0.0f) {
         emit logMessage(tr("Pulse weapons recharging (%1 s)").arg(m_pulseCooldown, 0, 'f', 1),
                         LogLevel::Warning);
@@ -478,6 +490,10 @@ bool BattleView::firePulseVolley()
 
 bool BattleView::fireSecondaryBurst()
 {
+    if (!m_loadout.towers) {
+        emit logMessage(tr("No secondary towers aboard this ship"), LogLevel::Warning);
+        return false;
+    }
     if (m_secondaryCooldown > 0.0f) {
         emit logMessage(tr("Secondary towers recharging (%1 s)").arg(m_secondaryCooldown, 0, 'f', 1),
                         LogLevel::Warning);
@@ -787,6 +803,10 @@ void BattleView::step(float dt)
     m_pulseCooldown = std::max(0.0f, m_pulseCooldown - recharge);
     m_secondaryCooldown = std::max(0.0f, m_secondaryCooldown - recharge);
     m_shieldFlash = std::max(0.0f, m_shieldFlash - dt * 2.0f);
+
+    // Organic hull (Wraith): it heals itself, even in battle
+    if (m_loadout.hullRegen > 0.0f && m_hull > 0.0f)
+        m_hull = std::min(100.0f, m_hull + m_loadout.hullRegen * dt);
 
     // Shield regeneration (slower while under fire)
     if (m_shieldOrdered) {
@@ -1282,6 +1302,10 @@ void BattleView::drawAllies()
 
 void BattleView::setTurretsActive(bool on)
 {
+    if (!m_loadout.towers) {
+        emit logMessage(tr("No secondary towers aboard this ship"), LogLevel::Warning);
+        return;
+    }
     m_turretsOn = on;
     emit logMessage(on ? tr("Secondary towers: auto-fire on") : tr("Secondary towers: auto-fire off (+%1 power)").arg(kTurretPower),
                     LogLevel::Info);
@@ -1289,6 +1313,10 @@ void BattleView::setTurretsActive(bool on)
 
 void BattleView::setRailgunsActive(bool on)
 {
+    if (!m_loadout.railguns) {
+        emit logMessage(tr("No railguns aboard this ship"), LogLevel::Warning);
+        return;
+    }
     m_railgunsOn = on;
     emit logMessage(on ? tr("Railguns: point defense on") : tr("Railguns: point defense off (+%1 power)").arg(kRailgunPower),
                     on ? LogLevel::Info : LogLevel::Warning);
@@ -1304,9 +1332,9 @@ void BattleView::setPowerPriority(PowerPriority priority)
 int BattleView::freePower() const
 {
     int used = kMainTowerPower + kEnginePower;
-    if (m_turretsOn)
+    if (m_turretsOn && m_loadout.towers)
         used += kTurretPower;
-    if (m_railgunsOn)
+    if (m_railgunsOn && m_loadout.railguns)
         used += kRailgunPower;
     if (m_shieldOrdered)
         used += kShieldPower;
@@ -1996,6 +2024,10 @@ WeaponReadiness BattleView::weaponReadiness() const
     w.hangar = m_hangar;
     w.hangarMax = m_hangarCapacity;
     w.drones = m_drones;
+    w.mainName = QString::fromLatin1(m_loadout.mainName);
+    w.hasPulse = m_loadout.pulse;
+    w.hasTowers = m_loadout.towers;
+    w.hasRailguns = m_loadout.railguns;
     w.dronesMax = m_droneBay;
     w.fightersOut = int(std::count_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return a.group == -1 && a.alive; }));
     w.allies = allyCount();
@@ -2949,7 +2981,7 @@ void BattleView::drawOverlay()
             if (!project(m.map(it->first / float(it->second)), &a))
                 continue;
             const QString &kind = it.key();
-            const QString label = kind == "main"                ? tr("Main tower")
+            const QString label = kind == "main" ? QCoreApplication::translate("Balance", m_loadout.mainName)
                                 : kind == "pulse"               ? tr("Pulse")
                                 : kind == "turret"              ? tr("Towers")
                                 : kind == "beam"                ? tr("Beam")

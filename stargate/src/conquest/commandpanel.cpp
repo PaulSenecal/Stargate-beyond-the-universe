@@ -304,7 +304,8 @@ void CommandPanel::rebuildDiplomacy()
     QString key;
     for (int f = 0; f < m_game->factions().size(); ++f) {
         const Faction &faction = m_game->factions()[f];
-        key += QStringLiteral("%1/%2/%3/%4/%5;")
+        key += QStringLiteral("%1/%2/%3/%4/%5/%6;")
+                   .arg(faction.pacts.join(','))
                    .arg(faction.allied)
                    .arg(qCeil(faction.allyCooldown))
                    .arg(m_game->planetCount(f))
@@ -343,6 +344,11 @@ void CommandPanel::rebuildDiplomacy()
                                         .arg(faction.techs.size()),
                                     card);
         strength->setObjectName("field");
+        auto *pacts = new QLabel(faction.pacts.isEmpty() ? tr("No pact with the other factions")
+                                                         : tr("Allied with: %1").arg(faction.pacts.join(", ")),
+                                 card);
+        pacts->setObjectName("note");
+        pacts->setStyleSheet(faction.pacts.isEmpty() ? QString() : QStringLiteral("color: #e2bf3e;"));
         auto *trait = new QLabel(ConquestGame::traitSummary(faction.id), card);
         trait->setObjectName("note");
         trait->setWordWrap(true);
@@ -377,6 +383,7 @@ void CommandPanel::rebuildDiplomacy()
         text->setSpacing(4);
         text->addWidget(name);
         text->addWidget(strength);
+        text->addWidget(pacts);
         text->addWidget(trait);
         auto *row = new QHBoxLayout(card);
         row->setContentsMargins(10, 10, 14, 10);

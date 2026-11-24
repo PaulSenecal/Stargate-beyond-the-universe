@@ -21,6 +21,9 @@ SOURCES += \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
+    src/Menu/mainmenu/titlescreen.cpp \
+    src/Menu/pause/pausemenu.cpp \
+    src/Menu/setting/settingspanel.cpp \
     src/audio/soundsystem.cpp \
     src/core/commandmanager.cpp \
     src/core/destinystate.cpp \
@@ -56,6 +59,10 @@ HEADERS += \
     src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
+    src/Menu/mainmenu/titlescreen.h \
+    src/Menu/menustyle.h \
+    src/Menu/pause/pausemenu.h \
+    src/Menu/setting/settingspanel.h \
     src/audio/soundcue.h \
     src/audio/soundsystem.h \
     src/core/commandmanager.h \

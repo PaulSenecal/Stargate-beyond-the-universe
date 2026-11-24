@@ -265,6 +265,16 @@ BattleView::BattleView(QWidget *parent)
     m_timer->start(16);
 }
 
+void BattleView::setPaused(bool paused)
+{
+    if (paused) {
+        m_timer->stop();
+    } else if (!m_timer->isActive()) {
+        m_clock.restart();
+        m_timer->start(16);
+    }
+}
+
 BattleView::~BattleView()
 {
     makeCurrent();
@@ -1761,7 +1771,7 @@ void BattleView::drawOverlay()
 
     // --- Contacts (top right) and hint (bottom left)
     p.setPen(ids.empty() ? QColor(70, 230, 100) : red);
-    p.drawText(QRectF(0, 14, width() - 14, 18), Qt::AlignRight,
+    p.drawText(QRectF(0, 46, width() - 14, 18), Qt::AlignRight,     // below the MENU button
                ids.empty() ? tr("NO CONTACT") : tr("HOSTILES: %1").arg(ids.size()));
     // --- Quest objectives (top center)
     if (!m_objectiveLines.isEmpty()) {

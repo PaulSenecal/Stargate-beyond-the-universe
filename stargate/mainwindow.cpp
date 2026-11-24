@@ -1,6 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "src/Menu/gamemenu/gamemenu.h"
+#include "src/Menu/mainmenu/titlescreen.h"
+#include "src/audio/soundsystem.h"
+
+#include <QStackedWidget>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -9,17 +13,50 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle(tr("Stargate - Beyond the Universe"));
 
-    // The in-game menu (3D battle view + HUD + command console) is the
-    // first screen. The former title buttons stay in mainwindow.ui.
-    setCentralWidget(new GameMenu(this));
+    // Screens: the title screen and the game (3D battle view + HUD +
+    // command console). The game is the first screen; quitting the game
+    // session leads to the title screen. The former title buttons stay
+    // in mainwindow.ui.
+    m_sound = new SoundSystem(this);
+    m_screens = new QStackedWidget(this);
+    m_title = new TitleScreen(m_sound, m_screens);
+    m_screens->addWidget(m_title);
+    setCentralWidget(m_screens);
     menuBar()->hide();
+
+    connect(m_title, &TitleScreen::playRequested, this, &MainWindow::startGame);
+    connect(m_title, &TitleScreen::quitRequested, this, &MainWindow::close);
+    startGame();
     //menuBackground();
 
 }
 
 MainWindow::~MainWindow()
 {
+    delete m_game;          // saves the game while the database is still open
     delete ui;
+}
+
+void MainWindow::startGame()
+{
+    if (!m_game) {
+        m_game = new GameMenu(m_sound, m_screens);
+        m_screens->addWidget(m_game);
+        connect(m_game, &GameMenu::quitToTitleRequested, this, &MainWindow::showTitle);
+        connect(m_game, &GameMenu::quitGameRequested, this, &MainWindow::close);
+    }
+    m_screens->setCurrentWidget(m_game);
+}
+
+void MainWindow::showTitle()
+{
+    m_screens->setCurrentWidget(m_title);
+    if (m_game) {
+        // Called from a button of the game screen: deleted (and saved) later
+        m_screens->removeWidget(m_game);
+        m_game->deleteLater();
+        m_game = nullptr;
+    }
 }
 
 

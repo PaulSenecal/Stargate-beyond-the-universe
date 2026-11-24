@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "src/Menu/setting/settingspanel.h"
 #include "src/db/databasemanager.h"
 
 #include <QApplication>
@@ -34,6 +35,9 @@ int main(int argc, char *argv[])
         qWarning() << "[DB] Database unavailable, running without persistence";
 
     MainWindow w;
-    w.showMaximized();
+    if (SettingsPanel::fullScreenSetting())
+        w.showFullScreen();
+    else
+        w.showMaximized();
     return a.exec();
 }

@@ -102,6 +102,8 @@ public:
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
     void simulate(float seconds);
+    // Stops the real-time battle (pause menu)
+    void setPaused(bool paused);
 
     // Destiny weapons from the database: "Railgun" (point defense,
     // anti-fighter) and "Energy Cannon" (tower auto-fire)

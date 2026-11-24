@@ -431,7 +431,7 @@ private slots:
         QVERIFY(ShipLibraryRepository::migrate());          // idempotent
 
         const QList<ShipClass> ships = ShipLibraryRepository::all();
-        QCOMPARE(ships.size(), 20);
+        QCOMPARE(ships.size(), 25);
         QStringList hostileFactions;
         for (const ShipClass &c : ships) {
             QVERIFY2(!c.attacks.isEmpty(), qPrintable(c.name));
@@ -514,6 +514,7 @@ private slots:
         QTest::newRow("small") << int(Conquest::Size::Small) << 12 << 2;
         QTest::newRow("medium") << int(Conquest::Size::Medium) << 24 << 3;
         QTest::newRow("large") << int(Conquest::Size::Large) << 40 << 4;
+        QTest::newRow("huge") << int(Conquest::Size::Huge) << 56 << 7;
     }
 
     void generation()

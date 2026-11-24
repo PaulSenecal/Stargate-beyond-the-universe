@@ -79,6 +79,17 @@ const ClassSeed kClasses[] = {
      "Flagship of Anubis with Ancient-derived shields and a superweapon able to destroy a planet."},
     {"Wraith Superhive", "MotherShip", "Wraith", 1016, false, "#3e2f4d",
      "Hive powered by a ZPM: grows, regenerates and launches endless swarms of Darts."},
+    // Conquest factions (not in the survival waves)
+    {"Asgard Cruiser", "MotherShip", "Asgard", 480, false, "#b8c4d6",
+     "Line ship of the Asgard fleet: few in number, but shielded and armed far beyond the younger races."},
+    {"Asgard Scout", "Fighter", "Asgard", 80, false, "#c8d2dc",
+     "Small Asgard escort ship with an ion cannon."},
+    {"Lantean Warship", "MotherShip", "Ancients", 520, false, "#8fb7c4",
+     "Ancient warship of the Lantean fleet, launching drones and firing energy batteries."},
+    {"Ori Warship", "MotherShip", "Ori", 560, false, "#e07b30",
+     "Ori crusade mothership, powered by the Ori themselves. Its main beam crosses any shield."},
+    {"Ori Fighter", "Fighter", "Ori", 65, false, "#c9883e",
+     "Small Ori attack craft escorting the warships of the crusade."},
 };
 
 const AttackSeed kAttacks[] = {
@@ -167,6 +178,22 @@ const AttackSeed kAttacks[] = {
      "Eight energy bolts at once."},
     {"Wraith Superhive", "Endless swarm", "launch", 0, 5, 20, 0.7, "always", "Wraith Dart", true,
      "Releases five Darts."},
+    {"Asgard Cruiser", "Asgard beam", "beam", 10, 1, 6, 1.0, "always", "", false,
+     "Asgard beam weapon: half of its energy goes through shields."},
+    {"Asgard Cruiser", "Ion bolts", "bolt", 2, 2, 3.0, 1.0, "always", "", false,
+     "Pair of ion bolts."},
+    {"Asgard Scout", "Ion bolt", "bolt", 1.4, 1, 2.4, 1.0, "always", "", false,
+     "Light ion bolt."},
+    {"Lantean Warship", "Drone weapons", "missile", 5, 3, 7, 1.0, "always", "", false,
+     "Three homing Ancient drones."},
+    {"Lantean Warship", "Energy batteries", "bolt", 2, 2, 3.0, 1.0, "always", "", false,
+     "Pair of energy bolts."},
+    {"Ori Warship", "Ori main beam", "beam", 16, 1, 9, 0.8, "always", "", true,
+     "The main beam of the crusade: half of its energy goes through shields."},
+    {"Ori Warship", "Plasma batteries", "bolt", 2.4, 2, 3.2, 1.0, "always", "", false,
+     "Pair of heavy plasma bolts."},
+    {"Ori Fighter", "Plasma bolt", "bolt", 1.3, 1, 2.4, 1.0, "always", "", false,
+     "Light plasma bolt."},
 };
 
 // Pictures of the Stargate Reborn mod (optional local assets)

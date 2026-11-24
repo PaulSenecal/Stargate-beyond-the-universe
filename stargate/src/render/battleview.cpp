@@ -769,6 +769,18 @@ void BattleView::spawnWave(bool announce, const QString &faction)
     }
 }
 
+// Line ships first: the heavy flagships of a faction (O'Neill, Aurora…)
+// only come when it has nothing lighter
+void BattleView::preferLineShips(QList<int> &motherships) const
+{
+    QList<int> line;
+    for (int i : motherships)
+        if (m_classes[i].hull <= 650)
+            line << i;
+    if (!line.isEmpty())
+        motherships = line;
+}
+
 bool BattleView::spawnFleet(const QString &faction, int motherships, int fighters)
 {
     constexpr int kBossHull = 900;
@@ -786,6 +798,7 @@ bool BattleView::spawnFleet(const QString &faction, int motherships, int fighter
     }
     if (big.isEmpty() && small.isEmpty())
         return false;
+    preferLineShips(big);
     if (big.isEmpty())
         big = small;
     if (small.isEmpty())
@@ -885,6 +898,7 @@ bool BattleView::spawnAllies(const QString &faction, int motherships, int fighte
         if (c.faction == faction && c.hull < kBossHull)
             (c.isMothership() ? big : small) << i;
     }
+    preferLineShips(big);
     if (big.isEmpty())
         big = small;
     if (small.isEmpty())
@@ -2113,6 +2127,39 @@ void BattleView::drawDestiny()
         drawMesh(m_pyramid, bottom, dark, 0.0f, 1.0f, ModeHull);
         return;
     }
+    if (m_flagshipStyle == "Asgard") {
+        // O'Neill class: long pale hull with a split bow and side wings
+        const QVector3D hull(0.72f, 0.76f, 0.8f), dark(0.45f, 0.48f, 0.52f), glow(0.7f, 0.85f, 1.0f);
+        part(m_sphere, {0.0f, 0.0f, 0.0f}, {6.2f, 0.7f, 1.6f}, 0, hull);
+        part(m_box, {4.6f, 0.0f, 0.75f}, {3.2f, 0.4f, 0.45f}, 0, dark);
+        part(m_box, {4.6f, 0.0f, -0.75f}, {3.2f, 0.4f, 0.45f}, 0, dark);
+        part(m_box, {-1.0f, 0.0f, 2.2f}, {4.0f, 0.18f, 2.2f}, 0, hull);
+        part(m_box, {-1.0f, 0.0f, -2.2f}, {4.0f, 0.18f, 2.2f}, 0, hull);
+        part(m_sphere, {-5.9f, 0.0f, 0.0f}, {0.45f, 0.45f, 0.9f}, 0, glow);
+        return;
+    }
+    if (m_flagshipStyle == "Ancients") {
+        // Aurora class: very long thin hull, central spine, engine pods
+        const QVector3D hull(0.56f, 0.62f, 0.66f), dark(0.34f, 0.38f, 0.42f), glow(0.5f, 0.9f, 1.0f);
+        part(m_box, {0.0f, 0.0f, 0.0f}, {12.5f, 0.5f, 1.1f}, 0, hull);
+        part(m_box, {0.5f, 0.45f, 0.0f}, {8.0f, 0.4f, 0.5f}, 0, dark);
+        part(m_box, {-3.0f, -0.1f, 1.1f}, {5.0f, 0.4f, 0.6f}, 0, dark);
+        part(m_box, {-3.0f, -0.1f, -1.1f}, {5.0f, 0.4f, 0.6f}, 0, dark);
+        part(m_box, {6.6f, 0.0f, 0.0f}, {1.0f, 0.4f, 0.9f}, 45, hull);
+        for (float z : {-1.1f, 1.1f})
+            part(m_sphere, {-5.7f, -0.1f, z}, {0.35f, 0.3f, 0.35f}, 0, glow);
+        return;
+    }
+    if (m_flagshipStyle == "Ori") {
+        // Ori warship: wide disc with a raised crown and a burning heart
+        const QVector3D hull(0.6f, 0.55f, 0.48f), dark(0.36f, 0.32f, 0.28f), fire(1.0f, 0.62f, 0.25f);
+        part(m_sphere, {0.0f, 0.0f, 0.0f}, {5.8f, 0.55f, 5.0f}, 0, hull);
+        part(m_sphere, {0.0f, 0.45f, 0.0f}, {3.2f, 0.6f, 2.8f}, 0, dark);
+        for (int i = 0; i < 6; ++i)
+            part(m_box, {0.0f, 0.7f, 0.0f}, {6.6f, 0.15f, 0.25f}, 30.0f * i, dark);
+        part(m_sphere, {0.0f, 0.9f, 0.0f}, {0.9f, 0.5f, 0.9f}, 0, fire);
+        return;
+    }
     if (m_flagshipStyle == "Wraith") {
         // Hive ship: long organic hull, bristling with spikes
         const QVector3D skin(0.26f, 0.3f, 0.24f), dark(0.14f, 0.16f, 0.14f), glow(0.45f, 0.85f, 0.5f);
@@ -2177,7 +2224,7 @@ void BattleView::drawEffects()
 {
     // Destiny engines (a Ha'tak has none there)
     const float engines = subsystemHealth("engines") / 100.0f;
-    const bool hatak = m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance";
+    const bool hatak = m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance" || m_flagshipStyle == "Ori";
     for (float angle = 160.0f; angle <= 200.0f && !hatak; angle += 10.0f) {
         const float a = qDegreesToRadians(angle);
         const QVector3D pos = destinyWorld({kFanCenter.x() + 6.0f * std::cos(a), 0.0f, 6.0f * std::sin(a)});

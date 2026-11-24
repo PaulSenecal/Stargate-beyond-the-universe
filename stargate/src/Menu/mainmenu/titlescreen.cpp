@@ -73,6 +73,7 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     m_size->addItem(tr("Small - 12 planets, 1 enemy faction (about 20 min)"), int(Conquest::Size::Small));
     m_size->addItem(tr("Medium - 24 planets, 2 enemy factions (about 45 min)"), int(Conquest::Size::Medium));
     m_size->addItem(tr("Large - 40 planets, 3 enemy factions (1 h 30 and more)"), int(Conquest::Size::Large));
+    m_size->addItem(tr("Huge - 56 planets, every other faction (6 enemies)"), int(Conquest::Size::Huge));
     m_size->setCurrentIndex(1);
     auto *startConquest = new QPushButton(tr("Start a new conquest"), conquestPage);
     m_continueConquest = new QPushButton(tr("Continue the conquest"), conquestPage);
@@ -96,6 +97,9 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
         const QString text = id == "Tau'ri"            ? tr("Earth's forces: Daedalus battlecruisers and F-302 fighters.")
                            : id == "Goa'uld"           ? tr("The System Lords: Ha'tak motherships, Al'kesh and Death Gliders.")
                            : id == "Wraith"            ? tr("Hive ships, cruisers and swarms of Darts.")
+                           : id == "Asgard"            ? tr("The oldest allies of Earth: few ships, but far ahead in technology.")
+                           : id == "Ancients"          ? tr("The builders of the Stargates: Lantean warships, drones and Puddle Jumpers.")
+                           : id == "Ori"               ? tr("The crusade of Origin: Ori warships, fighters and Priors.")
                                                        : tr("Smugglers and mercenaries: stolen Ha'taks and Gliders.");
         m_factionText->setText(text + QStringLiteral("\n") + ConquestGame::traitSummary(id));
     };

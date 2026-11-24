@@ -30,7 +30,8 @@ constexpr int kFlagshipPower = 12;              // AI estimate of the flagship s
 constexpr double kBattleRate = 0.04;            // damage per second per point of power
 constexpr double kEventPeriod = 30.0;           // seconds between two faction events (revolts…)
 constexpr double kRevoltChance = 0.04;          // per weak Goa'uld world and period
-constexpr double kDiplomacyChance = 0.04;       // per neutral neighbour of the Tau'ri and period
+constexpr double kDiplomacyChance = 0.06;       // per neutral neighbour of the Tau'ri and period
+constexpr double kConversionChance = 0.03;      // per neutral neighbour of the Ori and period
 constexpr int kMaxBattleMotherships = 4;        // 3D battle limits (12 contacts)
 constexpr int kMaxBattleFighters = 8;
 
@@ -66,6 +67,9 @@ const QList<FactionInfo> &Conquest::factionInfos()
         {QStringLiteral("Goa'uld"), QStringLiteral("#d4a63a"), QStringLiteral("Chulak")},
         {QStringLiteral("Wraith"), QStringLiteral("#5fbf6a"), QStringLiteral("Wraith Prime")},
         {QStringLiteral("Lucian Alliance"), QStringLiteral("#c0563f"), QStringLiteral("Lucia")},
+        {QStringLiteral("Asgard"), QStringLiteral("#b8c4d6"), QStringLiteral("Orilla")},
+        {QStringLiteral("Ancients"), QStringLiteral("#6fd0e0"), QStringLiteral("Atlantis")},
+        {QStringLiteral("Ori"), QStringLiteral("#e07b30"), QStringLiteral("Celestis")},
     };
     return infos;
 }
@@ -107,6 +111,7 @@ int ConquestGame::planetCountFor(Size size)
     case Size::Small: return 12;
     case Size::Medium: return 24;
     case Size::Large: return 40;
+    case Size::Huge: return 56;
     }
     return 24;
 }
@@ -141,7 +146,7 @@ void ConquestGame::generate(const Setup &setup)
     m_over = false;
 
     const int count = planetCountFor(setup.size);
-    const int enemies = setup.size == Size::Small ? 1 : setup.size == Size::Medium ? 2 : 3;
+    const int enemies = setup.size == Size::Small ? 1 : setup.size == Size::Medium ? 2 : setup.size == Size::Large ? 3 : 6;
 
     // --- Positions: random, kept apart from each other
     constexpr double margin = 50;
@@ -328,8 +333,9 @@ int ConquestGame::findPlanet(const QString &nameOrNumber) const
 
 int ConquestGame::garrisonPower(const Planet &p) const
 {
-    const int perLevel = hasTech(p.owner, "defense1") ? 4 : 3;     // reinforced garrisons
-    return p.defense * perLevel + 4 * p.dockMotherships + p.dockFighters;
+    const int perLevel = hasTech(p.owner, "defense1") ? 4 : 3;        // reinforced garrisons
+    const int drones = hasTrait(p.owner, "Ancients") ? p.defense / 2 : 0;  // drone defenses
+    return p.defense * perLevel + drones + 4 * p.dockMotherships + p.dockFighters;
 }
 
 double ConquestGame::naquadahRate(const Planet &p) const
@@ -353,6 +359,10 @@ double ConquestGame::powerMultiplier(int faction) const
 {
     double weapons = 1.0 + (hasTech(faction, "weapons1") ? 0.10 : 0.0) + (hasTech(faction, "weapons2") ? 0.10 : 0.0)
                    + (hasTech(faction, "weapons3") ? 0.15 : 0.0);
+    if (hasTrait(faction, "Asgard"))
+        weapons *= 1.15;                // Asgard technology
+    if (hasTrait(faction, "Ori"))
+        weapons *= 1.1;                 // faith of the crusade
     if (!hasTrait(faction, "Tau'ri"))
         return weapons;
     const int sites = int(std::count_if(m_planets.cbegin(), m_planets.cend(), [faction](const Planet &p) {
@@ -368,6 +378,16 @@ double ConquestGame::powerMultiplier(int faction) const
 bool ConquestGame::hasTech(int faction, const QString &tech) const
 {
     return faction >= 0 && faction < m_factions.size() && m_factions[faction].techs.contains(tech);
+}
+
+double ConquestGame::researchCost(int faction, const TechInfo &tech) const
+{
+    return hasTrait(faction, "Asgard") ? tech.cost * 0.75 : tech.cost;
+}
+
+double ConquestGame::researchTime(int faction, const TechInfo &tech) const
+{
+    return hasTrait(faction, "Asgard") ? tech.seconds * 0.5 : tech.seconds;
 }
 
 bool ConquestGame::canResearch(int faction, const QString &tech, QString *why) const
@@ -389,8 +409,8 @@ bool ConquestGame::canResearch(int faction, const QString &tech, QString *why) c
     for (const TechInfo &t : techInfos())
         if (t.branch == info->branch && t.tier == info->tier - 1 && !f.techs.contains(t.id))
             return no(tr("needs %1 first").arg(techName(t.id)));
-    if (f.naquadah < info->cost)
-        return no(tr("%1 naquadah needed (%2 available)").arg(info->cost).arg(int(f.naquadah)));
+    if (f.naquadah < researchCost(faction, *info))
+        return no(tr("%1 naquadah needed (%2 available)").arg(researchCost(faction, *info)).arg(int(f.naquadah)));
     return true;
 }
 
@@ -401,10 +421,10 @@ bool ConquestGame::startResearch(const QString &tech, QString *error)
     const auto info = std::find_if(techInfos().cbegin(), techInfos().cend(),
                                    [&tech](const TechInfo &t) { return t.id == tech; });
     Faction &me = m_factions[m_player];
-    me.naquadah -= info->cost;
+    me.naquadah -= researchCost(m_player, *info);
     me.research = tech;
     me.researchProgress = 0;
-    emit message(tr("Research started: %1 (%2 s)").arg(techName(tech)).arg(info->seconds), Tone::Info);
+    emit message(tr("Research started: %1 (%2 s)").arg(techName(tech)).arg(researchTime(m_player, *info)), Tone::Info);
     return true;
 }
 
@@ -562,6 +582,12 @@ QString ConquestGame::hangarFighter(const QString &factionId)
         return QStringLiteral("Wraith Dart");
     if (factionId == "Lucian Alliance")
         return QStringLiteral("Glider");
+    if (factionId == "Asgard")
+        return QStringLiteral("Asgard Scout");
+    if (factionId == "Ancients")
+        return QStringLiteral("Puddle Jumper");
+    if (factionId == "Ori")
+        return QStringLiteral("Ori Fighter");
     return QStringLiteral("F-302");
 }
 
@@ -588,9 +614,18 @@ QString ConquestGame::traitSummary(const QString &factionId)
                   "Jaffa revolts.");
     if (factionId == "Tau'ri")
         return tr("Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral "
-                  "neighbours may join, the flagship rallies worlds twice as fast.");
+                  "neighbours may join, the flagship rallies worlds twice as fast. Shipyards x1.1.");
     if (factionId == "Lucian Alliance")
-        return tr("Smuggling: fighters built x1.4 faster. Raids: every world taken steals naquadah from its owner.");
+        return tr("Smuggling: fighters built x1.25 faster. Raids: every world taken steals naquadah from its owner.");
+    if (factionId == "Asgard")
+        return tr("Advanced technology: research twice as fast and 25% cheaper, fleets +15%; but shipyards "
+                  "x0.7 - the Asgard are few.");
+    if (factionId == "Ancients")
+        return tr("Knowledge of the Ancients: Ancient sites give 200 naquadah, drone defenses (stronger "
+                  "garrisons); but shipyards x0.8.");
+    if (factionId == "Ori")
+        return tr("Crusade: conquered worlds keep most of their people, who grow faster; the Priors convert "
+                  "neutral neighbours; fleets +10%; but the crusade builds slowly (shipyards x0.85).");
     return QString();
 }
 
@@ -834,7 +869,8 @@ void ConquestGame::tick(double seconds)
         if (hasTrait(p.owner, "Wraith"))
             p.population = std::max(0.2 * p.maxPopulation, p.population - 0.002 * p.population * seconds);
         else
-            p.population += 0.02 * p.population * (1.0 - p.population / p.maxPopulation) * seconds;
+            p.population += (hasTrait(p.owner, "Ori") ? 0.025 : 0.02) * p.population
+                          * (1.0 - p.population / p.maxPopulation) * seconds;
         // Garrisons are rebuilt little by little
         const bool shields = hasTech(p.owner, "defense3");          // planetary shields
         const int rebuiltMax = p.capital ? 5 : shields ? 4 : 3;
@@ -860,7 +896,7 @@ void ConquestGame::tick(double seconds)
             faction.research.clear();
             continue;
         }
-        faction.researchProgress += seconds / info->seconds;
+        faction.researchProgress += seconds / researchTime(f, *info);
         if (faction.researchProgress >= 1.0) {
             faction.techs << faction.research;
             if (f == m_player)
@@ -1063,7 +1099,7 @@ void ConquestGame::battleWon()
                    m_fleets.end());
     if (p.owner == owner) {
         p.defense = std::max(1, p.defense - 1);
-        p.population *= 0.8;                // the battle took its toll
+        p.population *= hasTrait(m_player, "Ori") ? 0.9 : 0.8;              // the battle took its toll
         emit message(tr("%1 taken from the %2").arg(p.name, m_factions[owner].id), Tone::Success);
         capture(id, m_player);
     } else {
@@ -1111,9 +1147,10 @@ void ConquestGame::capture(int planetId, int newOwner)
     }
     p.fighterProgress = p.mothershipProgress = 0;
     if (p.bonus == Bonus::AncientSite && newOwner >= 0) {
-        m_factions[newOwner].naquadah += 100;
+        const int archives = hasTrait(newOwner, "Ancients") ? 200 : 100;     // they can read them
+        m_factions[newOwner].naquadah += archives;
         if (newOwner == m_player)
-            emit message(tr("Ancient site on %1: +100 naquadah from its archives").arg(p.name), Tone::Success);
+            emit message(tr("Ancient site on %1: +%2 naquadah from its archives").arg(p.name).arg(archives), Tone::Success);
     }
     if (previousOwner >= 0 && previousOwner != newOwner && planetCount(previousOwner) == 0)
         emit message(tr("The %1 have lost their last world").arg(m_factions[previousOwner].id),
@@ -1164,6 +1201,21 @@ void ConquestGame::factionEvents()
             emit planetChanged(p.id);
             continue;
         }
+        // Ori Priors convert a neutral neighbour
+        if (p.owner < 0 && quiet(p)) {
+            bool converted = false;
+            for (int n : p.lanes) {
+                const int f = m_planets[n].owner;
+                if (hasTrait(f, "Ori") && m_rng.generateDouble() < kConversionChance) {
+                    emit message(tr("The Priors convert %1 to Origin").arg(p.name), f == m_player ? Tone::Success : Tone::Info);
+                    capture(p.id, f);
+                    converted = true;
+                    break;
+                }
+            }
+            if (converted)
+                continue;
+        }
         // Tau'ri diplomacy with a neutral neighbour
         if (p.owner < 0 && quiet(p)) {
             for (int n : p.lanes) {
@@ -1182,8 +1234,8 @@ void ConquestGame::factionEvents()
         if (f == m_player || !m_factions[f].research.isEmpty())
             continue;
         for (const TechInfo &t : techInfos()) {
-            if (canResearch(f, t.id) && m_factions[f].naquadah >= t.cost + 40) {
-                m_factions[f].naquadah -= t.cost;
+            if (canResearch(f, t.id) && m_factions[f].naquadah >= researchCost(f, t) + 40) {
+                m_factions[f].naquadah -= researchCost(f, t);
                 m_factions[f].research = t.id;
                 m_factions[f].researchProgress = 0;
                 break;
@@ -1212,10 +1264,16 @@ void ConquestGame::produce(double seconds)
     for (Planet &p : m_planets) {
         if (p.owner < 0 || !p.hasShipyard() || p.id == m_battlePlanet)
             continue;
-        const double yard = hasTrait(p.owner, "Wraith") ? 1.6 : hasTrait(p.owner, "Goa'uld") ? 1.25 : 1.0;
+        const double yard = hasTrait(p.owner, "Wraith") ? 1.6
+                          : hasTrait(p.owner, "Goa'uld") ? 1.25
+                          : hasTrait(p.owner, "Asgard") ? 0.7
+                          : hasTrait(p.owner, "Ancients") ? 0.8
+                          : hasTrait(p.owner, "Tau'ri") ? 1.1
+                          : hasTrait(p.owner, "Ori") ? 0.85
+                                                          : 1.0;
         const double shipyards = hasTech(p.owner, "industry1") ? 1.25 : 1.0;
         const double rate = std::clamp(0.5 + p.population / 10.0, 0.6, 1.6) * seconds * yard * shipyards;
-        const double smuggling = hasTrait(p.owner, "Lucian Alliance") ? 1.4 : 1.0;
+        const double smuggling = hasTrait(p.owner, "Lucian Alliance") ? 1.25 : 1.0;
         if (p.dockFighters < kDockFighters) {
             p.fighterProgress += rate * smuggling / kFighterBuild;
             if (p.fighterProgress >= 1.0) {
@@ -1570,7 +1628,7 @@ void ConquestGame::endSkirmish(int index, bool attackerWon)
     if (attackerWon) {
         const int previous = p.owner;
         p.defense = 1;
-        p.population *= 0.75;
+        p.population *= hasTrait(battle.attacker, "Ori") ? 0.9 : 0.75;     // the Ori convert the people
         if (battle.attacker == m_player)
             emit message(tr("Your fleet takes %1 from the %2").arg(name, defender), Tone::Success);
         else if (previous == m_player)

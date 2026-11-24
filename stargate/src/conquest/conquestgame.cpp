@@ -2,7 +2,6 @@
 
 #include <QJsonArray>
 #include <QLineF>
-#include <QRandomGenerator>
 
 #include <algorithm>
 #include <cmath>
@@ -14,11 +13,22 @@ using namespace Conquest;
 namespace {
 
 constexpr double kFlagshipSpeed = 70.0;         // map units per second
+constexpr double kFleetSpeed = 28.0;
 constexpr double kCaptureBase = 4.0;            // seconds in orbit, + kCapturePerDefense per level
 constexpr double kCapturePerDefense = 3.0;
 constexpr double kHullRegen = 0.3;              // % per second at an owned planet
 constexpr double kShipyardRegen = 1.5;
 constexpr double kTriniumPerHull = 0.5;         // repair cost
+constexpr double kFighterBuild = 40.0;          // seconds per ship at a shipyard (average population)
+constexpr double kMothershipBuild = 120.0;
+constexpr int kDockFighters = 8;                // shipyard capacity
+constexpr int kDockMotherships = 3;
+constexpr double kThinkDelay = 4.0;             // seconds between two AI decisions of a fleet
+constexpr double kAttackRatio = 1.6;            // AI attacks only with that much more power
+constexpr double kDefenseRebuild = 60.0;        // seconds per defense level rebuilt (up to 3, 5 for capitals)
+constexpr int kFlagshipPower = 12;              // AI estimate of the flagship strength
+constexpr int kMaxBattleMotherships = 4;        // 3D battle limits (12 contacts)
+constexpr int kMaxBattleFighters = 8;
 
 const QStringList kNamedWorlds{"Abydos", "Dakara", "Tollana", "Langara", "Cimmeria", "Hebridan", "Kheb",
                                "Hala", "Vis Uban", "Delmak", "Netu", "Hasara", "Juna", "Orban", "Edora",
@@ -71,6 +81,7 @@ int Conquest::factionInfoIndex(const QString &id)
 
 ConquestGame::ConquestGame(QObject *parent)
     : QObject(parent)
+    , m_rng(QRandomGenerator::global()->generate())
 {
 }
 
@@ -94,17 +105,22 @@ void ConquestGame::start(const Setup &setup)
                  Tone::Success);
     emit message(tr("Take every planet of the enemy factions. Neutral worlds join you after a stay in orbit."),
                  Tone::Info);
+    emit message(tr("Shipyards build fleets that act on their own - yours too. Enemy fleets will attack."),
+                 Tone::Info);
 }
 
 void ConquestGame::generate(const Setup &setup)
 {
-    QRandomGenerator rng(setup.seed ? setup.seed : QRandomGenerator::global()->generate());
+    m_rng.seed(setup.seed ? setup.seed : QRandomGenerator::global()->generate());
+    QRandomGenerator &rng = m_rng;
     m_planets.clear();
     m_factions.clear();
+    m_fleets.clear();
+    m_nextFleetId = 1;
     m_route.clear();
     m_legProgress = m_capture = 0;
     m_hull = 100;
-    m_battlePlanet = -1;
+    m_battlePlanet = m_battleOwner = -1;
     m_over = false;
 
     const int count = planetCountFor(setup.size);
@@ -225,6 +241,15 @@ void ConquestGame::generate(const Setup &setup)
         capital.maxPopulation = 12;
         capital.defense = 5;
         capital.bonus = Bonus::Shipyard;
+        // Every faction starts with a small fleet at home
+        Fleet fleet;
+        fleet.id = m_nextFleetId++;
+        fleet.owner = f;
+        fleet.motherships = 1;
+        fleet.fighters = 3;
+        fleet.at = capital.id;
+        fleet.think = 5 + rng.generateDouble() * 5;
+        m_fleets << fleet;
         if (f == m_player)
             continue;
         int taken = 0;
@@ -252,6 +277,12 @@ int ConquestGame::planetCount(int faction) const
                              [faction](const Planet &p) { return p.owner == faction; }));
 }
 
+int ConquestGame::fleetCount(int faction) const
+{
+    return int(std::count_if(m_fleets.cbegin(), m_fleets.cend(),
+                             [faction](const Fleet &f) { return f.owner == faction; }));
+}
+
 int ConquestGame::findPlanet(const QString &nameOrNumber) const
 {
     const QString wanted = nameOrNumber.trimmed().toLower().remove(' ').remove('\'');
@@ -269,6 +300,11 @@ int ConquestGame::findPlanet(const QString &nameOrNumber) const
         if (normalized(p.name).startsWith(wanted))
             return p.id;
     return -1;
+}
+
+int ConquestGame::garrisonPower(const Planet &p)
+{
+    return p.defense * 3 + 4 * p.dockMotherships + p.dockFighters;
 }
 
 double ConquestGame::naquadahRate(const Planet &p)
@@ -293,6 +329,11 @@ QString ConquestGame::bonusName(Bonus bonus)
     return tr("None");
 }
 
+QString ConquestGame::ownerName(int owner) const
+{
+    return owner < 0 ? tr("independent world") : m_factions.at(owner).id;
+}
+
 QPointF ConquestGame::flagshipPos() const
 {
     const QPointF from = m_planets.value(m_at).pos;
@@ -300,6 +341,15 @@ QPointF ConquestGame::flagshipPos() const
         return from;
     const QPointF to = m_planets.value(m_route.first()).pos;
     return from + (to - from) * m_legProgress;
+}
+
+QPointF ConquestGame::fleetPos(const Fleet &fleet) const
+{
+    const QPointF from = m_planets.value(fleet.at).pos;
+    if (fleet.route.isEmpty())
+        return from;
+    const QPointF to = m_planets.value(fleet.route.first()).pos;
+    return from + (to - from) * fleet.leg;
 }
 
 // Dijkstra on the lanes (lengths = distances)
@@ -334,6 +384,22 @@ QList<int> ConquestGame::path(int from, int to) const
     for (int p = to; p != from; p = previous[p])
         result.prepend(p);
     return result;
+}
+
+double ConquestGame::pathLength(int from, int to) const
+{
+    if (from == to)
+        return 0;
+    const QList<int> steps = path(from, to);
+    if (steps.isEmpty())
+        return -1;
+    double length = 0;
+    int previous = from;
+    for (int p : steps) {
+        length += distance(m_planets[previous], m_planets[p]);
+        previous = p;
+    }
+    return length;
 }
 
 // ================================================================
@@ -418,6 +484,60 @@ bool ConquestGame::repairFlagship(QString *error)
     return true;
 }
 
+bool ConquestGame::build(int planetId, bool mothership, QString *error)
+{
+    auto fail = [error](const QString &text) {
+        if (error)
+            *error = text;
+        return false;
+    };
+    if (planetId < 0 || planetId >= m_planets.size())
+        return fail(tr("unknown planet"));
+    Planet &p = m_planets[planetId];
+    if (p.owner != m_player)
+        return fail(tr("%1 is not yours").arg(p.name));
+    if (!p.hasShipyard())
+        return fail(tr("%1 has no shipyard").arg(p.name));
+    if (mothership ? p.dockMotherships >= kDockMotherships : p.dockFighters >= kDockFighters)
+        return fail(tr("the shipyard of %1 is full").arg(p.name));
+    const double cost = mothership ? kMothershipCost : kFighterCost;
+    Faction &me = m_factions[m_player];
+    if (me.naquadah < cost)
+        return fail(tr("%1 naquadah needed (%2 available)").arg(cost).arg(int(me.naquadah)));
+    me.naquadah -= cost;
+    (mothership ? p.dockMotherships : p.dockFighters) += 1;
+    emit message(mothership ? tr("Mothership built at %1").arg(p.name) : tr("Fighter built at %1").arg(p.name),
+                 Tone::Success);
+    return true;
+}
+
+bool ConquestGame::orderFleet(int fleetId, int planetId, QString *error)
+{
+    auto fail = [error](const QString &text) {
+        if (error)
+            *error = text;
+        return false;
+    };
+    auto it = std::find_if(m_fleets.begin(), m_fleets.end(), [fleetId](const Fleet &f) { return f.id == fleetId; });
+    if (it == m_fleets.end() || it->owner != m_player)
+        return fail(tr("no fleet of yours with that number"));
+    if (planetId < 0 || planetId >= m_planets.size())
+        return fail(tr("unknown planet"));
+    if (it->at == m_battlePlanet && !it->moving())
+        return fail(tr("that fleet is in battle"));
+    const int start = it->moving() ? it->route.first() : it->at;
+    QList<int> route = it->moving() ? QList<int>{it->route.first()} : QList<int>();
+    if (planetId != start)
+        route << path(start, planetId);
+    if (route.isEmpty())
+        return fail(tr("the fleet is already there"));
+    it->route = route;
+    it->target = planetId;
+    it->ordered = true;
+    emit message(tr("Fleet %1 heads for %2").arg(it->id).arg(m_planets[planetId].name), Tone::Info);
+    return true;
+}
+
 // ================================================================
 //  Simulation
 // ================================================================
@@ -435,9 +555,33 @@ void ConquestGame::tick(double seconds)
         f.naquadah += naquadahRate(p) * seconds;
         f.trinium += triniumRate(p) * seconds;
         p.population += 0.02 * p.population * (1.0 - p.population / p.maxPopulation) * seconds;
+        // Garrisons are rebuilt little by little
+        const int rebuiltMax = p.capital ? 5 : 3;
+        if (p.defense < rebuiltMax && p.id != m_battlePlanet) {
+            p.rebuild += seconds / kDefenseRebuild;
+            if (p.rebuild >= 1.0) {
+                p.rebuild = 0;
+                ++p.defense;
+            }
+        }
     }
 
-    if (inBattle())
+    // Autonomous fleets of every faction
+    produce(seconds);
+    moveFleets(seconds);
+    resolveBattles();
+    mergeFleets();
+    for (Fleet &fleet : m_fleets) {
+        if (fleet.moving() || fleet.ordered || fleet.at == m_battlePlanet)
+            continue;
+        fleet.think -= seconds;
+        if (fleet.think <= 0) {
+            fleet.think = kThinkDelay + m_rng.generateDouble();
+            think(fleet);
+        }
+    }
+    checkVictory();
+    if (m_over || inBattle())
         return;
 
     // Flagship on a lane
@@ -453,6 +597,10 @@ void ConquestGame::tick(double seconds)
         return;
     }
 
+    // Enemy fleets reaching the flagship: it defends the planet
+    if (startFlagshipBattle(m_at))
+        return;
+
     const Planet &here = m_planets[m_at];
     if (here.owner < 0) {
         // Neutral world: taken after a stay in orbit
@@ -460,7 +608,7 @@ void ConquestGame::tick(double seconds)
         if (m_capture >= 1.0) {
             m_capture = 0;
             emit message(tr("%1 joins your faction").arg(here.name), Tone::Success);
-            capture(m_at);
+            capture(m_at, m_player);
         }
     } else if (here.owner == m_player && m_hull < 100.0) {
         m_hull = std::min(100.0, m_hull + (here.bonus == Bonus::Shipyard ? kShipyardRegen : kHullRegen) * seconds);
@@ -470,15 +618,8 @@ void ConquestGame::tick(double seconds)
 void ConquestGame::arrive(int planetId)
 {
     const Planet &p = m_planets[planetId];
-    if (p.owner >= 0 && p.owner != m_player) {
-        m_route.clear();
-        m_battlePlanet = planetId;
-        const int big = fleetMotherships(p), small = fleetFighters(p);
-        emit message(tr("%1 is defended by the %2 fleet: battle!").arg(p.name, m_factions[p.owner].id),
-                     Tone::Critical);
-        emit battleStarted(planetId, m_factions[p.owner].id, big, small);
+    if (startFlagshipBattle(planetId))
         return;
-    }
     if (!m_route.isEmpty())
         return;                     // only passing through
     if (p.owner < 0)
@@ -500,18 +641,91 @@ int ConquestGame::fleetFighters(const Planet &p) const
     return std::min(7, 2 + p.defense);
 }
 
+// Forces at a planet that fight `againstOwner`: the planet owner (garrison
+// and its fleets) if hostile, otherwise the strongest hostile fleets.
+int ConquestGame::hostileForces(int planetId, int againstOwner, int *motherships, int *fighters) const
+{
+    const Planet &p = m_planets[planetId];
+    int owner = -1;
+    if (p.owner >= 0 && p.owner != againstOwner) {
+        owner = p.owner;
+    } else {
+        int best = 0;
+        for (int f = 0; f < m_factions.size(); ++f) {
+            if (f == againstOwner)
+                continue;
+            int power = 0;
+            for (const Fleet &fleet : m_fleets)
+                if (fleet.owner == f && fleet.at == planetId && !fleet.moving())
+                    power += fleet.power();
+            if (power > best) {
+                best = power;
+                owner = f;
+            }
+        }
+    }
+    if (owner < 0)
+        return -1;
+    int big = owner == p.owner ? fleetMotherships(p) + p.dockMotherships : 0;
+    int small = owner == p.owner ? fleetFighters(p) + p.dockFighters : 0;
+    for (const Fleet &fleet : m_fleets)
+        if (fleet.owner == owner && fleet.at == planetId && !fleet.moving()) {
+            big += fleet.motherships;
+            small += fleet.fighters;
+        }
+    if (motherships)
+        *motherships = std::min(kMaxBattleMotherships, big);
+    if (fighters)
+        *fighters = std::min(kMaxBattleFighters, small);
+    return owner;
+}
+
+bool ConquestGame::startFlagshipBattle(int planetId)
+{
+    int big = 0, small = 0;
+    const int owner = hostileForces(planetId, m_player, &big, &small);
+    if (owner < 0 || big + small == 0)
+        return false;
+    const Planet &p = m_planets[planetId];
+    m_route.clear();
+    m_capture = 0;
+    m_battlePlanet = planetId;
+    m_battleOwner = owner;
+    if (owner == p.owner)
+        emit message(tr("%1 is defended by the %2 fleet: battle!").arg(p.name, m_factions[owner].id),
+                     Tone::Critical);
+    else
+        emit message(tr("A %1 fleet attacks the flagship at %2: battle!").arg(m_factions[owner].id, p.name),
+                     Tone::Critical);
+    emit battleStarted(planetId, m_factions[owner].id, big, small);
+    return true;
+}
+
+QString ConquestGame::battleFaction() const
+{
+    return m_battleOwner >= 0 && m_battleOwner < m_factions.size() ? m_factions[m_battleOwner].id : QString();
+}
+
 void ConquestGame::battleWon()
 {
     if (!inBattle())
         return;
     const int id = m_battlePlanet;
-    m_battlePlanet = -1;
+    const int owner = m_battleOwner;
+    m_battlePlanet = m_battleOwner = -1;
     Planet &p = m_planets[id];
-    const QString loser = m_factions[p.owner].id;
-    p.defense = std::max(1, p.defense - 1);
-    p.population *= 0.8;                    // the battle took its toll
-    emit message(tr("%1 taken from the %2").arg(p.name, loser), Tone::Success);
-    capture(id);
+    m_fleets.erase(std::remove_if(m_fleets.begin(), m_fleets.end(),
+                                  [&](const Fleet &f) { return f.owner == owner && f.at == id && !f.moving(); }),
+                   m_fleets.end());
+    if (p.owner == owner) {
+        p.defense = std::max(1, p.defense - 1);
+        p.population *= 0.8;                // the battle took its toll
+        emit message(tr("%1 taken from the %2").arg(p.name, m_factions[owner].id), Tone::Success);
+        capture(id, m_player);
+    } else {
+        emit message(tr("The %1 fleet at %2 is destroyed").arg(m_factions[owner].id, p.name), Tone::Success);
+    }
+    checkVictory();
 }
 
 void ConquestGame::battleLost()
@@ -519,26 +733,41 @@ void ConquestGame::battleLost()
     if (!inBattle())
         return;
     const QString planet = m_planets[m_battlePlanet].name;
-    m_battlePlanet = -1;
+    m_battlePlanet = m_battleOwner = -1;
     m_route.clear();
+    if (m_previous == m_at) {
+        // Attacked where it stood: fall back to the nearest world of ours
+        double best = std::numeric_limits<double>::max();
+        for (const Planet &p : m_planets)
+            if (p.owner == m_player && p.id != m_at) {
+                const double d = pathLength(m_at, p.id);
+                if (d >= 0 && d < best) {
+                    best = d;
+                    m_previous = p.id;
+                }
+            }
+    }
     m_at = m_previous;
     emit message(tr("Hull breached: the flagship retreats from %1 to %2").arg(planet, m_planets[m_at].name),
                  Tone::Critical);
 }
 
-void ConquestGame::capture(int planetId)
+void ConquestGame::capture(int planetId, int newOwner)
 {
     Planet &p = m_planets[planetId];
     const int previousOwner = p.owner;
-    p.owner = m_player;
-    if (p.bonus == Bonus::AncientSite) {
-        m_factions[m_player].naquadah += 100;
-        emit message(tr("Ancient site on %1: +100 naquadah from its archives").arg(p.name), Tone::Success);
+    p.owner = newOwner;
+    p.dockMotherships = p.dockFighters = 0;
+    p.fighterProgress = p.mothershipProgress = 0;
+    if (p.bonus == Bonus::AncientSite && newOwner >= 0) {
+        m_factions[newOwner].naquadah += 100;
+        if (newOwner == m_player)
+            emit message(tr("Ancient site on %1: +100 naquadah from its archives").arg(p.name), Tone::Success);
     }
-    if (previousOwner >= 0 && planetCount(previousOwner) == 0)
-        emit message(tr("The %1 have lost their last world").arg(m_factions[previousOwner].id), Tone::Success);
+    if (previousOwner >= 0 && previousOwner != newOwner && planetCount(previousOwner) == 0)
+        emit message(tr("The %1 have lost their last world").arg(m_factions[previousOwner].id),
+                     previousOwner == m_player ? Tone::Critical : Tone::Success);
     emit planetChanged(planetId);
-    checkVictory();
 }
 
 void ConquestGame::checkVictory()
@@ -547,11 +776,335 @@ void ConquestGame::checkVictory()
         return;
     bool enemyLeft = false;
     for (int f = 0; f < m_factions.size(); ++f)
-        if (f != m_player && planetCount(f) > 0)
+        if (f != m_player && (planetCount(f) > 0 || fleetCount(f) > 0))
             enemyLeft = true;
     if (!enemyLeft || planetCount(m_player) == 0) {
         m_over = true;
+        m_battlePlanet = m_battleOwner = -1;
         emit gameOver(!enemyLeft);
+    }
+}
+
+// ================================================================
+//  Phase 2: production, fleets, AI, automatic battles
+// ================================================================
+
+void ConquestGame::produce(double seconds)
+{
+    for (Planet &p : m_planets) {
+        if (p.owner < 0 || !p.hasShipyard() || p.id == m_battlePlanet)
+            continue;
+        const double rate = std::clamp(0.5 + p.population / 10.0, 0.6, 1.6) * seconds;
+        if (p.dockFighters < kDockFighters) {
+            p.fighterProgress += rate / kFighterBuild;
+            if (p.fighterProgress >= 1.0) {
+                p.fighterProgress -= 1.0;
+                ++p.dockFighters;
+            }
+        }
+        if (p.dockMotherships < kDockMotherships) {
+            p.mothershipProgress += rate / kMothershipBuild;
+            if (p.mothershipProgress >= 1.0) {
+                p.mothershipProgress -= 1.0;
+                ++p.dockMotherships;
+            }
+        }
+
+        // A fleet takes off when the shipyard holds enough ships; a fleet of
+        // the faction waiting there takes them as reinforcements
+        const bool ready = (p.dockMotherships >= 1 && p.dockFighters >= 3) || p.dockFighters >= 6;
+        if (!ready)
+            continue;
+        auto waiting = std::find_if(m_fleets.begin(), m_fleets.end(), [&p](const Fleet &f) {
+            return f.owner == p.owner && f.at == p.id && !f.moving();
+        });
+        if (waiting != m_fleets.end()) {
+            waiting->motherships += p.dockMotherships;
+            waiting->fighters += p.dockFighters;
+            p.dockMotherships = p.dockFighters = 0;
+            continue;
+        }
+        const int maxFleets = std::min(4, 1 + planetCount(p.owner) / 5);
+        if (fleetCount(p.owner) >= maxFleets)
+            continue;
+        Fleet fleet;
+        fleet.id = m_nextFleetId++;
+        fleet.owner = p.owner;
+        fleet.motherships = p.dockMotherships;
+        fleet.fighters = p.dockFighters;
+        fleet.at = p.id;
+        fleet.think = 0.5;
+        p.dockMotherships = p.dockFighters = 0;
+        m_fleets << fleet;
+        if (fleet.owner == m_player)
+            emit message(tr("New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))")
+                             .arg(fleet.id)
+                             .arg(p.name)
+                             .arg(fleet.motherships)
+                             .arg(fleet.fighters),
+                         Tone::Success);
+    }
+}
+
+void ConquestGame::moveFleets(double seconds)
+{
+    for (Fleet &fleet : m_fleets) {
+        if (!fleet.moving())
+            continue;
+        const double length = std::max(1.0, distance(m_planets[fleet.at], m_planets[fleet.route.first()]));
+        fleet.leg += kFleetSpeed * seconds / length;
+        if (fleet.leg < 1.0)
+            continue;
+        fleet.leg = 0;
+        fleet.at = fleet.route.takeFirst();
+        const Planet &p = m_planets[fleet.at];
+        // Stops at the first world that is not its own, or where enemies wait
+        bool enemies = p.owner != fleet.owner;
+        for (const Fleet &other : m_fleets)
+            if (other.owner != fleet.owner && other.at == fleet.at && !other.moving())
+                enemies = true;
+        if (fleet.owner != m_player && fleet.at == m_at && !travelling())
+            enemies = true;
+        if (enemies || fleet.route.isEmpty()) {
+            fleet.route.clear();
+            fleet.target = -1;
+            fleet.ordered = false;
+            fleet.think = kThinkDelay;
+        }
+    }
+}
+
+// Utility AI: the best of attacking a beatable world, defending a threatened
+// one, or regrouping with another fleet when too weak.
+void ConquestGame::think(Fleet &fleet)
+{
+    const int me = fleet.owner;
+    const double power = fleet.power();
+    double bestScore = 0.5;
+    int bestTarget = -1;
+
+    auto fleetPowerAt = [this](int planetId, int owner) {
+        int power = 0;
+        for (const Fleet &f : m_fleets)
+            if (f.owner == owner && f.at == planetId && !f.moving())
+                power += f.power();
+        return power;
+    };
+
+    for (const Planet &t : m_planets) {
+        if (t.id == fleet.at)
+            continue;
+        const double length = pathLength(fleet.at, t.id);
+        if (length < 0)
+            continue;
+        const double nearness = 1.0 + length / 250.0;
+
+        if (t.owner != me) {
+            // Attack: only where the fleet clearly outguns the defenders
+            double defense = garrisonPower(t) + (t.owner >= 0 ? fleetPowerAt(t.id, t.owner) : 0);
+            if (me != m_player && t.id == m_at && !travelling())
+                defense += kFlagshipPower;
+            const double ratio = power / std::max(1.0, defense);
+            if (ratio < kAttackRatio)
+                continue;
+            const double value = (t.capital ? 4.0 : 1.0) + t.population / 5.0 + (t.bonus != Bonus::None ? 1.0 : 0.0)
+                               + (t.owner >= 0 ? 0.5 : 0.0);
+            const double score = value * std::min(ratio, 3.0) / nearness;
+            if (score > bestScore) {
+                bestScore = score;
+                bestTarget = t.id;
+            }
+        } else {
+            // Defense: enemy fleets heading for one of our worlds
+            double threat = 0;
+            for (const Fleet &enemy : m_fleets)
+                if (enemy.owner != me && (enemy.target == t.id || (enemy.at == t.id && !enemy.moving())))
+                    threat += enemy.power();
+            if (threat <= 0)
+                continue;
+            const double score = (t.capital ? 10.0 : 6.0) * std::min(power / threat, 2.0) / nearness;
+            if (score > bestScore) {
+                bestScore = score;
+                bestTarget = t.id;
+            }
+        }
+    }
+
+    // Too weak alone: join another fleet of the faction
+    if (power < 6) {
+        for (const Fleet &other : m_fleets) {
+            if (other.id == fleet.id || other.owner != me || other.moving() || other.at == fleet.at)
+                continue;
+            const double length = pathLength(fleet.at, other.at);
+            if (length < 0)
+                continue;
+            const double score = 3.0 / (1.0 + length / 250.0);
+            if (score > bestScore) {
+                bestScore = score;
+                bestTarget = other.at;
+            }
+        }
+    }
+
+    // Nothing to do: gather the forces (another fleet, or a full shipyard)
+    if (bestTarget < 0) {
+        double idleScore = 0;
+        for (const Fleet &other : m_fleets) {
+            if (other.id == fleet.id || other.owner != me || other.moving() || other.at == fleet.at)
+                continue;
+            const double length = pathLength(fleet.at, other.at);
+            const double score = length < 0 ? 0 : 1.0 / (1.0 + length / 250.0);
+            if (score > idleScore) {
+                idleScore = score;
+                bestTarget = other.at;
+            }
+        }
+        for (const Planet &yard : m_planets) {
+            if (yard.owner != me || yard.id == fleet.at || yard.dockMotherships * 4 + yard.dockFighters < 4)
+                continue;
+            const double length = pathLength(fleet.at, yard.id);
+            const double score = length < 0 ? 0 : 1.2 / (1.0 + length / 250.0);
+            if (score > idleScore) {
+                idleScore = score;
+                bestTarget = yard.id;
+            }
+        }
+    }
+
+    if (bestTarget < 0 || bestTarget == fleet.at)
+        return;
+    const Planet &target = m_planets[bestTarget];
+    if (me != m_player && target.owner == m_player && fleet.target != bestTarget)
+        emit message(tr("A %1 fleet (%2 mothership(s), %3 fighter(s)) heads for %4!")
+                         .arg(m_factions[me].id)
+                         .arg(fleet.motherships)
+                         .arg(fleet.fighters)
+                         .arg(target.name),
+                     Tone::Warning);
+    fleet.route = path(fleet.at, bestTarget);
+    fleet.target = bestTarget;
+}
+
+void ConquestGame::resolveBattles()
+{
+    for (const Planet &p : m_planets) {
+        if (p.id == m_battlePlanet)
+            continue;
+        for (int round = 0; round < 4 && resolveAt(p.id); ++round) {
+        }
+    }
+    m_fleets.erase(std::remove_if(m_fleets.begin(), m_fleets.end(),
+                                  [](const Fleet &f) { return f.motherships + f.fighters <= 0; }),
+                   m_fleets.end());
+}
+
+void ConquestGame::takeLosses(Fleet &fleet, double fraction)
+{
+    fraction = std::clamp(fraction, 0.0, 1.0);
+    fleet.fighters = int(std::round(fleet.fighters * (1.0 - fraction)));
+    fleet.motherships = int(std::round(fleet.motherships * (1.0 - fraction * 0.7)));
+}
+
+// One automatic battle at a planet: the strongest attacking faction against
+// the planet side (garrison, shipyard and its fleets). True if one happened.
+bool ConquestGame::resolveAt(int planetId)
+{
+    Planet &p = m_planets[planetId];
+    const bool flagshipHere = m_at == planetId && !travelling() && !inBattle();
+
+    int attacker = -1;
+    int attackPower = 0;
+    for (int f = 0; f < m_factions.size(); ++f) {
+        if (f == p.owner)
+            continue;
+        int power = 0;
+        for (const Fleet &fleet : m_fleets)
+            if (fleet.owner == f && fleet.at == planetId && !fleet.moving() && fleet.power() > 0)
+                power += fleet.power();
+        if (power > attackPower) {
+            attackPower = power;
+            attacker = f;
+        }
+    }
+    if (attacker < 0)
+        return false;
+    // The flagship fights the enemies that reach it (3D battle)
+    if (flagshipHere && attacker != m_player)
+        return false;
+    // Neutral world where the flagship waits: the player's fleets help it
+    if (flagshipHere && p.owner < 0 && attacker == m_player)
+        return false;
+
+    int defensePower = garrisonPower(p);
+    if (p.owner >= 0)
+        for (const Fleet &fleet : m_fleets)
+            if (fleet.owner == p.owner && fleet.at == planetId && !fleet.moving())
+                defensePower += fleet.power();
+
+    const double a = attackPower * (0.8 + 0.4 * m_rng.generateDouble());
+    const double d = defensePower * (0.8 + 0.4 * m_rng.generateDouble());
+    const QString defender = ownerName(p.owner);
+    const QString name = p.name;
+
+    if (a > d) {
+        // Attackers win: defenders destroyed, the planet changes hands
+        for (Fleet &fleet : m_fleets) {
+            if (fleet.at != planetId || fleet.moving())
+                continue;
+            if (fleet.owner == attacker)
+                takeLosses(fleet, 0.6 * d / a);
+            else if (fleet.owner == p.owner)
+                fleet.motherships = fleet.fighters = 0;
+        }
+        const int previous = p.owner;
+        p.defense = 1;
+        p.population *= 0.75;
+        if (attacker == m_player)
+            emit message(tr("Your fleet takes %1 from the %2").arg(name, defender), Tone::Success);
+        else if (previous == m_player)
+            emit message(tr("%1 falls to the %2!").arg(name, m_factions[attacker].id), Tone::Critical);
+        else
+            emit message(tr("The %1 take %2 from the %3").arg(m_factions[attacker].id, name, defender), Tone::Info);
+        capture(planetId, attacker);
+    } else {
+        // Defenders hold: the attacking fleets are destroyed
+        for (Fleet &fleet : m_fleets) {
+            if (fleet.at != planetId || fleet.moving())
+                continue;
+            if (fleet.owner == attacker)
+                fleet.motherships = fleet.fighters = 0;
+            else if (fleet.owner == p.owner)
+                takeLosses(fleet, 0.6 * a / d);
+        }
+        p.defense = std::max(1, p.defense - int(std::round(p.defense * 0.5 * a / d)));
+        if (p.owner == m_player)
+            emit message(tr("%1 holds against a %2 attack").arg(name, m_factions[attacker].id), Tone::Success);
+        else if (attacker == m_player)
+            emit message(tr("Your fleet is destroyed attacking %1").arg(name), Tone::Warning);
+        emit planetChanged(planetId);
+    }
+    m_fleets.erase(std::remove_if(m_fleets.begin(), m_fleets.end(),
+                                  [](const Fleet &f) { return f.motherships + f.fighters <= 0; }),
+                   m_fleets.end());
+    return true;
+}
+
+// Fleets of the same faction waiting at the same world become one
+void ConquestGame::mergeFleets()
+{
+    for (int i = 0; i < m_fleets.size(); ++i) {
+        Fleet &a = m_fleets[i];
+        if (a.moving())
+            continue;
+        for (int j = int(m_fleets.size()) - 1; j > i; --j) {
+            const Fleet &b = m_fleets[j];
+            if (b.moving() || b.owner != a.owner || b.at != a.at)
+                continue;
+            a.motherships += b.motherships;
+            a.fighters += b.fighters;
+            a.ordered = a.ordered && b.ordered;
+            m_fleets.removeAt(j);
+        }
     }
 }
 
@@ -573,19 +1126,31 @@ QJsonObject ConquestGame::toJson() const
         planets.append(QJsonObject{{"name", p.name}, {"x", p.pos.x()}, {"y", p.pos.y()}, {"owner", p.owner},
                                    {"population", p.population}, {"maxPopulation", p.maxPopulation},
                                    {"bonus", int(p.bonus)}, {"defense", p.defense}, {"capital", p.capital},
-                                   {"lanes", lanes}});
+                                   {"lanes", lanes}, {"dockM", p.dockMotherships}, {"dockF", p.dockFighters},
+                                   {"buildF", p.fighterProgress}, {"buildM", p.mothershipProgress}});
+    }
+    QJsonArray fleets;
+    for (const Fleet &f : m_fleets) {
+        QJsonArray route;
+        for (int r : f.route)
+            route.append(r);
+        fleets.append(QJsonObject{{"id", f.id}, {"owner", f.owner}, {"motherships", f.motherships},
+                                  {"fighters", f.fighters}, {"at", f.at}, {"route", route}, {"leg", f.leg},
+                                  {"target", f.target}, {"ordered", f.ordered}, {"think", f.think}});
     }
     QJsonArray route;
     for (int r : m_route)
         route.append(r);
-    return {{"version", 1}, {"factions", factions}, {"planets", planets}, {"at", m_at},
-            {"previous", m_previous}, {"route", route}, {"leg", m_legProgress}, {"capture", m_capture},
-            {"hull", m_hull}, {"battle", m_battlePlanet}, {"over", m_over}};
+    return {{"version", 2}, {"factions", factions}, {"planets", planets}, {"fleets", fleets},
+            {"nextFleet", m_nextFleetId}, {"at", m_at}, {"previous", m_previous}, {"route", route},
+            {"leg", m_legProgress}, {"capture", m_capture}, {"hull", m_hull}, {"battle", m_battlePlanet},
+            {"battleOwner", m_battleOwner}, {"over", m_over}};
 }
 
 bool ConquestGame::fromJson(const QJsonObject &json)
 {
-    if (json.value("version").toInt() != 1)
+    const int version = json.value("version").toInt();
+    if (version != 1 && version != 2)
         return false;
     QList<Faction> factions;
     int player = -1;
@@ -614,6 +1179,10 @@ bool ConquestGame::fromJson(const QJsonObject &json)
         p.capital = o.value("capital").toBool();
         for (const QJsonValue &n : o.value("lanes").toArray())
             p.lanes << n.toInt();
+        p.dockMotherships = std::clamp(o.value("dockM").toInt(), 0, kDockMotherships);
+        p.dockFighters = std::clamp(o.value("dockF").toInt(), 0, kDockFighters);
+        p.fighterProgress = std::clamp(o.value("buildF").toDouble(), 0.0, 1.0);
+        p.mothershipProgress = std::clamp(o.value("buildM").toDouble(), 0.0, 1.0);
         planets << p;
     }
     const int count = int(planets.size());
@@ -627,9 +1196,33 @@ bool ConquestGame::fromJson(const QJsonObject &json)
             if (!valid(n))
                 return false;
     }
+    QList<Fleet> fleets;
+    int nextFleet = 1;
+    for (const QJsonValue &v : json.value("fleets").toArray()) {
+        const QJsonObject o = v.toObject();
+        Fleet f;
+        f.id = o.value("id").toInt();
+        f.owner = o.value("owner").toInt(-1);
+        f.motherships = std::max(0, o.value("motherships").toInt());
+        f.fighters = std::max(0, o.value("fighters").toInt());
+        f.at = o.value("at").toInt(-1);
+        if (f.owner < 0 || f.owner >= factions.size() || !valid(f.at) || f.motherships + f.fighters == 0)
+            continue;
+        for (const QJsonValue &r : o.value("route").toArray())
+            if (valid(r.toInt(-1)))
+                f.route << r.toInt();
+        f.leg = std::clamp(o.value("leg").toDouble(), 0.0, 1.0);
+        f.target = valid(o.value("target").toInt(-1)) ? o.value("target").toInt() : -1;
+        f.ordered = o.value("ordered").toBool();
+        f.think = o.value("think").toDouble();
+        nextFleet = std::max(nextFleet, f.id + 1);
+        fleets << f;
+    }
 
     m_factions = factions;
     m_planets = planets;
+    m_fleets = fleets;
+    m_nextFleetId = std::max(nextFleet, json.value("nextFleet").toInt(1));
     m_player = player;
     m_at = json.value("at").toInt();
     m_previous = valid(json.value("previous").toInt(-1)) ? json.value("previous").toInt() : m_at;
@@ -641,6 +1234,11 @@ bool ConquestGame::fromJson(const QJsonObject &json)
     m_capture = std::clamp(json.value("capture").toDouble(), 0.0, 1.0);
     m_hull = std::clamp(json.value("hull").toDouble(100), 1.0, 100.0);
     m_battlePlanet = valid(json.value("battle").toInt(-1)) ? json.value("battle").toInt() : -1;
+    m_battleOwner = json.value("battleOwner").toInt(-1);
+    if (m_battlePlanet >= 0 && (m_battleOwner < 0 || m_battleOwner >= m_factions.size()))
+        m_battleOwner = m_planets[m_battlePlanet].owner;
+    if (m_battleOwner < 0)
+        m_battlePlanet = -1;
     m_over = json.value("over").toBool();
     return true;
 }

@@ -9,6 +9,7 @@
 // ================================================================
 
 #include <QJsonArray>
+#include <array>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -484,6 +485,20 @@ class ConquestTest : public QObject
                 {"at", 0}, {"previous", 0}, {"route", QJsonArray()}, {"hull", 100.0}};
     }
 
+    // The same galaxy with fleets (owner, motherships, fighters, planet)
+    static QJsonObject withFleets(const QList<std::array<int, 4>> &fleets)
+    {
+        QJsonObject json = smallGalaxy();
+        QJsonArray list;
+        int id = 1;
+        for (const auto &[owner, big, small, at] : fleets)
+            list.append(QJsonObject{{"id", id++}, {"owner", owner}, {"motherships", big}, {"fighters", small},
+                                    {"at", at}, {"think", 100.0}});
+        json["version"] = 2;
+        json["fleets"] = list;
+        return json;
+    }
+
     static void run(ConquestGame &game, double seconds)
     {
         for (double t = 0; t < seconds; t += 0.1)
@@ -590,6 +605,90 @@ private slots:
         QCOMPARE(game.findPlanet("abyd"), 1);
         QCOMPARE(game.findPlanet("3"), 2);
         QCOMPARE(game.findPlanet("nowhere"), -1);
+    }
+
+    void shipyardsLaunchFleets()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(smallGalaxy()));
+        game.setSeed(3);
+        QCOMPARE(game.fleetCount(0), 0);
+        run(game, 200);                         // Earth (capital) fills its shipyard
+        QVERIFY(game.fleetCount(0) + game.planetCount(0) > 1);
+        QVERIFY(game.fleetCount(1) > 0 || game.planets()[2].dockFighters > 0);
+        QString error;
+        QVERIFY(!game.build(1, false, &error));   // Abydos: no shipyard
+        QVERIFY(game.build(0, false, &error));    // 30 naquadah
+    }
+
+    void strongFleetTakesWeakWorld()
+    {
+        ConquestGame game;
+        // Goa'uld fleet (3 motherships, 6 fighters) on the neutral Abydos (militia 2)
+        QVERIFY(game.fromJson(withFleets({{1, 3, 6, 1}})));
+        game.setSeed(1);
+        QSignalSpy changed(&game, &ConquestGame::planetChanged);
+        run(game, 0.2);
+        QCOMPARE(game.planets()[1].owner, 1);
+        QVERIFY(changed.size() >= 1);
+        QCOMPARE(game.fleetCount(1), 1);
+    }
+
+    void fleetAttackingTheFlagship()
+    {
+        ConquestGame game;
+        // A Goa'uld fleet waits at Earth, where the flagship is: defense battle
+        QVERIFY(game.fromJson(withFleets({{1, 2, 4, 0}})));
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        run(game, 0.2);
+        QCOMPARE(battles.size(), 1);
+        QCOMPARE(battles[0][0].toInt(), 0);
+        QCOMPARE(battles[0][1].toString(), QStringLiteral("Goa'uld"));
+        QCOMPARE(battles[0][2].toInt(), 2);
+        QCOMPARE(battles[0][3].toInt(), 4);
+        QCOMPARE(game.planets()[0].owner, 0);   // no automatic battle while the flagship fights
+        game.battleWon();
+        QCOMPARE(game.fleetCount(1), 0);
+        QCOMPARE(game.planets()[0].owner, 0);   // still ours
+    }
+
+    void defendedWorldHolds()
+    {
+        ConquestGame game;
+        // A weak Goa'uld fleet attacks Earth (defense 5 = 15) while the flagship is away
+        QJsonObject json = withFleets({{1, 0, 3, 0}});
+        json["at"] = 1;
+        QVERIFY(game.fromJson(json));
+        game.setSeed(2);
+        run(game, 0.2);
+        QCOMPARE(game.planets()[0].owner, 0);
+        QCOMPARE(game.fleetCount(1), 0);
+    }
+
+    void noVictoryWhileEnemyFleetsRemain()
+    {
+        ConquestGame game;
+        // A Goa'uld fleet at Abydos (it takes the neutral world)
+        QVERIFY(game.fromJson(withFleets({{1, 1, 1, 1}})));
+        QSignalSpy over(&game, &ConquestGame::gameOver);
+        game.setSeed(5);
+        QVERIFY(game.orderTravel(2));
+        run(game, 6);
+        if (game.inBattle())
+            game.battleWon();
+        QVERIFY(game.fleetCount(1) + game.planetCount(1) > 0);
+        QCOMPARE(over.size(), 0);
+    }
+
+    void orderedFleet()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withFleets({{0, 1, 3, 0}})));
+        QString error;
+        QVERIFY(!game.orderFleet(99, 1, &error));
+        QVERIFY(game.orderFleet(1, 1, &error));
+        QVERIFY(game.fleets().first().moving());
+        QCOMPARE(game.fleets().first().target, 1);
     }
 
     void saveRoundTrip()

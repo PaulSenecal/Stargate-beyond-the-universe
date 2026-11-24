@@ -168,7 +168,8 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     });
 
     // --- Console
-    m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "attack",
+    m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
+                               "send", "build", "fighter", "mothership", "attack",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -230,10 +231,8 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     if (!loaded)
         m_game->start(setup);
     m_battle->restoreDefenses(float(m_game->flagshipHull()), 100.0f, true);
-    if (m_game->inBattle()) {
-        const Conquest::Planet &p = m_game->planets()[m_game->battlePlanet()];
-        onBattleStarted(p.id, m_game->factions()[p.owner].id, 2, 4);
-    }
+    if (m_game->inBattle())
+        onBattleStarted(m_game->battlePlanet(), m_game->battleFaction(), 2, 4);
     m_console->appendLine(tr("Type 'help' for the conquest commands - double click a planet to travel there"));
     m_map->select(m_game->flagshipPlanet());
     updatePlanetLook();
@@ -355,6 +354,21 @@ QString ConquestScreen::planetSummary(int planetId) const
     html += tr("Produces %1 naquadah and %2 trinium per minute")
                 .arg(ConquestGame::naquadahRate(p) * 60, 0, 'f', 0)
                 .arg(ConquestGame::triniumRate(p) * 60, 0, 'f', 0);
+    if (p.hasShipyard() && p.owner >= 0)
+        html += "<br>" + tr("Shipyard: %1 mothership(s), %2 fighter(s) ready").arg(p.dockMotherships).arg(p.dockFighters);
+    QStringList here;
+    for (const Conquest::Fleet &f : m_game->fleets()) {
+        if (f.at != p.id || f.moving())
+            continue;
+        const QString who = f.owner == m_game->playerIndex() ? tr("your fleet %1").arg(f.id)
+                                                             : m_game->factions()[f.owner].id;
+        here << QStringLiteral("<span style='color:%1'>%2 (%3+%4)</span>")
+                    .arg(m_game->factions()[f.owner].color, who.toHtmlEscaped())
+                    .arg(f.motherships)
+                    .arg(f.fighters);
+    }
+    if (!here.isEmpty())
+        html += "<br>" + tr("In orbit: %1").arg(here.join(QStringLiteral(", ")));
 
     if (planetId == m_game->flagshipPlanet() && !m_game->travelling())
         html += "<br><span style='color:#e2bf3e'>" + tr("Your flagship is here") + "</span>";
@@ -469,6 +483,33 @@ void ConquestScreen::onCommand(const QString &command)
             warn(tr("No repairs during a battle"));
         else if (!m_game->repairFlagship(&error))
             warn(tr("Cannot repair: %1").arg(error));
+    } else if (name == "fleets") {
+        listFleets();
+    } else if (name == "send") {
+        // send <fleet number> <planet>
+        bool ok = false;
+        const int fleet = words.value(1).toInt(&ok);
+        const int id = m_game->findPlanet(words.mid(2).join(' '));
+        QString error;
+        if (!ok || id < 0)
+            warn(tr("Usage: send <fleet number> <planet> - see 'fleets'"));
+        else if (!m_game->orderFleet(fleet, id, &error))
+            warn(tr("Cannot send the fleet: %1").arg(error));
+    } else if (name == "build") {
+        // build fighter|mothership [planet]
+        const QString kind = words.value(1).toLower();
+        const bool mothership = kind.startsWith("mother") || kind == "m";
+        const bool fighter = kind.startsWith("fight") || kind == "f";
+        int id = words.size() > 2 ? m_game->findPlanet(words.mid(2).join(' ')) : m_map->selected();
+        if (id < 0 || m_game->planets()[id].owner != m_game->playerIndex())
+            id = m_game->flagshipPlanet();
+        QString error;
+        if (!mothership && !fighter)
+            warn(tr("Usage: build fighter|mothership [planet] (%1 / %2 naquadah)")
+                     .arg(ConquestGame::kFighterCost)
+                     .arg(ConquestGame::kMothershipCost));
+        else if (!m_game->build(id, mothership, &error))
+            warn(tr("Cannot build: %1").arg(error));
     } else if (name == "hud") {
         const QString state = arg.toLower();
         setHudVisible(state.isEmpty() ? !m_hud->isVisible() : state != "off" && state != "hide");
@@ -496,6 +537,10 @@ void ConquestScreen::showHelp()
         tr("Planets: planets (list), info <planet>, status"),
         tr("Economy: fortify <planet> (+1 defense, %1 naquadah), repair (flagship hull, trinium)")
             .arg(ConquestGame::kFortifyCost),
+        tr("Fleets: shipyards build ships on their own, fleets attack and defend by themselves"),
+        tr("   fleets (list), send <fleet> <planet>, build fighter|mothership [planet] (%1 / %2 naquadah)")
+            .arg(ConquestGame::kFighterCost)
+            .arg(ConquestGame::kMothershipCost),
         tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
         tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
         tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
@@ -503,6 +548,26 @@ void ConquestScreen::showHelp()
     };
     for (const QString &line : lines)
         m_console->appendLine(line);
+}
+
+void ConquestScreen::listFleets()
+{
+    if (m_game->fleets().isEmpty()) {
+        m_console->appendLine(tr("No fleet in the galaxy"));
+        return;
+    }
+    for (const Conquest::Fleet &f : m_game->fleets()) {
+        const bool mine = f.owner == m_game->playerIndex();
+        const QString where = m_game->planets()[f.at].name;
+        const QString going = f.target >= 0 ? tr(" -> %1").arg(m_game->planets()[f.target].name) : QString();
+        m_console->appendLine(tr("%1 %2: %3 mothership(s), %4 fighter(s) at %5%6")
+                                  .arg(mine ? tr("Fleet %1").arg(f.id) : m_game->factions()[f.owner].id)
+                                  .arg(mine ? tr("(yours)") : QString())
+                                  .arg(f.motherships)
+                                  .arg(f.fighters)
+                                  .arg(where, going),
+                              mine ? CommandConsole::Tone::Success : CommandConsole::Tone::Info);
+    }
 }
 
 void ConquestScreen::listPlanets()

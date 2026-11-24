@@ -11,6 +11,8 @@
 #include <QLineF>
 #include <QMap>
 #include <QMutex>
+#include <QRegularExpression>
+#include <QSettings>
 #include <QThreadPool>
 #include <QMouseEvent>
 #include <QPainter>
@@ -21,6 +23,7 @@
 #include <QWheelEvent>
 #include <QtMath>
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <utility>
 
@@ -229,6 +232,7 @@ const QVector3D kDestinyBolt(0.55f, 0.85f, 1.0f);
 const QVector3D kEnemyBolt(1.0f, 0.72f, 0.18f);
 const QVector3D kBeamColor(0.75f, 0.95f, 1.0f);
 const QVector3D kMissileExhaust(1.0f, 0.35f, 0.15f);
+const QVector3D kDroneColor(1.0f, 0.82f, 0.35f);       // Ancient drones: golden
 const QVector3D kSlug(1.0f, 0.92f, 0.65f);
 const QVector3D kExplosion(1.0f, 0.5f, 0.12f);
 const QVector3D kShieldColor(0.35f, 0.65f, 1.0f);
@@ -1123,7 +1127,7 @@ void BattleView::updateAlly(Enemy &a, float dt)
         if (timer > 0.0f)
             continue;
         timer = attacks[i].cooldown * randRange(0.85f, 1.15f);
-        if (randRange(0.0f, 1.0f) <= attacks[i].chance)
+        if (randRange(0.0f, 1.0f) <= attacks[i].chance && useAmmo(a, i))
             allyAttack(a, attacks[i], *target);
     }
 }
@@ -1148,8 +1152,10 @@ void BattleView::allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &tar
         emit sound(big ? SoundCue::EnemyHeavyFire : SoundCue::EnemyLightFire, sc.faction, 0.0f);
     } else if (attack.kind == "missile") {
         for (int i = 0; i < attack.shots; ++i) {
-            shoot(true, a.pos, target.id, {}, attack.damage, kMissileSpeed * 1.3f, kMissileExhaust, 0.6f, 0.16f, i * 0.4f);
+            shoot(true, a.pos, target.id, {}, attack.damage, kMissileSpeed * 1.3f,
+                  isDrone(attack) ? kDroneColor : kMissileExhaust, 0.6f, 0.16f, i * 0.4f);
             fired(Projectile::Kind::Missile);
+            m_projectiles.back().drone = isDrone(attack);
             m_projectiles.back().life = 12.0f;
         }
         emit sound(SoundCue::EnemyMissile, sc.faction, 0.0f);
@@ -1198,7 +1204,8 @@ void BattleView::drawAllies()
         // Friendly ships light up in blue, whatever their faction
         if (drawModShip(meshKeyOf(classOf(a)), m, a.cls == EnemyClass::Mothership ? 9.0f : 2.6f, tint, flash,
                         QVector3D(0.35f, 0.7f, 1.0f))) {
-            drawGlow(a.pos - a.facing * a.radius * 0.95f, a.radius * 0.35f, QVector3D(0.35f, 0.7f, 1.0f), 0.8f);
+            drawEngineSpots(meshKeyOf(classOf(a)), m, a.cls == EnemyClass::Mothership ? 9.0f : 2.6f,
+                            QVector3D(0.35f, 0.7f, 1.0f), 1.0f);
             continue;
         }
         if (a.cls == EnemyClass::Mothership) {
@@ -1383,7 +1390,7 @@ void BattleView::updateEnemy(Enemy &e, float dt)
         timer = attack.cooldown * randRange(0.85f, 1.15f);
         if (attack.trigger == "damaged" && e.hp > 0.5f * e.maxHp)
             continue;
-        if (randRange(0.0f, 1.0f) > attack.chance)
+        if (randRange(0.0f, 1.0f) > attack.chance || !useAmmo(e, i))
             continue;
         performAttack(e, attack);
         if (e.diving)
@@ -1417,9 +1424,10 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
         }
     } else if (attack.kind == "missile") {
         for (int i = 0; i < attack.shots; ++i) {
-            shoot(false, e.pos, -1, randomHullPoint(), attack.damage, kMissileSpeed, kMissileExhaust, 0.6f, 0.16f,
-                  i * 0.4f);
+            shoot(false, e.pos, -1, randomHullPoint(), attack.damage, kMissileSpeed,
+                  isDrone(attack) ? kDroneColor : kMissileExhaust, 0.6f, 0.16f, i * 0.4f);
             m_projectiles.back().kind = Projectile::Kind::Missile;
+            m_projectiles.back().drone = isDrone(attack);
             m_projectiles.back().life = 14.0f;
             aimAtVictim();
             emit sound(SoundCue::EnemyMissile, sc.faction, i * 0.4f);
@@ -1666,7 +1674,7 @@ void BattleView::updateProjectiles(float dt)
                     hitAlly(*ally, p);
                     remove = true;
                 }
-            } else if (p.targetId < 0 && shieldProtecting() && insideShield(p.pos)) {
+            } else if (p.targetId < 0 && !p.drone && shieldProtecting() && insideShield(p.pos)) {
                 if (p.kind == Projectile::Kind::Beam) {
                     // Half of a beam goes through the shield
                     Projectile half = p;
@@ -1732,6 +1740,71 @@ void BattleView::setupShip(Enemy &ship)
     ship.hp = ship.maxHp = std::max(1.0f, float(sc.hull) * kShipHullScale);
     ship.shield = ship.maxShield
         = float(sc.hull) * shipShieldShare(sc.faction, ship.cls == EnemyClass::Mothership) * kShipShieldScale;
+    ship.ammo.clear();
+    for (const ShipAttack &attack : sc.attacks)
+        ship.ammo.push_back(attack.kind != "missile" ? -1 : isDrone(attack) ? kDroneSalvos : kMissileSalvos);
+}
+
+BattleView::Schematic BattleView::schematic() const
+{
+    const auto it = m_modModels.find(flagshipMeshKey());
+    if (it == m_modModels.end() || !it->second || m_shieldRadii.isNull())
+        return {};
+    const ModModel &ship = *it->second;
+    const QRectF &r = ship.silhouetteRect;
+    return {ship.silhouette, QRectF(r.x() * 13.5, r.y() * 13.5, r.width() * 13.5, r.height() * 13.5),
+            QPointF(m_shieldCenter.x(), m_shieldCenter.z()), QSizeF(m_shieldRadii.x(), m_shieldRadii.z())};
+}
+
+bool BattleView::isDrone(const ShipAttack &attack)
+{
+    return attack.name.contains(QLatin1String("drone"), Qt::CaseInsensitive);
+}
+
+// Missiles and drones are limited: false when the magazine is empty
+bool BattleView::useAmmo(Enemy &ship, int attack)
+{
+    if (attack < 0 || attack >= int(ship.ammo.size()) || ship.ammo[size_t(attack)] < 0)
+        return true;
+    if (ship.ammo[size_t(attack)] == 0)
+        return false;
+    --ship.ammo[size_t(attack)];
+    return true;
+}
+
+// Engine glows on the exhausts of a mod model (or the spots at its rear)
+void BattleView::drawEngineSpots(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color,
+                                 float strength)
+{
+    const ModModel *ship = modModel(key);
+    if (!ship)
+        return;
+    QMatrix4x4 m = model;
+    m.scale(length);
+    const float size = length * (ship->engines.size() > 6 ? 0.010f : 0.014f);
+    for (size_t i = 0; i < ship->engines.size(); ++i) {
+        const QVector3D pos = m.map(ship->engines[i]);
+        const float pulse = size * (1.0f + 0.12f * std::sin(m_time * 9.0f + float(i)));
+        drawGlow(pos, pulse, color, 0.9f * strength);
+        drawGlow(pos, pulse * 2.2f, color, 0.1f * strength);
+    }
+}
+
+namespace {
+std::atomic<int> g_assist{-1};
+} // namespace
+
+bool BattleView::assistSetting()
+{
+    if (g_assist < 0)
+        g_assist = QSettings("Stargate", "stargate").value("gameplay/combatAssist", true).toBool() ? 1 : 0;
+    return g_assist == 1;
+}
+
+void BattleView::setAssistSetting(bool on)
+{
+    g_assist = on ? 1 : 0;
+    QSettings("Stargate", "stargate").setValue("gameplay/combatAssist", on);
 }
 
 // The shield takes the hit first; returns what is left for the hull.
@@ -1739,8 +1812,8 @@ void BattleView::setupShip(Enemy &ship)
 float BattleView::absorbByShield(Enemy &ship, const Projectile &p, float damage)
 {
     ship.lastHit = m_time;
-    if (ship.shield <= 0.0f)
-        return damage;
+    if (ship.shield <= 0.0f || p.drone)
+        return damage;                          // drones go through the shields
     float through = 0.0f;
     if (p.kind == Projectile::Kind::Beam) {
         through = damage * kBeamShieldPierce;
@@ -1770,8 +1843,9 @@ void BattleView::drawShipShield(const Enemy &ship, const QMatrix4x4 &model)
     const bool big = ship.cls == EnemyClass::Mothership;
     const float length = big ? 9.0f : 2.6f;
     QMatrix4x4 m = model;
-    if (ModModel *bubble = modModel(meshKeyOf(classOf(ship)) + QStringLiteral("_shield"))) {
-        m.scale(length * 1.08f);
+    const QString key = meshKeyOf(classOf(ship));
+    if (ModModel *bubble = modModel(key + QStringLiteral("_shield"), key)) {
+        m.scale(length * 1.03f);                // same frame as the hull: it wraps it
         drawMesh(bubble->mesh, m, kShieldColor, 0.0f, alpha, ModeShield);
     } else {
         m.scale(length * 0.62f, length * 0.32f, length * 0.42f);
@@ -1983,7 +2057,9 @@ QVector3D BattleView::destinyWorld(const QVector3D &local) const
 
 bool BattleView::insideShield(const QVector3D &world) const
 {
-    const QVector3D l = (m_destinyInverse.map(world) - kShieldCenter) / kShieldRadii;
+    const QVector3D center = m_shieldRadii.isNull() ? kShieldCenter : m_shieldCenter;
+    const QVector3D radii = m_shieldRadii.isNull() ? kShieldRadii : m_shieldRadii;
+    const QVector3D l = (m_destinyInverse.map(world) - center) / radii;
     return l.lengthSquared() < 1.0f;
 }
 
@@ -2194,8 +2270,8 @@ void BattleView::paintGL()
     if (shieldAlpha > 0.003f) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         QMatrix4x4 shield = m_destinyModel;
-        shield.translate(kShieldCenter);
-        shield.scale(kShieldRadii);
+        shield.translate(m_shieldRadii.isNull() ? kShieldCenter : m_shieldCenter);
+        shield.scale(m_shieldRadii.isNull() ? kShieldRadii : m_shieldRadii);
         drawMesh(m_sphere, shield, kShieldColor, 0.0f, shieldAlpha, ModeShield);
     }
 
@@ -2272,8 +2348,16 @@ void BattleView::drawDestiny()
                                : m_flagshipStyle == "Lucian Alliance"                       ? QVector3D(0.62f, 0.36f, 0.26f)
                                                                                             : QVector3D(0.78f, 0.64f, 0.32f);
     if (drawModShip(flagshipMeshKey(), m_destinyModel, 13.5f, modelColor * 1.3f, 0.0f,
-                    factionLights(m_flagshipStyle.isEmpty() ? QStringLiteral("Ancients") : m_flagshipStyle)))
+                    factionLights(m_flagshipStyle.isEmpty() ? QStringLiteral("Ancients") : m_flagshipStyle))) {
+        // The shield bubble fits the hull of the model
+        const ModModel *ship = modModel(flagshipMeshKey());
+        m_shieldCenter = QVector3D();
+        m_shieldRadii = QVector3D(std::max(ship->halfExtents.x() * 13.5f * 1.2f, 3.0f),
+                                  std::max(ship->halfExtents.y() * 13.5f * 1.6f, 2.0f),
+                                  std::max(ship->halfExtents.z() * 13.5f * 1.3f, 2.5f));
         return;
+    }
+    m_shieldRadii = QVector3D();
 
     // --- Conquest flagships of the other factions
     if (m_flagshipStyle == "Tau'ri") {
@@ -2382,16 +2466,30 @@ struct BattleView::TextureJob
     bool done = false;
 };
 
-BattleView::ModModel *BattleView::modModel(const QString &key)
+BattleView::ModModel *BattleView::modModel(const QString &key, const QString &frameKey)
 {
     if (key.isEmpty())
         return nullptr;
     auto it = m_modModels.find(key);
     if (it == m_modModels.end()) {
-        const ModMesh::Model data = ModMesh::load(Assets::modFile(QStringLiteral("meshes/%1.mesh").arg(key)));
+        ModMesh::Model frame;
+        const ModModel *parent = frameKey.isEmpty() ? nullptr : modModel(frameKey);
+        if (parent) {
+            frame.center = parent->center;
+            frame.length = parent->length;
+        }
+        const ModMesh::Model data = ModMesh::load(Assets::modFile(QStringLiteral("meshes/%1.mesh").arg(key)),
+                                                  parent ? &frame : nullptr);
         std::unique_ptr<ModModel> model;
         if (!data.vertices.empty()) {
             model = std::make_unique<ModModel>();
+            model->engines = data.engines;
+            model->points = data.points;
+            model->halfExtents = data.halfExtents;
+            model->center = data.center;
+            model->length = data.length;
+            model->silhouette = data.silhouette;
+            model->silhouetteRect = data.silhouetteRect;
             model->texturePaths[0] = data.texturePath;
             model->texturePaths[1] = data.maskPath;
             model->texturePaths[2] = data.ormPath;
@@ -2583,9 +2681,13 @@ void BattleView::drawEnemies()
 
 void BattleView::drawEffects()
 {
-    // Destiny engines (a Ha'tak has none there)
+    // Engines of the flagship: on the mod model when there is one
     const float engines = subsystemHealth("engines") / 100.0f;
-    const bool hatak = m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance" || m_flagshipStyle == "Ori";
+    const bool modFlagship = modModel(flagshipMeshKey()) != nullptr;
+    if (modFlagship)
+        drawEngineSpots(flagshipMeshKey(), m_destinyModel, 13.5f, kEngineGlow * (0.3f + 0.7f * engines),
+                        0.4f + 0.6f * engines);
+    const bool hatak = modFlagship || m_flagshipStyle == "Goa'uld" || m_flagshipStyle == "Lucian Alliance" || m_flagshipStyle == "Ori";
     for (float angle = 160.0f; angle <= 200.0f && !hatak; angle += 10.0f) {
         const float a = qDegreesToRadians(angle);
         const QVector3D pos = destinyWorld({kFanCenter.x() + 6.0f * std::cos(a), 0.0f, 6.0f * std::sin(a)});
@@ -2598,6 +2700,14 @@ void BattleView::drawEffects()
     for (const Enemy &e : m_enemies) {
         if (!e.alive)
             continue;
+        const QString key = meshKeyOf(classOf(e));
+        if (modModel(key)) {
+            QMatrix4x4 m;
+            m.translate(e.pos);
+            m.rotate(QQuaternion::rotationTo({1, 0, 0}, e.facing));
+            drawEngineSpots(key, m, e.cls == EnemyClass::Mothership ? 9.0f : 2.6f, factionLights(classOf(e).faction), 1.0f);
+            continue;
+        }
         const QVector3D back = e.pos - e.facing * e.radius * 0.95f;
         drawGlow(back, e.radius * 0.18f, QVector3D(1.0f, 0.6f, 0.2f), 0.8f);
     }
@@ -2707,6 +2817,8 @@ void BattleView::drawOverlay()
 
         const qreal w = std::max(44.0, r * 2.2);
         const QRectF bar(center.x() - w / 2, center.y() - r - 16, w, 5);
+        if (!assistSetting())
+            continue;
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(90, 90, 90, 200));
         p.drawRect(bar);
@@ -2741,6 +2853,8 @@ void BattleView::drawOverlay()
         p.drawLine(QPointF(center.x() - r, center.y() - r), QPointF(center.x() - r, center.y() - r + 5));
         p.drawLine(QPointF(center.x() + r, center.y() + r), QPointF(center.x() + r - 5, center.y() + r));
         p.drawLine(QPointF(center.x() + r, center.y() + r), QPointF(center.x() + r, center.y() + r - 5));
+        if (!assistSetting())
+            continue;
         const qreal w = std::max(30.0, r * 1.8);
         const QRectF bar(center.x() - w / 2, center.y() - r - 10, w, 4);
         p.setPen(Qt::NoPen);
@@ -2758,8 +2872,54 @@ void BattleView::drawOverlay()
         }
     }
 
-    // --- Destiny subsystem callouts
+    // --- Weapons of the flagship, on their hardpoints (mod model)
+    if (const ModModel *ship = modModel(flagshipMeshKey())) {
+        QMap<QString, std::pair<QVector3D, int>> groups;
+        for (const ModMesh::AttachPoint &point : ship->points) {
+            QString kind;
+            if (point.name.startsWith(QLatin1String("weapon.")))
+                kind = point.name.mid(7).section(QRegularExpression("[-_.0-9]"), 0, 0);
+            else if (point.name.startsWith(QLatin1String("child.")) && point.name.contains(QLatin1String("turret")))
+                kind = QStringLiteral("turret");
+            if (kind.isEmpty())
+                continue;
+            auto &group = groups[kind];
+            group.first += point.pos;
+            ++group.second;
+        }
+        QMatrix4x4 m = m_destinyModel;
+        m.scale(13.5f);
+        const QFont before = p.font();
+        QFont small = before;
+        small.setPointSizeF(before.pointSizeF() * 0.85);
+        p.setFont(small);
+        for (auto it = groups.cbegin(); it != groups.cend(); ++it) {
+            QPointF a;
+            if (!project(m.map(it->first / float(it->second)), &a))
+                continue;
+            const QString &kind = it.key();
+            const QString label = kind == "main"                ? tr("Main tower")
+                                : kind == "pulse"               ? tr("Pulse")
+                                : kind == "turret"              ? tr("Towers")
+                                : kind == "beam"                ? tr("Beam")
+                                : kind.contains("drone")        ? tr("Drones")
+                                : kind.contains("missile")      ? tr("Missiles")
+                                : kind.contains("railgun")      ? tr("Railguns")
+                                                                : kind.left(1).toUpper() + kind.mid(1);
+            const QColor cyan(120, 220, 255, 220);
+            p.setPen(QPen(cyan, 1.2));
+            p.setBrush(Qt::NoBrush);
+            p.drawRect(QRectF(a.x() - 3, a.y() - 3, 6, 6));
+            p.drawLine(a, a + QPointF(14, -14));
+            p.drawText(a + QPointF(16, -16), label);
+        }
+        p.setFont(before);
+    }
+
+    // --- Destiny subsystem callouts (combat assist only: otherwise the HUD panels)
     for (const Subsystem &s : m_subsystems) {
+        if (!assistSetting())
+            break;
         QPointF a;
         if (!project(destinyWorld(s.localPos), &a))
             continue;

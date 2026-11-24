@@ -13,6 +13,7 @@
 #include "src/audio/musicplayer.h"
 #include "src/audio/soundsystem.h"
 #include "src/core/language.h"
+#include "src/render/battleview.h"
 #include "src/render/ddstexture.h"
 
 SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
@@ -82,6 +83,10 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     texturesRow->addWidget(m_textures);
     texturesRow->addStretch(1);
     grid->addLayout(texturesRow, 9, 0, 1, 2);
+    m_assist = new QCheckBox(tr("Combat assist (health bars of the ships, damage callouts on the hull)"), this);
+    m_assist->setToolTip(tr("Off: watch the ship status panels of the HUD to know your damage"));
+    grid->addWidget(m_assist, 10, 0, 1, 2);
+    connect(m_assist, &QCheckBox::toggled, this, [](bool on) { BattleView::setAssistSetting(on); });
 
     auto *back = new QPushButton(tr("Back"), this);
 
@@ -140,7 +145,8 @@ void SettingsPanel::refresh()
     MusicPlayer *music = m_sound ? m_sound->music() : nullptr;
     const int musicVolume = music ? music->volume() : 0;
     const QSignalBlocker blockVolume(m_volume), blockMute(m_mute), blockScreen(m_fullScreen),
-        blockLanguage(m_language), blockMusic(m_music), blockTextures(m_textures);
+        blockLanguage(m_language), blockMusic(m_music), blockTextures(m_textures), blockAssist(m_assist);
+    m_assist->setChecked(BattleView::assistSetting());
     m_textures->setCurrentIndex(std::max(0, m_textures->findData(DdsTexture::qualitySetting())));
     if (musicVolume > 0)
         m_lastMusic = musicVolume;

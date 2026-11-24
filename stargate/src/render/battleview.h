@@ -10,6 +10,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWidget>
+#include "modmesh.h"
 #include <QPoint>
 #include <QPointF>
 #include <QStringList>
@@ -241,6 +242,13 @@ private:
     struct ModModel {
         Mesh mesh;
         QString texturePaths[4];                // color, mask, orm, normal
+        std::vector<QVector3D> engines;         // exhaust spots (normalized model space)
+        std::vector<ModMesh::AttachPoint> points;
+        QVector3D halfExtents;
+        QVector3D center;                       // normalization of the file (for its shield model)
+        float length = 0;
+        QImage silhouette;
+        QRectF silhouetteRect;
         ShipTextures textures;
         int quality = -1;                       // texture quality it was decoded for
         std::shared_ptr<TextureJob> job;        // decoding in progress
@@ -256,6 +264,7 @@ private:
         float shield = 0, maxShield = 0;    // energy shield (0 = none, see Balance)
         float shieldFlash = 0;      // bubble visible after a hit
         float lastHit = -1000;      // m_time of the last hit (shield recharge delay)
+        std::vector<int> ammo;      // salvos left per attack, -1 = unlimited (missiles, drones)
         int classIndex = 0;         // in m_classes
         std::vector<float> attackTimers;    // one per attack of its class
         bool diving = false;        // kamikaze run on the Destiny
@@ -279,6 +288,7 @@ private:
         int targetId = -1;          // -1 = the Destiny
         int targetAlly = -1;        // enemy shot at a friendly ship
         bool fromAlly = false;
+        bool drone = false;         // Ancient drone: goes through the shields
         QVector3D pos, vel;
         QVector3D aimLocal;         // aim point on the Destiny hull (local space)
         QVector3D color;
@@ -340,7 +350,12 @@ private:
     void hitAlly(Enemy &a, const Projectile &p);
     void drawAllies();
     // Ship models of the mod (local assets), loaded once on first use
-    ModModel *modModel(const QString &key);
+    ModModel *modModel(const QString &key, const QString &frameKey = QString());
+    bool useAmmo(Enemy &ship, int attack);
+    static bool isDrone(const ShipAttack &attack);
+    void drawEngineSpots(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color,
+                         float strength);
+    QVector3D m_shieldCenter, m_shieldRadii;    // Destiny / flagship shield (fits its model)
     void updateTexture(ModModel &model);
     static QString meshKeyOf(const ShipClass &shipClass);
     QString flagshipMeshKey() const;
@@ -414,6 +429,19 @@ private:
     bool m_autoWaves = true;
     float m_damageBonus = 1.0f;
     float m_shieldRegenBonus = 1.0f;
+public:
+    // Schematic of the flagship for the status panel (empty without a mod model)
+    struct Schematic {
+        QImage silhouette;
+        QRectF rect;                // (x, z) in ship-local units
+        QPointF shieldCenter;
+        QSizeF shieldRadii;
+    };
+    Schematic schematic() const;
+    // Combat assist (settings): health bars on the ships, callouts on the hull
+    static bool assistSetting();
+    static void setAssistSetting(bool on);
+private:
     QVector3D m_shipLights;                 // light color of the mod model being drawn
     QString m_flagshipStyle;
     bool m_turretsOn = true;

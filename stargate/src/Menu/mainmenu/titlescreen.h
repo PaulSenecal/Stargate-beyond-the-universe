@@ -21,9 +21,12 @@ class TitleScreen : public QWidget
 public:
     explicit TitleScreen(SoundSystem *sound, QWidget *parent = nullptr);
 
+    void showSettings();
+
 signals:
     void playRequested();
     void quitRequested();
+    void languageChanged(const QString &code);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

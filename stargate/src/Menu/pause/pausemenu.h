@@ -24,6 +24,7 @@ public:
 
     void open();                            // covers the parent and takes the focus
     void showSaveResult(bool ok, const QString &text);
+    void openSettings();
     void escape();                          // back from the settings, otherwise resume
 
 signals:
@@ -31,6 +32,7 @@ signals:
     void saveRequested();
     void quitToTitleRequested();
     void quitGameRequested();
+    void languageChanged(const QString &code);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

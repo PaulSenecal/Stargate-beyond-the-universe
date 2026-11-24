@@ -75,6 +75,7 @@ PauseMenu::PauseMenu(SoundSystem *sound, QWidget *parent)
         MenuStyle::showPage(m_pages, 0);
         m_firstButton->setFocus();
     });
+    connect(m_settings, &SettingsPanel::languageChanged, this, &PauseMenu::languageChanged);
     connect(quitToTitle, &QPushButton::clicked, this, &PauseMenu::quitToTitleRequested);
     connect(quitGame, &QPushButton::clicked, this, &PauseMenu::quitGameRequested);
 
@@ -104,6 +105,12 @@ void PauseMenu::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
     p.fillRect(rect(), QColor(0, 0, 0, 170));
+}
+
+void PauseMenu::openSettings()
+{
+    m_settings->refresh();
+    MenuStyle::showPage(m_pages, 1);
 }
 
 void PauseMenu::escape()

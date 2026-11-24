@@ -64,6 +64,7 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     layout->addStretch(3);
     layout->addWidget(version);
 
+    connect(m_settings, &SettingsPanel::languageChanged, this, &TitleScreen::languageChanged);
     connect(play, &QPushButton::clicked, this, &TitleScreen::playRequested);
     connect(quit, &QPushButton::clicked, this, &TitleScreen::quitRequested);
     connect(settings, &QPushButton::clicked, this, [this] {
@@ -79,8 +80,16 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
 void TitleScreen::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
+    if (m_pages->currentIndex() != 0)
+        return;
     MenuStyle::showPage(m_pages, 0);
     m_firstButton->setFocus();
+}
+
+void TitleScreen::showSettings()
+{
+    m_settings->refresh();
+    MenuStyle::showPage(m_pages, 1);
 }
 
 // Background picture scaled to cover the screen, darkened for the text

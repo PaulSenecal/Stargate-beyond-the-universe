@@ -27,6 +27,10 @@ public:
 
     void startGame();       // loads the saved game
     void showTitle();       // saves and leaves the game
+    // Installs the new language and rebuilds the screens (the game is
+    // saved and reloaded), back on the settings page
+    void changeLanguage(const QString &code);
+    void createTitle();
 
 private slots:
     void on_pushButton_clicked();

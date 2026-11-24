@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QCheckBox;
+class QComboBox;
 class QLabel;
 class QSlider;
 class SoundSystem;
@@ -30,6 +31,8 @@ public:
 
 signals:
     void backRequested();
+    // The new language is saved; the screens must be rebuilt to show it
+    void languageChanged(const QString &code);
 
 private:
     void applyVolume();
@@ -39,6 +42,7 @@ private:
     QLabel *m_volumeValue = nullptr;
     QCheckBox *m_mute = nullptr;
     QCheckBox *m_fullScreen = nullptr;
+    QComboBox *m_language = nullptr;
     QLabel *m_soundStatus = nullptr;
     int m_lastVolume = 70;
 };

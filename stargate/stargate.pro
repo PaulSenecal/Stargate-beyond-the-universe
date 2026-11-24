@@ -92,6 +92,7 @@ HEADERS += \
     src/core/destinystate.h \
     src/core/questsystem.h \
     src/core/assets.h \
+    src/core/balance.h \
     src/core/shipclass.h \
     src/db/databasemanager.h \
     src/db/dbtext.h \

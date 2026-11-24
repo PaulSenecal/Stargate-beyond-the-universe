@@ -68,6 +68,8 @@ private:
     void showResources();
     void showLibrary(const QString &ship);
     void soundCommand(const QString &arg);
+    void musicCommand(const QString &arg);
+    void updateMusic(bool immediate);
 
     // Exploration (DestinyRoute)
     void jumpFtl();
@@ -107,6 +109,7 @@ private:
     double m_starvingHours = 0;
     bool m_lowWaterWarned = false;
     bool m_lowFoodWarned = false;
+    int m_calmSeconds = 0;          // without enemy, before the calm music
 };
 
 #endif // GAMEMENU_H

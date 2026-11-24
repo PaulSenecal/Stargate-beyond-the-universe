@@ -9,6 +9,8 @@
 
 #include "src/Menu/menustyle.h"
 #include "src/Menu/setting/settingspanel.h"
+#include "src/audio/musicplayer.h"
+#include "src/audio/soundsystem.h"
 
 #ifndef APP_VERSION
 #define APP_VERSION "dev"     // set by stargate.pro from git
@@ -17,6 +19,7 @@
 TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     : QWidget(parent)
     , m_background(":/images/background/destinyPlan.jpg")
+    , m_sound(sound)
 {
     setStyleSheet(MenuStyle::sheet());
 
@@ -80,6 +83,8 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
 void TitleScreen::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
+    if (m_sound && m_sound->music())
+        m_sound->music()->setMood(MusicPlayer::Mood::Title);
     if (m_pages->currentIndex() != 0)
         return;
     MenuStyle::showPage(m_pages, 0);

@@ -34,6 +34,7 @@ protected:
 
 private:
     QPixmap m_background;
+    SoundSystem *m_sound = nullptr;
     QStackedWidget *m_pages = nullptr;
     SettingsPanel *m_settings = nullptr;
     QWidget *m_firstButton = nullptr;

@@ -40,11 +40,14 @@ private:
     SoundSystem *m_sound = nullptr;
     QSlider *m_volume = nullptr;
     QLabel *m_volumeValue = nullptr;
+    QSlider *m_music = nullptr;
+    QLabel *m_musicValue = nullptr;
     QCheckBox *m_mute = nullptr;
     QCheckBox *m_fullScreen = nullptr;
     QComboBox *m_language = nullptr;
     QLabel *m_soundStatus = nullptr;
     int m_lastVolume = 70;
+    int m_lastMusic = 40;
 };
 
 #endif // SETTINGSPANEL_H

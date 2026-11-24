@@ -17,6 +17,7 @@
 #include "shiplibrarydialog.h"
 #include "shipstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
+#include "src/audio/musicplayer.h"
 #include "src/audio/soundsystem.h"
 #include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
@@ -149,7 +150,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "menu";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -160,7 +161,8 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
                                          QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
-                                         QStringLiteral("sound"), QStringLiteral("menu")})
+                                         QStringLiteral("sound"), QStringLiteral("music"),
+                                         QStringLiteral("menu")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -221,6 +223,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
 
     updateNavigation();
     updatePlanetView();
+    updateMusic(true);
     m_simTimer->start(1000);
     if (m_sessionId >= 0)
         m_autosaveTimer->start(kAutosaveMs);
@@ -270,6 +273,10 @@ void GameMenu::onCommandEntered(const QString &command)
     }
     if (first == "menu" || first == "pause") {
         openPauseMenu();
+        return;
+    }
+    if (first == "music") {
+        musicCommand(command.section(' ', 1, 1, QString::SectionSkipEmpty).toLower());
         return;
     }
     if (first == "sound" || first == "volume") {
@@ -348,6 +355,7 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Game: quests, hint, save (also automatic every 30 s, after each jump and on exit), clear"));
     m_console->appendLine(tr("Library: library (all ships), library <ship> (e.g. library dart) - attacks and chances"));
     m_console->appendLine(tr("Sound: sound (status), sound on, sound off, sound <0-100> (volume)"));
+    m_console->appendLine(tr("Music: music (status), music on, music off, music <0-100> (volume)"));
     m_console->appendLine(tr("Menu: menu or Esc - pause, save, settings, quit"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
@@ -387,6 +395,47 @@ bool GameMenu::eventFilter(QObject *watched, QEvent *event)
     if (watched == m_battle && event->type() == QEvent::Resize)
         m_menuButton->move(m_battle->width() - m_menuButton->width() - 10, 10);
     return QWidget::eventFilter(watched, event);
+}
+
+// Battle music as soon as enemies are there, calm music after 10 s of peace
+void GameMenu::updateMusic(bool immediate)
+{
+    MusicPlayer *music = m_sound ? m_sound->music() : nullptr;
+    if (!music)
+        return;
+    if (m_battle->hostileCount() > 0) {
+        m_calmSeconds = 0;
+        music->setMood(MusicPlayer::Mood::Battle, m_battle->waveFaction());
+    } else if (immediate || ++m_calmSeconds >= 10 || music->mood() == MusicPlayer::Mood::Title) {
+        music->setMood(MusicPlayer::Mood::Calm);
+    }
+}
+
+void GameMenu::musicCommand(const QString &arg)
+{
+    MusicPlayer *music = m_sound ? m_sound->music() : nullptr;
+    if (!music) {
+        m_console->appendLine(tr("Music: no audio output available"), CommandConsole::Tone::Warning);
+        return;
+    }
+    static int lastVolume = 40;
+    if (arg == "off" || arg == "mute") {
+        if (music->volume() > 0)
+            lastVolume = music->volume();
+        music->setVolume(0);
+    } else if (arg == "on") {
+        music->setVolume(music->volume() > 0 ? music->volume() : lastVolume);
+    } else if (!arg.isEmpty()) {
+        bool ok = false;
+        const int volume = arg.toInt(&ok);
+        if (!ok || volume < 0 || volume > 100) {
+            m_console->appendLine(tr("Usage: music on | off | <0-100>"), CommandConsole::Tone::Warning);
+            return;
+        }
+        music->setVolume(volume);
+    }
+    m_console->appendLine(music->status(),
+                          music->hasMusic() ? CommandConsole::Tone::Info : CommandConsole::Tone::Warning);
 }
 
 void GameMenu::soundCommand(const QString &arg)
@@ -543,6 +592,7 @@ void GameMenu::onRouteNotice(const QString &text, DestinyRoute::Severity severit
 void GameMenu::simulate()
 {
     m_route->tick(kHoursPerTick);
+    updateMusic(false);
 
     // Crew supplies
     if (m_destiny.isLoaded()) {

@@ -169,7 +169,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
 
     // --- Console
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
-                               "send", "build", "fighter", "mothership", "attack",
+                               "send", "build", "fighter", "mothership", "engage", "attack",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -369,6 +369,17 @@ QString ConquestScreen::planetSummary(int planetId) const
     }
     if (!here.isEmpty())
         html += "<br>" + tr("In orbit: %1").arg(here.join(QStringLiteral(", ")));
+    if (const Conquest::Skirmish *battle = m_game->skirmishAt(p.id)) {
+        const QString defender = battle->defender < 0 ? tr("militia") : m_game->factions()[battle->defender].id;
+        html += "<br><span style='color:#ff9a5a'><b>"
+                + tr("BATTLE: %1 (%2) attack %3 (%4) - %5 s")
+                      .arg(m_game->factions()[battle->attacker].id.toHtmlEscaped())
+                      .arg(m_game->sidePower(p.id, battle->attacker))
+                      .arg(defender.toHtmlEscaped())
+                      .arg(m_game->sidePower(p.id, battle->defender))
+                      .arg(qRound(battle->elapsed))
+                + "</b></span>";
+    }
 
     if (planetId == m_game->flagshipPlanet() && !m_game->travelling())
         html += "<br><span style='color:#e2bf3e'>" + tr("Your flagship is here") + "</span>";
@@ -397,8 +408,17 @@ void ConquestScreen::refresh()
     m_map->update();
 
     QStringList objective;
-    if (m_game->inBattle())
+    if (m_game->inBattle()) {
         objective << tr("BATTLE FOR %1").arg(m_game->planets()[m_game->battlePlanet()].name.toUpper());
+    } else if (m_game->observing()) {
+        const Conquest::Skirmish *battle = m_game->skirmishAt(m_game->flagshipPlanet());
+        objective << tr("BATTLE IN PROGRESS: %1 %2 vs %3 %4")
+                         .arg(m_game->factions()[battle->attacker].id.toUpper())
+                         .arg(m_game->sidePower(battle->planet, battle->attacker))
+                         .arg(battle->defender < 0 ? tr("MILITIA") : m_game->factions()[battle->defender].id.toUpper())
+                         .arg(m_game->sidePower(battle->planet, battle->defender))
+                  << tr("'engage <faction>' to join in - or wait for the winner");
+    }
     else if (m_game->travelling())
         objective << tr("IN HYPERSPACE - %1 jump(s) to go").arg(m_game->route().size());
     else if (m_game->captureProgress() > 0)
@@ -483,6 +503,10 @@ void ConquestScreen::onCommand(const QString &command)
             warn(tr("No repairs during a battle"));
         else if (!m_game->repairFlagship(&error))
             warn(tr("Cannot repair: %1").arg(error));
+    } else if (name == "engage") {
+        QString error;
+        if (!m_game->engage(arg, &error))
+            warn(tr("Cannot engage: %1").arg(error));
     } else if (name == "fleets") {
         listFleets();
     } else if (name == "send") {
@@ -542,6 +566,7 @@ void ConquestScreen::showHelp()
             .arg(ConquestGame::kFighterCost)
             .arg(ConquestGame::kMothershipCost),
         tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
+        tr("Battles between other factions last a while: watch them, or 'engage <faction>' to fight one side"),
         tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
         tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
         tr("Win by taking every planet of the enemy factions. Menu: Esc or 'menu'."),

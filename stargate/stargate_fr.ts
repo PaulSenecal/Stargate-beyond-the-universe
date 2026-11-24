@@ -440,6 +440,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 rejoint votre faction</translation>
     </message>
     <message>
+        <source>Battle in progress at %1: the %2 attack the %3. &apos;engage &lt;faction&gt;&apos; to join in, or wait for the winner</source>
+        <translation>Bataille en cours à %1 : les %2 attaquent (%3). &apos;engage &lt;faction&gt;&apos; pour intervenir, ou attendez le vainqueur</translation>
+    </message>
+    <message>
         <source>%1 is defended by the %2 fleet: battle!</source>
         <translation>%1 est défendue par la flotte %2 : combat !</translation>
     </message>
@@ -450,6 +454,30 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>A %1 fleet (%2 mothership(s), %3 fighter(s)) heads for %4!</source>
         <translation>Une flotte %1 (%2 vaisseau(x)-mère(s), %3 chasseur(s)) se dirige vers %4 !</translation>
+    </message>
+    <message>
+        <source>the flagship must be in orbit, out of battle</source>
+        <translation>le vaisseau amiral doit être en orbite, hors combat</translation>
+    </message>
+    <message>
+        <source>no battle here</source>
+        <translation>aucune bataille ici</translation>
+    </message>
+    <message>
+        <source>the factions fighting here: %1 and %2</source>
+        <translation>les factions qui combattent ici : %1 et %2</translation>
+    </message>
+    <message>
+        <source>nothing left to fight</source>
+        <translation>plus rien à combattre</translation>
+    </message>
+    <message>
+        <source>Your fleet attacks %1</source>
+        <translation>Votre flotte attaque %1</translation>
+    </message>
+    <message>
+        <source>%1 is under attack by the %2!</source>
+        <translation>%1 est attaquée par les %2 !</translation>
     </message>
     <message>
         <source>Your fleet takes %1 from the %2</source>
@@ -603,6 +631,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>En orbite : %1</translation>
     </message>
     <message>
+        <source>militia</source>
+        <translation>milice</translation>
+    </message>
+    <message>
+        <source>BATTLE: %1 (%2) attack %3 (%4) - %5 s</source>
+        <translation>BATAILLE : %1 (%2) attaquent %3 (%4) - %5 s</translation>
+    </message>
+    <message>
         <source>Your flagship is here</source>
         <translation>Votre vaisseau amiral est ici</translation>
     </message>
@@ -617,6 +653,18 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>BATTLE FOR %1</source>
         <translation>BATAILLE POUR %1</translation>
+    </message>
+    <message>
+        <source>BATTLE IN PROGRESS: %1 %2 vs %3 %4</source>
+        <translation>BATAILLE EN COURS : %1 %2 contre %3 %4</translation>
+    </message>
+    <message>
+        <source>MILITIA</source>
+        <translation>MILICE</translation>
+    </message>
+    <message>
+        <source>&apos;engage &lt;faction&gt;&apos; to join in - or wait for the winner</source>
+        <translation>&apos;engage &lt;faction&gt;&apos; pour intervenir - ou attendez le vainqueur</translation>
     </message>
     <message>
         <source>IN HYPERSPACE - %1 jump(s) to go</source>
@@ -653,6 +701,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Cannot repair: %1</source>
         <translation>Réparation impossible : %1</translation>
+    </message>
+    <message>
+        <source>Cannot engage: %1</source>
+        <translation>Intervention impossible : %1</translation>
     </message>
     <message>
         <source>Usage: send &lt;fleet number&gt; &lt;planet&gt; - see &apos;fleets&apos;</source>
@@ -697,6 +749,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Battle: attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</source>
         <translation>Combat : attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</translation>
+    </message>
+    <message>
+        <source>Battles between other factions last a while: watch them, or &apos;engage &lt;faction&gt;&apos; to fight one side</source>
+        <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
     </message>
     <message>
         <source>Display: hud on|off (radar, ship and weapon panels), or the HUD button</source>

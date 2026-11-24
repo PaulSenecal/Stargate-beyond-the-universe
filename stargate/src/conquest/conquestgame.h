@@ -80,6 +80,19 @@ struct Fleet
     bool moving() const { return !route.isEmpty(); }
 };
 
+// Battle in progress at a planet between two sides (fought over time):
+// the attacking faction's fleets against the planet side (garrison,
+// shipyard and the owner's fleets; owner -1 = neutral militia)
+struct Skirmish
+{
+    int planet = 0;
+    int attacker = 0;
+    int defender = -1;
+    double attackerPending = 0;     // damage received, not yet turned into losses
+    double defenderPending = 0;
+    double elapsed = 0;             // seconds
+};
+
 struct Faction
 {
     QString id;
@@ -114,6 +127,12 @@ public:
     const QList<Conquest::Planet> &planets() const { return m_planets; }
     const QList<Conquest::Faction> &factions() const { return m_factions; }
     const QList<Conquest::Fleet> &fleets() const { return m_fleets; }
+    const QList<Conquest::Skirmish> &skirmishes() const { return m_skirmishes; }
+    const Conquest::Skirmish *skirmishAt(int planetId) const;
+    // Current strength of a side at a planet (fleets, + garrison for the owner)
+    int sidePower(int planetId, int owner) const;
+    // Flagship at a battle between two other factions, not fighting yet
+    bool observing() const;
     int playerIndex() const { return m_player; }
     const Conquest::Faction &player() const { return m_factions.at(m_player); }
     int planetCount(int faction) const;
@@ -148,6 +167,8 @@ public:
     bool repairFlagship(QString *error = nullptr);
     bool build(int planetId, bool mothership, QString *error = nullptr);
     bool orderFleet(int fleetId, int planetId, QString *error = nullptr);
+    // Joins the battle where the flagship is, against that faction
+    bool engage(const QString &faction, QString *error = nullptr);
     static constexpr double kFortifyCost = 60;             // naquadah per defense level
     static constexpr double kFighterCost = 30;
     static constexpr double kMothershipCost = 120;
@@ -183,8 +204,11 @@ private:
     void produce(double seconds);
     void moveFleets(double seconds);
     void think(Conquest::Fleet &fleet);
-    void resolveBattles();
-    bool resolveAt(int planetId);
+    void startSkirmishes();
+    void updateSkirmishes(double seconds);
+    void endSkirmish(int index, bool attackerWon);
+    void applyDamage(int planetId, int owner, double &pending);
+    bool startFlagshipBattleAgainst(int planetId, int owner);
     void mergeFleets();
     bool startFlagshipBattle(int planetId);
     int hostileForces(int planetId, int againstOwner, int *motherships, int *fighters) const;
@@ -195,6 +219,7 @@ private:
     QList<Conquest::Planet> m_planets;
     QList<Conquest::Faction> m_factions;
     QList<Conquest::Fleet> m_fleets;
+    QList<Conquest::Skirmish> m_skirmishes;
     int m_nextFleetId = 1;
     int m_player = 0;
     int m_at = 0;                   // planet of the flagship

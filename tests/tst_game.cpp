@@ -628,7 +628,11 @@ private slots:
         QVERIFY(game.fromJson(withFleets({{1, 3, 6, 1}})));
         game.setSeed(1);
         QSignalSpy changed(&game, &ConquestGame::planetChanged);
-        run(game, 0.2);
+        run(game, 0.5);
+        QVERIFY(game.skirmishAt(1));            // the battle takes time
+        QCOMPARE(game.planets()[1].owner, -1);
+        run(game, 15);
+        QVERIFY(!game.skirmishAt(1));
         QCOMPARE(game.planets()[1].owner, 1);
         QVERIFY(changed.size() >= 1);
         QCOMPARE(game.fleetCount(1), 1);
@@ -660,9 +664,10 @@ private slots:
         json["at"] = 1;
         QVERIFY(game.fromJson(json));
         game.setSeed(2);
-        run(game, 0.2);
+        run(game, 20);
         QCOMPARE(game.planets()[0].owner, 0);
         QCOMPARE(game.fleetCount(1), 0);
+        QVERIFY(game.planets()[0].defense >= 1);
     }
 
     void noVictoryWhileEnemyFleetsRemain()
@@ -678,6 +683,37 @@ private slots:
             game.battleWon();
         QVERIFY(game.fleetCount(1) + game.planetCount(1) > 0);
         QCOMPARE(over.size(), 0);
+    }
+
+    void watchAndEngage()
+    {
+        ConquestGame game;
+        // Goa'uld fleet attacking a Lucian world... here: Goa'uld vs neutral Abydos,
+        // with a strong neutral militia so that the battle lasts
+        QJsonObject json = withFleets({{1, 2, 6, 1}});
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["defense"] = 5;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        QVERIFY(game.fromJson(json));
+        game.setSeed(4);
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        QVERIFY(game.orderTravel(1));
+        run(game, 2.5);                         // the flagship arrives during the battle
+        QCOMPARE(game.flagshipPlanet(), 1);
+        QVERIFY(game.observing());
+        QCOMPARE(battles.size(), 0);            // it only watches
+        QString error;
+        QVERIFY(!game.engage("wraith", &error));
+        QVERIFY(game.engage("goa", &error));
+        QCOMPARE(battles.size(), 1);
+        QCOMPARE(battles[0][1].toString(), QStringLiteral("Goa'uld"));
+        QVERIFY(battles[0][3].toInt() <= 6);    // what is left of the fleet
+        game.battleWon();
+        run(game, 0.5);
+        QVERIFY(!game.skirmishAt(1));
+        QCOMPARE(game.fleetCount(1), 0);
     }
 
     void orderedFleet()

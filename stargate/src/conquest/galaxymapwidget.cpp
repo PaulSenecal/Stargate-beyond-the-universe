@@ -2,6 +2,7 @@
 
 #include <QMouseEvent>
 #include <QPainter>
+#include <QDateTime>
 #include <QHash>
 #include <QPainterPath>
 #include <QPolygonF>
@@ -163,6 +164,27 @@ void GalaxyMapWidget::paintEvent(QPaintEvent *)
         }
         p.setPen(planet.capital ? kGold : kText);
         p.drawText(QPointF(c.x() + r + 5, c.y() + 4), planet.capital ? QStringLiteral("♛ ") + planet.name : planet.name);
+    }
+
+    // Battles in progress: pulsing ring and the balance of forces
+    const double pulse = 0.5 + 0.5 * std::sin(QDateTime::currentMSecsSinceEpoch() / 180.0);
+    for (const Skirmish &battle : m_game->skirmishes()) {
+        const QPointF c = toScreen(planets[battle.planet].pos);
+        QColor ring(255, 120, 60, 120 + int(120 * pulse));
+        p.setPen(QPen(ring, 2.5));
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(c, 17 + 3 * pulse, 17 + 3 * pulse);
+        const double attack = m_game->sidePower(battle.planet, battle.attacker);
+        const double defense = m_game->sidePower(battle.planet, battle.defender);
+        const QRectF bar(c.x() - 18, c.y() - 30, 36, 5);
+        const double share = attack + defense > 0 ? attack / (attack + defense) : 0.5;
+        p.setPen(Qt::NoPen);
+        p.setBrush(ownerColor(m_game, battle.defender));
+        p.drawRect(bar);
+        p.setBrush(ownerColor(m_game, battle.attacker));
+        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * share, bar.height()));
+        p.setPen(QColor(255, 150, 90));
+        p.drawText(QPointF(c.x() - 30, c.y() - 26), QStringLiteral("⚔"));
     }
 
     // Fleets: diamonds in the owner color (yours: gold outline and number).

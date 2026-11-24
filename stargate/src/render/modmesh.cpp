@@ -35,8 +35,8 @@ QVector3D toView(const QVector3D &v)
 }
 
 // First material of the model: a length-prefixed name in the trailing
-// block that has a .mesh_material file; returns its color texture
-QString colorTexture(const char *data, qsizetype from, qsizetype size)
+// block that has a .mesh_material file; fills the texture paths
+void findTextures(const char *data, qsizetype from, qsizetype size, ModMesh::Model &model)
 {
     for (qsizetype i = from; i + 4 < size; ++i) {
         const quint32 length = qFromLittleEndian<quint32>(data + i);
@@ -53,11 +53,18 @@ QString colorTexture(const char *data, qsizetype from, qsizetype size)
             continue;
         QFile file(material);
         if (!file.open(QIODevice::ReadOnly))
-            return {};
-        const QString texture = QJsonDocument::fromJson(file.readAll()).object().value("base_color_texture").toString();
-        return texture.isEmpty() ? QString() : Assets::modFile(QStringLiteral("textures/%1.dds").arg(texture));
+            return;
+        const QJsonObject json = QJsonDocument::fromJson(file.readAll()).object();
+        auto texture = [&json](const char *key) {
+            const QString name = json.value(QLatin1String(key)).toString();
+            return name.isEmpty() ? QString() : Assets::modFile(QStringLiteral("textures/%1.dds").arg(name));
+        };
+        model.texturePath = texture("base_color_texture");
+        model.maskPath = texture("mask_texture");
+        model.ormPath = texture("occlusion_roughness_metallic_texture");
+        model.normalPath = texture("normal_texture");
+        return;
     }
-    return {};
 }
 
 } // namespace
@@ -83,8 +90,9 @@ ModMesh::Model ModMesh::load(const QString &path)
         return {};
 
     // Vertices: position, normal and uv, in view axes
-    std::vector<QVector3D> positions(vertexCount), normals(vertexCount);
+    std::vector<QVector3D> positions(vertexCount), normals(vertexCount), tangents(vertexCount);
     std::vector<QVector2D> uvs(vertexCount);
+    std::vector<float> signs(vertexCount);
     QVector3D low(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
                   std::numeric_limits<float>::max());
     QVector3D high = -low;
@@ -92,6 +100,8 @@ ModMesh::Model ModMesh::load(const QString &path)
         const char *v = data + kVertexOffset + qsizetype(i) * kVertexSize;
         positions[i] = toView({readFloat(v), readFloat(v + 4), readFloat(v + 8)});
         normals[i] = toView({readFloat(v + 12), readFloat(v + 16), readFloat(v + 20)}).normalized();
+        tangents[i] = toView({readFloat(v + 24), readFloat(v + 28), readFloat(v + 32)}).normalized();
+        signs[i] = readFloat(v + 36) < 0.0f ? -1.0f : 1.0f;
         uvs[i] = QVector2D(readFloat(v + 40), readFloat(v + 44));
         for (int a = 0; a < 3; ++a) {
             low[a] = std::min(low[a], positions[i][a]);
@@ -114,8 +124,10 @@ ModMesh::Model ModMesh::load(const QString &path)
         const QVector3D p = (positions[index] - center) / length;
         const QVector3D &n = normals[index];
         const QVector2D &t = uvs[index];
-        model.vertices.insert(model.vertices.end(), {p.x(), p.y(), p.z(), n.x(), n.y(), n.z(), t.x(), t.y()});
+        const QVector3D &g = tangents[index];
+        model.vertices.insert(model.vertices.end(), {p.x(), p.y(), p.z(), n.x(), n.y(), n.z(), t.x(), t.y(),
+                                                     g.x(), g.y(), g.z(), signs[index]});
     }
-    model.texturePath = colorTexture(data, tailOffset, size);
+    findTextures(data, tailOffset, size, model);
     return model;
 }

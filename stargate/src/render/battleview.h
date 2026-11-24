@@ -232,10 +232,15 @@ private:
 
     // A mod model and its color texture (decoded in the background)
     struct TextureJob;
+    // Textures of a mod model: color, mask (lights in blue), occlusion-
+    // roughness-metallic, normal map; 0 = missing
+    struct ShipTextures {
+        GLuint color = 0, mask = 0, orm = 0, normal = 0;
+    };
     struct ModModel {
         Mesh mesh;
-        QString texturePath;
-        GLuint texture = 0;
+        QString texturePaths[4];                // color, mask, orm, normal
+        ShipTextures textures;
         int quality = -1;                       // texture quality it was decoded for
         std::shared_ptr<TextureJob> job;        // decoding in progress
     };
@@ -331,7 +336,9 @@ private:
     void updateTexture(ModModel &model);
     static QString meshKeyOf(const ShipClass &shipClass);
     QString flagshipMeshKey() const;
-    bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash);
+    bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash,
+                     const QVector3D &lights);
+    static QVector3D factionLights(const QString &faction);
     const Enemy *findEnemy(int id) const;
     const Enemy *pickTarget();
     Subsystem *subsystem(const QString &key);
@@ -344,7 +351,7 @@ private:
     void upload(Mesh &mesh, const MeshBuilder::VertexData &data);
     void updateCamera();
     void drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color, float emissive, float alpha,
-                  ShaderMode mode, GLuint texture);
+                  ShaderMode mode, const ShipTextures *textures);
     void drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &color,
                   float emissive, float alpha, ShaderMode mode);
     void drawGlow(const QVector3D &pos, float radius, const QVector3D &color, float alpha);
@@ -399,6 +406,7 @@ private:
     bool m_autoWaves = true;
     float m_damageBonus = 1.0f;
     float m_shieldRegenBonus = 1.0f;
+    QVector3D m_shipLights;                 // light color of the mod model being drawn
     QString m_flagshipStyle;
     bool m_turretsOn = true;
     bool m_railgunsOn = true;

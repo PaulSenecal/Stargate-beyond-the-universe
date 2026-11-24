@@ -26,6 +26,7 @@ struct RadarPicture
         bool mothership = false;
         bool locked = false;
         float health = 100;     // percent
+        bool ally = false;      // friendly ship (blue, no label)
     };
     struct Bolt {
         QPointF local;

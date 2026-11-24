@@ -25,7 +25,7 @@
 
 namespace Conquest {
 
-enum class Size { Small, Medium, Large };
+enum class Size { Small, Medium, Large, Huge };
 
 enum class Bonus { None, Shipyard, NaquadahMine, TriniumMine, AncientSite };
 
@@ -100,7 +100,26 @@ struct Faction
     bool player = false;
     double naquadah = 0;
     double trinium = 0;
+    // Phase 4
+    QStringList techs;              // researched technologies
+    QString research;               // technology being researched ("" = none)
+    double researchProgress = 0;    // 0..1
+    bool allied = false;            // allied with the player
+    double allyCooldown = 0;        // seconds before a new proposal
+    QStringList pacts;              // AI factions it is allied with (AI diplomacy)
 };
+
+// Technology tree: 3 branches (weapons, defense, industry) of 3 tiers;
+// a tier needs the previous one of its branch
+struct TechInfo
+{
+    QString id;                     // "weapons1"…
+    int branch = 0;                 // 0 weapons, 1 defense, 2 industry
+    int tier = 1;
+    double cost = 0;                // naquadah
+    double seconds = 0;             // research time
+};
+const QList<TechInfo> &techInfos();
 
 constexpr double kMapWidth = 1000.0;
 constexpr double kMapHeight = 640.0;
@@ -141,7 +160,7 @@ public:
     static int planetCountFor(Conquest::Size size);
     QPointF fleetPos(const Conquest::Fleet &fleet) const;
     // Strength of a planet garrison (neutral militia is weaker)
-    static int garrisonPower(const Conquest::Planet &p);
+    int garrisonPower(const Conquest::Planet &p) const;
 
     // --- Flagship
     int flagshipPlanet() const { return m_at; }             // planet it orbits / leaves
@@ -179,8 +198,43 @@ public:
     bool isOver() const { return m_over; }
 
     // Planet income per second for its owner
-    static double naquadahRate(const Conquest::Planet &p);
-    static double triniumRate(const Conquest::Planet &p);
+    double naquadahRate(const Conquest::Planet &p) const;
+    double triniumRate(const Conquest::Planet &p) const;
+
+    // --- Faction traits (phase 3)
+    //  Wraith: cull populations (captured worlds halved, no growth), fast
+    //          shipyards, fleets regrow fighters at home
+    //  Goa'uld: slavery (naquadah x1.6, faster shipyards), Jaffa revolts on
+//           worlds left without a fleet
+    //  Tau'ri: Ancient technology (+8% fleet power per Ancient site, max
+    //          +40%), diplomacy (neutral neighbours may join, faster rallying)
+    //  Lucian Alliance: smuggling (fast fighters), raids steal naquadah
+    double powerMultiplier(int faction) const;
+
+    // --- Technologies (phase 4)
+    bool hasTech(int faction, const QString &tech) const;
+    double researchCost(int faction, const Conquest::TechInfo &tech) const;     // Asgard: cheaper
+    double researchTime(int faction, const Conquest::TechInfo &tech) const;     // Asgard: faster
+    bool canResearch(int faction, const QString &tech, QString *why = nullptr) const;
+    bool startResearch(const QString &tech, QString *error = nullptr);     // for the player
+    int findTech(const QString &nameOrNumber) const;                       // index in techInfos(), -1
+    static QString techName(const QString &tech);
+    static QString techEffect(const QString &tech);
+    double flagshipDamageBonus() const;     // weapons techs of the player (3D battles)
+    double flagshipShieldBonus() const;     // shield generators
+
+    // --- Alliances with the player (phase 4)
+    bool hostile(int a, int b) const;       // can a attack b (-1 = neutral)
+    bool isAllied(int faction) const;
+    bool hasPact(int a, int b) const;       // alliance between two AI factions
+    bool proposeAlliance(const QString &faction, QString *answer = nullptr);
+    bool breakAlliance(const QString &faction, QString *error = nullptr);
+    int findFaction(const QString &name) const;
+    static QString traitSummary(const QString &factionId);
+    static QString hangarFighter(const QString &factionId);     // fighter class of the flagship hangar
+    // Survivors of a fleet after a 3D battle (removed when none is left)
+    void setFleetStrength(int fleetId, int motherships, int fighters);
+    bool hasTrait(int faction, const char *factionId) const;
     static QString bonusName(Conquest::Bonus bonus);
 
     QJsonObject toJson() const;
@@ -215,6 +269,9 @@ private:
     static void takeLosses(Conquest::Fleet &fleet, double fraction);
     bool involvesPlayer(int owner) const { return owner == m_player; }
     QString ownerName(int owner) const;
+    void factionEvents();
+    void aiDiplomacy();
+    void stopFightsBetween(int a, int b);
 
     QList<Conquest::Planet> m_planets;
     QList<Conquest::Faction> m_factions;
@@ -231,6 +288,7 @@ private:
     int m_battlePlanet = -1;
     int m_battleOwner = -1;         // faction fought by the flagship
     bool m_over = false;
+    double m_eventClock = 0;        // seconds toward the next faction events
     QRandomGenerator m_rng;
 };
 

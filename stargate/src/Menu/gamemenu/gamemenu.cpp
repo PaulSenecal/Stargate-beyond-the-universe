@@ -151,7 +151,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu" << "launch" << "turrets" << "railguns" << "power";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -163,7 +163,8 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
                                          QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
                                          QStringLiteral("sound"), QStringLiteral("music"),
-                                         QStringLiteral("menu")})
+                                         QStringLiteral("menu"), QStringLiteral("launch"), QStringLiteral("turrets"),
+                                         QStringLiteral("railguns"), QStringLiteral("power")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -206,7 +207,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         RadarPicture picture;
         picture.shieldUp = m_battle->shieldActive() && m_battle->shieldStrength() > 0.0f;
         for (const BattleView::RadarBlip &b : m_battle->radarContacts())
-            picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health});
+            picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health, b.ally});
         for (const BattleView::RadarShot &s : m_battle->radarShots())
             picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny, s.missile});
         return picture;
@@ -270,6 +271,27 @@ void GameMenu::onCommandEntered(const QString &command)
     }
     if (first == "library" || first == "ships") {
         showLibrary(command.section(' ', 1, -1, QString::SectionSkipEmpty));
+        return;
+    }
+    if (first == "turrets" || first == "railguns" || first == "power") {
+        const QString arg = command.section(' ', 1, 1, QString::SectionSkipEmpty).toLower();
+        if (first == "turrets")
+            m_battle->setTurretsActive(arg != "off");
+        else if (first == "railguns")
+            m_battle->setRailgunsActive(arg != "off");
+        else if (arg.startsWith("shield"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Shields);
+        else if (arg.startsWith("weapon"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Weapons);
+        else if (arg.startsWith("bal"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Balanced);
+        else
+            m_console->appendLine(m_battle->powerReport());
+        return;
+    }
+    if (first == "launch") {
+        const QString count = command.section(' ', 1, 1, QString::SectionSkipEmpty);
+        m_battle->launchFighters(count.isEmpty() ? -1 : std::max(1, count.toInt()));
         return;
     }
     if (first == "menu" || first == "pause") {
@@ -358,6 +380,8 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Sound: sound (status), sound on, sound off, sound <0-100> (volume)"));
     m_console->appendLine(tr("Music: music (status), music on, music off, music <0-100> (volume)"));
     m_console->appendLine(tr("Menu: menu or Esc - pause, save, settings, quit"));
+    m_console->appendLine(tr("Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle"));
+    m_console->appendLine(tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -513,6 +537,7 @@ void GameMenu::loadSave()
         if (!library.isEmpty()) {
             m_library = library;
             m_battle->setShipClasses(m_library);
+            m_battle->setHangar(QStringLiteral("Puddle Jumper"), 4);   // the Destiny's shuttle bay
         }
     } else {
         m_console->appendLine(tr("Ship library unavailable - built-in enemies only"), CommandConsole::Tone::Warning);
@@ -859,6 +884,7 @@ void GameMenu::jumpFtl()
     // Enemies are left behind; new contacts may show up later
     m_battle->clearBattlefield(float(25 + QRandomGenerator::global()->bounded(50)));
     m_console->appendLine(tr("FTL jump - the Destiny enters hyperspace"), CommandConsole::Tone::Info);
+    m_battle->hyperspaceFlash();
 
     CommandConsole::Tone tone = CommandConsole::Tone::Info;
     switch (event.severity) {

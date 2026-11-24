@@ -32,6 +32,8 @@ SOURCES += \
     src/Menu/pause/pausemenu.cpp \
     src/Menu/setting/settingspanel.cpp \
     src/audio/musicplayer.cpp \
+    src/conquest/commandpanel.cpp \
+    src/conquest/conquestendscreen.cpp \
     src/conquest/conquestgame.cpp \
     src/conquest/conquestscreen.cpp \
     src/conquest/galaxymapwidget.cpp \
@@ -54,6 +56,7 @@ SOURCES += \
     src/entities/vessel.cpp \
     src/render/battleview.cpp \
     src/render/meshbuilder.cpp \
+    src/render/modmesh.cpp \
     src/render/planetlook.cpp \
     src/utils/logger.cpp \
     src/world/destinyroute.cpp \
@@ -76,6 +79,8 @@ HEADERS += \
     src/Menu/pause/pausemenu.h \
     src/Menu/setting/settingspanel.h \
     src/audio/musicplayer.h \
+    src/conquest/commandpanel.h \
+    src/conquest/conquestendscreen.h \
     src/conquest/conquestgame.h \
     src/conquest/conquestscreen.h \
     src/conquest/galaxymapwidget.h \
@@ -103,6 +108,7 @@ HEADERS += \
     src/entities/vessel.h \
     src/render/battleview.h \
     src/render/meshbuilder.h \
+    src/render/modmesh.h \
     src/render/planetlook.h \
     src/utils/logger.h \
     src/world/destinyroute.h \

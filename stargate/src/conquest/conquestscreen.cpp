@@ -15,6 +15,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "commandpanel.h"
+#include "conquestendscreen.h"
 #include "galaxymapwidget.h"
 #include "src/Menu/gamemenu/commandconsole.h"
 #include "src/Menu/gamemenu/radarwidget.h"
@@ -138,12 +140,17 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
                                                                              : CommandConsole::Tone::Success);
     });
     connect(m_battle, &BattleView::sectorCleared, this, [this] {
-        if (m_game->inBattle())
-            m_game->battleWon();
+        if (!m_game->inBattle())
+            return;
+        reportAllySurvivors();
+        ++m_battlesWon;
+        m_game->battleWon();
     });
     connect(m_battle, &BattleView::hullBreached, this, [this] {
         if (!m_game->inBattle())
             return;
+        reportAllySurvivors();
+        ++m_battlesLost;
         m_battle->clearBattlefield(0.0f);
         m_game->battleLost();
         m_game->setFlagshipHull(m_battle->hull());
@@ -158,6 +165,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
                                       : tr("DEFEAT - your faction has no world left."),
                               victory ? CommandConsole::Tone::Success : CommandConsole::Tone::Critical);
         QFile::remove(savePath());
+        QTimer::singleShot(1500, this, [this, victory] { showEnd(victory); });
     });
     connect(m_map, &GalaxyMapWidget::planetSelected, this, &ConquestScreen::refresh);
     connect(m_map, &GalaxyMapWidget::planetActivated, this, [this](int id) {
@@ -169,7 +177,8 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
 
     // --- Console
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
-                               "send", "build", "fighter", "mothership", "engage", "attack",
+                               "send", "build", "fighter", "mothership", "engage", "research", "ally", "break",
+                               "diplomacy", "launch", "turrets", "railguns", "power", "attack",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -186,7 +195,9 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     auto *escape = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     escape->setContext(Qt::WidgetWithChildrenShortcut);
     connect(escape, &QShortcut::activated, this, [this] {
-        if (m_pauseMenu->isVisible())
+        if (m_command->isVisible())
+            m_command->hide();
+        else if (m_pauseMenu->isVisible())
             m_pauseMenu->escape();
         else
             openPauseMenu();
@@ -208,6 +219,14 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_hudButton->setStyleSheet(m_menuButton->styleSheet());
     m_hudButton->adjustSize();
     connect(m_hudButton, &QPushButton::clicked, this, [this] { setHudVisible(!m_hud->isVisible()); });
+    m_techButton = new QPushButton(tr("TECH"), m_battle);
+    m_techButton->setFocusPolicy(Qt::NoFocus);
+    m_techButton->setCursor(Qt::PointingHandCursor);
+    m_techButton->setToolTip(tr("Research tree and diplomacy ('research', 'diplomacy')"));
+    m_techButton->setStyleSheet(m_menuButton->styleSheet());
+    m_techButton->adjustSize();
+    m_command = new CommandPanel(m_game, this);
+    connect(m_techButton, &QPushButton::clicked, this, [this] { m_command->open(CommandPanel::Page::Research); });
     m_battle->installEventFilter(this);
     setupHud();
     setHudVisible(QSettings("Stargate", "stargate").value("conquest/hud", true).toBool());
@@ -231,8 +250,16 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     if (!loaded)
         m_game->start(setup);
     m_battle->restoreDefenses(float(m_game->flagshipHull()), 100.0f, true);
+    m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), 4);
+    m_battle->setFlagshipStyle(m_game->player().id);
+    m_wasTravelling = m_game->travelling();
+    m_end = new ConquestEndScreen(this);
+    connect(m_end, &ConquestEndScreen::titleRequested, this, &ConquestScreen::quitToTitleRequested);
+    connect(m_end, &ConquestEndScreen::quitRequested, this, &ConquestScreen::quitGameRequested);
     if (m_game->inBattle())
         onBattleStarted(m_game->battlePlanet(), m_game->battleFaction(), 2, 4);
+    m_console->appendLine(tr("Faction trait: %1").arg(ConquestGame::traitSummary(m_game->player().id)),
+                          CommandConsole::Tone::Info);
     m_console->appendLine(tr("Type 'help' for the conquest commands - double click a planet to travel there"));
     m_map->select(m_game->flagshipPlanet());
     updatePlanetLook();
@@ -283,6 +310,16 @@ void ConquestScreen::tick()
                 m_battle->setSubsystemHealth(key, 100.0f);         // repaired at home
     }
     m_game->tick(dt);
+    m_playSeconds += dt;
+    m_command->refresh();
+    if (m_game->inBattle())
+        joinFriendlyFleets();           // reinforcements arriving during the battle
+    if (m_game->travelling() != m_wasTravelling) {
+        m_wasTravelling = m_game->travelling();
+        m_battle->hyperspaceFlash();     // jump into / out of hyperspace
+    }
+    m_battle->setDamageBonus(float(m_game->flagshipDamageBonus()));
+    m_battle->setShieldRegenBonus(float(m_game->flagshipShieldBonus()));
 
     if (m_game->flagshipPlanet() != m_lookPlanet && !m_game->travelling())
         updatePlanetLook();
@@ -309,6 +346,8 @@ void ConquestScreen::onBattleStarted(int planetId, const QString &faction, int m
         m_game->battleWon();
         return;
     }
+    m_joined.clear();
+    joinFriendlyFleets();
     if (m_sound && m_sound->music())
         m_sound->music()->setMood(MusicPlayer::Mood::Battle, faction);
     m_console->appendLine(tr("%1 mothership(s) and %2 fighter(s) - shields up, fire at will ('attack <n>', "
@@ -338,7 +377,8 @@ QString ConquestScreen::planetSummary(int planetId) const
     const Conquest::Planet &p = m_game->planets()[planetId];
     const QString owner = p.owner < 0 ? tr("Neutral")
                         : p.owner == m_game->playerIndex() ? tr("You (%1)").arg(m_game->player().id)
-                                                           : m_game->factions()[p.owner].id;
+                        : m_game->isAllied(p.owner) ? tr("%1 (ally)").arg(m_game->factions()[p.owner].id)
+                                                    : m_game->factions()[p.owner].id;
     const QString color = p.owner < 0 ? QStringLiteral("#9a9a94") : m_game->factions()[p.owner].color;
     QString pips;
     for (int i = 0; i < 5; ++i)
@@ -352,8 +392,8 @@ QString ConquestScreen::planetSummary(int planetId) const
     html += tr("Defense %1").arg(pips) + "&nbsp;&nbsp;" + tr("Bonus: %1").arg(ConquestGame::bonusName(p.bonus))
             + "<br>";
     html += tr("Produces %1 naquadah and %2 trinium per minute")
-                .arg(ConquestGame::naquadahRate(p) * 60, 0, 'f', 0)
-                .arg(ConquestGame::triniumRate(p) * 60, 0, 'f', 0);
+                .arg(m_game->naquadahRate(p) * 60, 0, 'f', 0)
+                .arg(m_game->triniumRate(p) * 60, 0, 'f', 0);
     if (p.hasShipyard() && p.owner >= 0)
         html += "<br>" + tr("Shipyard: %1 mothership(s), %2 fighter(s) ready").arg(p.dockMotherships).arg(p.dockFighters);
     QStringList here;
@@ -404,7 +444,11 @@ void ConquestScreen::refresh()
                                 .arg(m_game->planetCount(m_game->playerIndex()))
                                 .arg(m_game->planets().size())
                                 .arg(qRound(m_game->flagshipHull()));
-    m_info->setText(planetSummary(selected) + stock);
+    QString research;
+    if (!me.research.isEmpty())
+        research = "<br>" + tr("Research: %1 %2%").arg(ConquestGame::techName(me.research).toHtmlEscaped())
+                                                    .arg(qRound(me.researchProgress * 100));
+    m_info->setText(planetSummary(selected) + stock + research);
     m_map->update();
 
     QStringList objective;
@@ -492,6 +536,10 @@ void ConquestScreen::onCommand(const QString &command)
                                   .arg(int(me.trinium))
                                   .arg(qRound(m_battle->hull()))
                                   .arg(m_game->planets()[m_game->flagshipPlanet()].name));
+        m_console->appendLine(tr("Faction trait: %1").arg(ConquestGame::traitSummary(me.id)));
+        if (m_game->powerMultiplier(m_game->playerIndex()) > 1.0)
+            m_console->appendLine(tr("Ancient technology: fleet power +%1%")
+                                      .arg(qRound((m_game->powerMultiplier(m_game->playerIndex()) - 1.0) * 100)));
     } else if (name == "fortify") {
         const int id = planetArg();
         QString error;
@@ -503,6 +551,55 @@ void ConquestScreen::onCommand(const QString &command)
             warn(tr("No repairs during a battle"));
         else if (!m_game->repairFlagship(&error))
             warn(tr("Cannot repair: %1").arg(error));
+    } else if (name == "research" || name == "tech") {
+        if (arg.isEmpty()) {
+            listTechs();
+            m_command->open(CommandPanel::Page::Research);
+        } else {
+            const int index = m_game->findTech(arg);
+            QString error;
+            if (index < 0)
+                warn(tr("Unknown technology '%1' - type 'research' for the list").arg(arg));
+            else if (!m_game->startResearch(Conquest::techInfos()[index].id, &error))
+                warn(tr("Cannot research: %1").arg(error));
+        }
+    } else if (name == "ally") {
+        QString answer;
+        if (!m_game->proposeAlliance(arg, &answer))
+            warn(tr("No alliance: %1").arg(answer));
+    } else if (name == "break") {
+        QString error;
+        if (!m_game->breakAlliance(arg, &error))
+            warn(tr("Cannot break: %1").arg(error));
+    } else if (name == "diplomacy") {
+        m_command->open(CommandPanel::Page::Diplomacy);
+        for (int f = 0; f < m_game->factions().size(); ++f) {
+            if (f == m_game->playerIndex())
+                continue;
+            const Conquest::Faction &other = m_game->factions()[f];
+            m_console->appendLine(tr("%1: %2 - %3 world(s), %4 fleet(s)")
+                                      .arg(other.id)
+                                      .arg(m_game->isAllied(f) ? tr("ally") : tr("at war"))
+                                      .arg(m_game->planetCount(f))
+                                      .arg(m_game->fleetCount(f)),
+                                  m_game->isAllied(f) ? CommandConsole::Tone::Success : CommandConsole::Tone::Info);
+        }
+    } else if (name == "turrets") {
+        m_battle->setTurretsActive(arg.toLower() != "off");
+    } else if (name == "railguns") {
+        m_battle->setRailgunsActive(arg.toLower() != "off");
+    } else if (name == "power") {
+        const QString a = arg.toLower();
+        if (a.startsWith("shield"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Shields);
+        else if (a.startsWith("weapon"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Weapons);
+        else if (a.startsWith("bal"))
+            m_battle->setPowerPriority(BattleView::PowerPriority::Balanced);
+        else
+            m_console->appendLine(m_battle->powerReport());
+    } else if (name == "launch") {
+        m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
     } else if (name == "engage") {
         QString error;
         if (!m_game->engage(arg, &error))
@@ -567,12 +664,44 @@ void ConquestScreen::showHelp()
             .arg(ConquestGame::kMothershipCost),
         tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
         tr("Battles between other factions last a while: watch them, or 'engage <faction>' to fight one side"),
+        tr("Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle"),
+        tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"),
+        tr("Research: research (tree), research <n> - weapons, defense and industry, 3 tiers each"),
+        tr("Diplomacy: diplomacy (relations), ally <faction> (against a common enemy), break <faction>"),
         tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
         tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
         tr("Win by taking every planet of the enemy factions. Menu: Esc or 'menu'."),
     };
     for (const QString &line : lines)
         m_console->appendLine(line);
+}
+
+void ConquestScreen::listTechs()
+{
+    const QStringList branches{tr("Weapons"), tr("Defense"), tr("Industry")};
+    const Conquest::Faction &me = m_game->player();
+    for (int i = 0; i < Conquest::techInfos().size(); ++i) {
+        const Conquest::TechInfo &t = Conquest::techInfos()[i];
+        QString state;
+        CommandConsole::Tone tone = CommandConsole::Tone::Info;
+        if (me.techs.contains(t.id)) {
+            state = tr("done");
+            tone = CommandConsole::Tone::Success;
+        } else if (me.research == t.id) {
+            state = tr("in progress %1%").arg(qRound(me.researchProgress * 100));
+            tone = CommandConsole::Tone::Warning;
+        } else {
+            state = tr("%1 naquadah, %2 s")
+                        .arg(m_game->researchCost(m_game->playerIndex(), t))
+                        .arg(m_game->researchTime(m_game->playerIndex(), t));
+        }
+        m_console->appendLine(QStringLiteral("%1  %2 %3  %4 - %5 [%6]")
+                                  .arg(i + 1)
+                                  .arg(branches.value(t.branch))
+                                  .arg(t.tier)
+                                  .arg(ConquestGame::techName(t.id), ConquestGame::techEffect(t.id), state),
+                              tone);
+    }
 }
 
 void ConquestScreen::listFleets()
@@ -663,7 +792,7 @@ void ConquestScreen::setupHud()
         RadarPicture picture;
         picture.shieldUp = m_battle->shieldActive() && m_battle->shieldStrength() > 0.0f;
         for (const BattleView::RadarBlip &b : m_battle->radarContacts())
-            picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health});
+            picture.contacts.append({QPointF(b.local.x(), b.local.z()), b.index, b.mothership, b.locked, b.health, b.ally});
         for (const BattleView::RadarShot &s : m_battle->radarShots())
             picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny, s.missile});
         return picture;
@@ -676,6 +805,70 @@ void ConquestScreen::setupHud()
                 data.weapons.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
         return data;
     });
+}
+
+// ================================================================
+//  Friendly fleets in the 3D battle, end of the game
+// ================================================================
+
+void ConquestScreen::joinFriendlyFleets()
+{
+    const int planet = m_game->battlePlanet();
+    for (const Conquest::Fleet &f : m_game->fleets()) {
+        if (f.at != planet || f.moving() || m_joined.contains(f.id))
+            continue;
+        if (f.owner != m_game->playerIndex() && !m_game->isAllied(f.owner))
+            continue;
+        // A big fleet sends part of its ships (the 3D view is limited);
+        // the survivors' share is applied to the whole fleet afterwards
+        const int big = std::min(f.motherships, 3);
+        const int small = std::min(f.fighters, 6);
+        if (!m_battle->spawnAllies(m_game->factions()[f.owner].id, big, small, f.id))
+            continue;
+        m_joined.insert(f.id, {big, small, f.motherships, f.fighters});
+        m_console->appendLine(f.owner == m_game->playerIndex()
+                                  ? tr("Your fleet %1 joins the battle").arg(f.id)
+                                  : tr("Allied %1 ships join the battle").arg(m_game->factions()[f.owner].id),
+                              CommandConsole::Tone::Success);
+    }
+}
+
+void ConquestScreen::reportAllySurvivors()
+{
+    const QList<BattleView::AllySurvivors> survivors = m_battle->allySurvivors();
+    for (auto it = m_joined.cbegin(); it != m_joined.cend(); ++it) {
+        int big = 0, small = 0;
+        for (const BattleView::AllySurvivors &s : survivors)
+            if (s.group == it.key()) {
+                big = s.motherships;
+                small = s.fighters;
+            }
+        const Joined &j = it.value();
+        const int motherships = j.spawnedMotherships > 0 ? qRound(double(j.motherships) * big / j.spawnedMotherships)
+                                                         : j.motherships;
+        const int fighters = j.spawnedFighters > 0 ? qRound(double(j.fighters) * small / j.spawnedFighters) : j.fighters;
+        m_game->setFleetStrength(it.key(), motherships, fighters);
+    }
+    m_joined.clear();
+    m_battle->clearAllies();
+}
+
+void ConquestScreen::showEnd(bool victory)
+{
+    setPaused(true);
+    m_pauseMenu->hide();
+    const int techs = int(m_game->player().techs.size());
+    const int minutes = int(m_playSeconds) / 60;
+    const QStringList summary{
+        tr("Worlds held: %1 of %2").arg(m_game->planetCount(m_game->playerIndex())).arg(m_game->planets().size()),
+        tr("Fleets: %1").arg(m_game->fleetCount(m_game->playerIndex())),
+        tr("Flagship battles: %1 won, %2 lost").arg(m_battlesWon).arg(m_battlesLost),
+        tr("Technologies: %1 of %2").arg(techs).arg(Conquest::techInfos().size()),
+        tr("Time of this session: %1 min %2 s").arg(minutes).arg(int(m_playSeconds) % 60, 2, 10, QChar('0')),
+    };
+    m_end->showResult(victory, m_game->player().id, summary);
+    if (m_sound && m_sound->music())
+        m_sound->music()->setMood(victory ? MusicPlayer::Mood::Title : MusicPlayer::Mood::Calm);
 }
 
 void ConquestScreen::openPauseMenu()
@@ -709,6 +902,7 @@ bool ConquestScreen::eventFilter(QObject *watched, QEvent *event)
     if (watched == m_battle && event->type() == QEvent::Resize) {
         m_menuButton->move(m_battle->width() - m_menuButton->width() - 10, 10);
         m_hudButton->move(m_menuButton->x() - m_hudButton->width() - 8, 10);
+        m_techButton->move(m_hudButton->x() - m_techButton->width() - 8, 10);
     }
     return QWidget::eventFilter(watched, event);
 }

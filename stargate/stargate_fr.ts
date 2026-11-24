@@ -152,6 +152,70 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Nouveaux contacts hostiles (%1) : %2</translation>
     </message>
     <message>
+        <source>Friendly %1 ships join the battle</source>
+        <translation>Des vaisseaux %1 amis rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>No hangar aboard</source>
+        <translation>Pas de hangar à bord</translation>
+    </message>
+    <message>
+        <source>Hangar empty - fighters are rebuilt out of battle</source>
+        <translation>Hangar vide - les chasseurs sont reconstruits hors combat</translation>
+    </message>
+    <message>
+        <source>%1 %2 launched</source>
+        <translation>%1 %2 lancé(s)</translation>
+    </message>
+    <message>
+        <source>Your %1 is shot down</source>
+        <translation>Votre %1 est abattu</translation>
+    </message>
+    <message>
+        <source>Friendly %1 destroyed</source>
+        <translation>%1 ami détruit</translation>
+    </message>
+    <message>
+        <source>Secondary towers: auto-fire on</source>
+        <translation>Tours secondaires : tir automatique activé</translation>
+    </message>
+    <message>
+        <source>Secondary towers: auto-fire off (+%1 power)</source>
+        <translation>Tours secondaires : tir automatique coupé (+%1 d&apos;énergie)</translation>
+    </message>
+    <message>
+        <source>Railguns: point defense on</source>
+        <translation>Railguns : défense rapprochée activée</translation>
+    </message>
+    <message>
+        <source>Railguns: point defense off (+%1 power)</source>
+        <translation>Railguns : défense rapprochée coupée (+%1 d&apos;énergie)</translation>
+    </message>
+    <message>
+        <source>shields</source>
+        <translation>boucliers</translation>
+    </message>
+    <message>
+        <source>weapons</source>
+        <translation>armes</translation>
+    </message>
+    <message>
+        <source>balanced</source>
+        <translation>équilibrée</translation>
+    </message>
+    <message>
+        <source>Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5) - towers %6, railguns %7</source>
+        <translation>Énergie %1 : libre %2 - priorité %3 (recharge du bouclier x%4, des armes x%5) - tours %6, railguns %7</translation>
+    </message>
+    <message>
+        <source>on</source>
+        <translation>actifs</translation>
+    </message>
+    <message>
+        <source>off</source>
+        <translation>coupés</translation>
+    </message>
+    <message>
         <source>%1 fires a salvo of %2 missiles</source>
         <translation>%1 tire une salve de %2 missiles</translation>
     </message>
@@ -314,6 +378,104 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
 </context>
 <context>
+    <name>CommandPanel</name>
+    <message>
+        <source>RESEARCH</source>
+        <translation>RECHERCHE</translation>
+    </message>
+    <message>
+        <source>DIPLOMACY</source>
+        <translation>DIPLOMATIE</translation>
+    </message>
+    <message>
+        <source>Close (Esc)</source>
+        <translation>Fermer (Échap)</translation>
+    </message>
+    <message>
+        <source>Naquadah %1  -  Trinium %2</source>
+        <translation>Naquadah %1  -  Trinium %2</translation>
+    </message>
+    <message>
+        <source>eliminated</source>
+        <translation>éliminés</translation>
+    </message>
+    <message>
+        <source>ALLY</source>
+        <translation>ALLIÉ</translation>
+    </message>
+    <message>
+        <source>AT WAR</source>
+        <translation>EN GUERRE</translation>
+    </message>
+    <message>
+        <source>%1 world(s) - %2 fleet(s) - %3 technolog(ies)</source>
+        <translation>%1 monde(s) - %2 flotte(s) - %3 technologie(s)</translation>
+    </message>
+    <message>
+        <source>No pact with the other factions</source>
+        <translation>Aucun pacte avec les autres factions</translation>
+    </message>
+    <message>
+        <source>Allied with: %1</source>
+        <translation>Alliée avec : %1</translation>
+    </message>
+    <message>
+        <source>No one to talk to</source>
+        <translation>Plus personne à qui parler</translation>
+    </message>
+    <message>
+        <source>Break the alliance</source>
+        <translation>Rompre l&apos;alliance</translation>
+    </message>
+    <message>
+        <source>They will listen again in %1 s</source>
+        <translation>Ils vous écouteront dans %1 s</translation>
+    </message>
+    <message>
+        <source>Propose an alliance</source>
+        <translation>Proposer une alliance</translation>
+    </message>
+    <message>
+        <source>Alliance with the %1 broken</source>
+        <translation>Alliance avec les %1 rompue</translation>
+    </message>
+    <message>
+        <source>Alliance sealed with the %1</source>
+        <translation>Alliance scellée avec les %1</translation>
+    </message>
+    <message>
+        <source>A faction accepts an alliance against a common enemy at least as strong as itself, if you do not hold 40% of the galaxy. Above 45%, allies break away.</source>
+        <translation>Une faction accepte une alliance contre un ennemi commun au moins aussi fort qu&apos;elle, si vous ne tenez pas 40 % de la galaxie. Au-delà de 45 %, les alliés vous quittent.</translation>
+    </message>
+</context>
+<context>
+    <name>ConquestEndScreen</name>
+    <message>
+        <source>Back to the title screen</source>
+        <translation>Retour à l&apos;écran titre</translation>
+    </message>
+    <message>
+        <source>Quit game</source>
+        <translation>Quitter le jeu</translation>
+    </message>
+    <message>
+        <source>VICTORY</source>
+        <translation>VICTOIRE</translation>
+    </message>
+    <message>
+        <source>DEFEAT</source>
+        <translation>DÉFAITE</translation>
+    </message>
+    <message>
+        <source>The galaxy belongs to the %1</source>
+        <translation>La galaxie appartient aux %1</translation>
+    </message>
+    <message>
+        <source>The %1 have no world left</source>
+        <translation>Les %1 n&apos;ont plus aucun monde</translation>
+    </message>
+</context>
+<context>
     <name>ConquestGame</name>
     <message>
         <source>Conquest begins: %1 planets, %2 enemy faction(s). Your flagship orbits %3.</source>
@@ -326,6 +488,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Shipyards build fleets that act on their own - yours too. Enemy fleets will attack.</source>
         <translation>Les chantiers navals construisent des flottes qui agissent seules - les vôtres aussi. Les flottes ennemies vont attaquer.</translation>
+    </message>
+    <message>
+        <source>Culling: captured worlds lose half their population (it feeds the hives: naquadah) and never grow back; shipyards x1.6; fleets regrow fighters at home.</source>
+        <translation>Prélèvement : les mondes conquis perdent la moitié de leur population (elle nourrit les ruches : naquadah) et ne repeuplent plus ; chantiers x1,6 ; les flottes régénèrent leurs chasseurs chez elles.</translation>
+    </message>
+    <message>
+        <source>Slavery: naquadah x1.6 and shipyards x1.25, but worlds without a fleet in orbit may rise in Jaffa revolts.</source>
+        <translation>Esclavage : naquadah x1,6 et chantiers x1,25, mais les mondes sans flotte en orbite peuvent connaître des révoltes jaffa.</translation>
     </message>
     <message>
         <source>Shipyard (fast repairs)</source>
@@ -388,6 +558,162 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 naquadah nécessaires (%2 disponibles)</translation>
     </message>
     <message>
+        <source>unknown technology</source>
+        <translation>technologie inconnue</translation>
+    </message>
+    <message>
+        <source>already researched</source>
+        <translation>déjà recherchée</translation>
+    </message>
+    <message>
+        <source>%1 is being researched</source>
+        <translation>%1 est en cours de recherche</translation>
+    </message>
+    <message>
+        <source>needs %1 first</source>
+        <translation>nécessite d&apos;abord %1</translation>
+    </message>
+    <message>
+        <source>Research started: %1 (%2 s)</source>
+        <translation>Recherche lancée : %1 (%2 s)</translation>
+    </message>
+    <message>
+        <source>Naquadah-enhanced weapons</source>
+        <translation>Armes au naquadah</translation>
+    </message>
+    <message>
+        <source>Improved plasma</source>
+        <translation>Plasma amélioré</translation>
+    </message>
+    <message>
+        <source>Asgard beams</source>
+        <translation>Rayons asgard</translation>
+    </message>
+    <message>
+        <source>Reinforced garrisons</source>
+        <translation>Garnisons renforcées</translation>
+    </message>
+    <message>
+        <source>Shield generators</source>
+        <translation>Générateurs de bouclier</translation>
+    </message>
+    <message>
+        <source>Planetary shields</source>
+        <translation>Boucliers planétaires</translation>
+    </message>
+    <message>
+        <source>Improved shipyards</source>
+        <translation>Chantiers améliorés</translation>
+    </message>
+    <message>
+        <source>Hyperdrive</source>
+        <translation>Hyperpropulsion</translation>
+    </message>
+    <message>
+        <source>Naquadah refining</source>
+        <translation>Raffinage du naquadah</translation>
+    </message>
+    <message>
+        <source>fleets +10%, flagship damage +15%</source>
+        <translation>flottes +10 %, dégâts du vaisseau amiral +15 %</translation>
+    </message>
+    <message>
+        <source>fleets +15%, flagship damage +25%</source>
+        <translation>flottes +15 %, dégâts du vaisseau amiral +25 %</translation>
+    </message>
+    <message>
+        <source>garrisons 4 instead of 3 per defense level</source>
+        <translation>garnisons : 4 au lieu de 3 par niveau de défense</translation>
+    </message>
+    <message>
+        <source>flagship shield regenerates 50% faster</source>
+        <translation>le bouclier du vaisseau amiral se recharge 50 % plus vite</translation>
+    </message>
+    <message>
+        <source>defenses rebuilt twice as fast, up to 4</source>
+        <translation>défenses reconstruites deux fois plus vite, jusqu&apos;à 4</translation>
+    </message>
+    <message>
+        <source>shipyards +25%</source>
+        <translation>chantiers navals +25 %</translation>
+    </message>
+    <message>
+        <source>fleets and flagship 30% faster</source>
+        <translation>flottes et vaisseau amiral 30 % plus rapides</translation>
+    </message>
+    <message>
+        <source>naquadah +25%</source>
+        <translation>naquadah +25 %</translation>
+    </message>
+    <message>
+        <source>The %1 and the %2 ally against the %3</source>
+        <translation>Les %1 et les %2 s&apos;allient contre les %3</translation>
+    </message>
+    <message>
+        <source>The %1 betray the %2!</source>
+        <translation>Les %1 trahissent les %2 !</translation>
+    </message>
+    <message>
+        <source>The %1 and the %2 end their alliance</source>
+        <translation>Les %1 et les %2 mettent fin à leur alliance</translation>
+    </message>
+    <message>
+        <source>unknown faction</source>
+        <translation>faction inconnue</translation>
+    </message>
+    <message>
+        <source>the %1 are already your allies</source>
+        <translation>les %1 sont déjà vos alliés</translation>
+    </message>
+    <message>
+        <source>the %1 will not listen again before %2 s</source>
+        <translation>les %1 ne vous écouteront pas avant %2 s</translation>
+    </message>
+    <message>
+        <source>the %1 are no more</source>
+        <translation>les %1 n&apos;existent plus</translation>
+    </message>
+    <message>
+        <source>the %1 refuse: your power frightens them</source>
+        <translation>les %1 refusent : votre puissance les effraie</translation>
+    </message>
+    <message>
+        <source>the %1 refuse: they see no common enemy</source>
+        <translation>les %1 refusent : ils ne voient pas d&apos;ennemi commun</translation>
+    </message>
+    <message>
+        <source>Alliance sealed with the %1: they will not attack you</source>
+        <translation>Alliance scellée avec les %1 : ils ne vous attaqueront pas</translation>
+    </message>
+    <message>
+        <source>no alliance with that faction</source>
+        <translation>aucune alliance avec cette faction</translation>
+    </message>
+    <message>
+        <source>Alliance with the %1 broken</source>
+        <translation>Alliance avec les %1 rompue</translation>
+    </message>
+    <message>
+        <source>Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral neighbours may join, the flagship rallies worlds twice as fast. Shipyards x1.1.</source>
+        <translation>Technologie des Anciens : +8 % de puissance des flottes par site des Anciens (max +40 %). Diplomatie : les voisins neutres peuvent vous rejoindre, le vaisseau amiral rallie les mondes deux fois plus vite. Chantiers x1,1.</translation>
+    </message>
+    <message>
+        <source>Smuggling: fighters built x1.25 faster. Raids: every world taken steals naquadah from its owner.</source>
+        <translation>Contrebande : chasseurs construits x1,25 plus vite. Raids : chaque monde pris vole du naquadah à son propriétaire.</translation>
+    </message>
+    <message>
+        <source>Advanced technology: research twice as fast and 25% cheaper, fleets +15%; but shipyards x0.7 - the Asgard are few.</source>
+        <translation>Technologie avancée : recherche deux fois plus rapide et 25 % moins chère, flottes +15 % ; mais chantiers x0,7 - les Asgard sont peu nombreux.</translation>
+    </message>
+    <message>
+        <source>Knowledge of the Ancients: Ancient sites give 200 naquadah, drone defenses (stronger garrisons); but shipyards x0.8.</source>
+        <translation>Savoir des Anciens : les sites des Anciens rapportent 200 naquadah, défenses à drones (garnisons renforcées) ; mais chantiers x0,8.</translation>
+    </message>
+    <message>
+        <source>Crusade: conquered worlds keep most of their people, who grow faster; the Priors convert neutral neighbours; fleets +10%; but the crusade builds slowly (shipyards x0.85).</source>
+        <translation>Croisade : les mondes conquis gardent l&apos;essentiel de leur population, qui croît plus vite ; les Prieurs convertissent les voisins neutres ; flottes +10 % ; mais la croisade construit lentement (chantiers x0,85).</translation>
+    </message>
+    <message>
         <source>%1 fortified: defense %2/5</source>
         <translation>%1 fortifiée : défense %2/5</translation>
     </message>
@@ -436,6 +762,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>La flotte %1 part vers %2</translation>
     </message>
     <message>
+        <source>Research complete: %1 - %2</source>
+        <translation>Recherche terminée : %1 - %2</translation>
+    </message>
+    <message>
         <source>%1 joins your faction</source>
         <translation>%1 rejoint votre faction</translation>
     </message>
@@ -446,6 +776,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>%1 is defended by the %2 fleet: battle!</source>
         <translation>%1 est défendue par la flotte %2 : combat !</translation>
+    </message>
+    <message>
+        <source>The Wraith cull the population of %1</source>
+        <translation>Les Wraith prélèvent la population de %1</translation>
+    </message>
+    <message>
+        <source>Ancient site on %1: +%2 naquadah from its archives</source>
+        <translation>Site des Anciens sur %1 : +%2 naquadah tirés de ses archives</translation>
+    </message>
+    <message>
+        <source>Allied victory: only you and your allies remain</source>
+        <translation>Victoire de l&apos;alliance : il ne reste que vous et vos alliés</translation>
+    </message>
+    <message>
+        <source>Jaffa revolt on %1: the world breaks free from the Goa&apos;uld</source>
+        <translation>Révolte jaffa sur %1 : le monde se libère des Goa&apos;uld</translation>
+    </message>
+    <message>
+        <source>The Priors convert %1 to Origin</source>
+        <translation>Les Prieurs convertissent %1 à l&apos;Origine</translation>
+    </message>
+    <message>
+        <source>%1 joins the Tau&apos;ri through diplomacy</source>
+        <translation>%1 rejoint les Tau&apos;ri par la diplomatie</translation>
+    </message>
+    <message>
+        <source>The %1 fear your power and break the alliance!</source>
+        <translation>Les %1 craignent votre puissance et rompent l&apos;alliance !</translation>
     </message>
     <message>
         <source>New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))</source>
@@ -492,6 +850,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%2 tombe aux mains des %1 (avant : %3)</translation>
     </message>
     <message>
+        <source>Lucian raid on %1: %2 naquadah stolen</source>
+        <translation>Raid lucien sur %1 : %2 naquadah volés</translation>
+    </message>
+    <message>
         <source>%1 holds against a %2 attack</source>
         <translation>%1 résiste à une attaque %2</translation>
     </message>
@@ -522,10 +884,6 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Hull breached: the flagship retreats from %1 to %2</source>
         <translation>Coque percée : le vaisseau amiral se replie de %1 vers %2</translation>
-    </message>
-    <message>
-        <source>Ancient site on %1: +100 naquadah from its archives</source>
-        <translation>Site des Anciens sur %1 : +100 naquadah tirés de ses archives</translation>
     </message>
     <message>
         <source>The %1 have lost their last world</source>
@@ -571,12 +929,24 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Afficher ou masquer le radar et les panneaux du vaisseau et des armes (&apos;hud on|off&apos;)</translation>
     </message>
     <message>
+        <source>TECH</source>
+        <translation>TECH</translation>
+    </message>
+    <message>
+        <source>Research tree and diplomacy (&apos;research&apos;, &apos;diplomacy&apos;)</source>
+        <translation>Arbre de recherche et diplomatie (&apos;research&apos;, &apos;diplomacy&apos;)</translation>
+    </message>
+    <message>
         <source>Conquest restored: %1 - %2 planet(s) of %3</source>
         <translation>Conquête restaurée : %1 - %2 planète(s) sur %3</translation>
     </message>
     <message>
         <source>No valid conquest save - a new galaxy is generated</source>
         <translation>Aucune sauvegarde de conquête valide - une nouvelle galaxie est générée</translation>
+    </message>
+    <message>
+        <source>Faction trait: %1</source>
+        <translation>Trait de faction : %1</translation>
     </message>
     <message>
         <source>Type &apos;help&apos; for the conquest commands - double click a planet to travel there</source>
@@ -597,6 +967,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>You (%1)</source>
         <translation>Vous (%1)</translation>
+    </message>
+    <message>
+        <source>%1 (ally)</source>
+        <translation>%1 (allié)</translation>
     </message>
     <message>
         <source> — capital</source>
@@ -651,6 +1025,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>&lt;b&gt;%1&lt;/b&gt; - naquadah %2 - trinium %3 - planètes %4/%5 - coque %6%</translation>
     </message>
     <message>
+        <source>Research: %1 %2%</source>
+        <translation>Recherche : %1 %2%</translation>
+    </message>
+    <message>
         <source>BATTLE FOR %1</source>
         <translation>BATAILLE POUR %1</translation>
     </message>
@@ -691,6 +1069,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>%1 : %2 planète(s) sur %3, naquadah %4, trinium %5, coque du vaisseau amiral %6% à %7</translation>
     </message>
     <message>
+        <source>Ancient technology: fleet power +%1%</source>
+        <translation>Technologie des Anciens : puissance des flottes +%1%</translation>
+    </message>
+    <message>
         <source>Cannot fortify: %1</source>
         <translation>Fortification impossible : %1</translation>
     </message>
@@ -701,6 +1083,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Cannot repair: %1</source>
         <translation>Réparation impossible : %1</translation>
+    </message>
+    <message>
+        <source>Unknown technology &apos;%1&apos; - type &apos;research&apos; for the list</source>
+        <translation>Technologie inconnue &apos;%1&apos; - tapez &apos;research&apos; pour la liste</translation>
+    </message>
+    <message>
+        <source>Cannot research: %1</source>
+        <translation>Recherche impossible : %1</translation>
+    </message>
+    <message>
+        <source>No alliance: %1</source>
+        <translation>Pas d&apos;alliance : %1</translation>
+    </message>
+    <message>
+        <source>Cannot break: %1</source>
+        <translation>Rupture impossible : %1</translation>
+    </message>
+    <message>
+        <source>%1: %2 - %3 world(s), %4 fleet(s)</source>
+        <translation>%1 : %2 - %3 monde(s), %4 flotte(s)</translation>
+    </message>
+    <message>
+        <source>ally</source>
+        <translation>allié</translation>
+    </message>
+    <message>
+        <source>at war</source>
+        <translation>en guerre</translation>
     </message>
     <message>
         <source>Cannot engage: %1</source>
@@ -755,6 +1165,22 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
     </message>
     <message>
+        <source>Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle</source>
+        <translation>Hangar : launch [n] - vos chasseurs combattent à vos côtés ; vos flottes et vos alliés en orbite rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
+        <translation>Énergie : turrets on|off, railguns on|off, power shields|weapons|balanced (power : bilan)</translation>
+    </message>
+    <message>
+        <source>Research: research (tree), research &lt;n&gt; - weapons, defense and industry, 3 tiers each</source>
+        <translation>Recherche : research (arbre), research &lt;n&gt; - armes, défense et industrie, 3 niveaux chacune</translation>
+    </message>
+    <message>
+        <source>Diplomacy: diplomacy (relations), ally &lt;faction&gt; (against a common enemy), break &lt;faction&gt;</source>
+        <translation>Diplomatie : diplomacy (relations), ally &lt;faction&gt; (contre un ennemi commun), break &lt;faction&gt;</translation>
+    </message>
+    <message>
         <source>Display: hud on|off (radar, ship and weapon panels), or the HUD button</source>
         <translation>Affichage : hud on|off (radar, panneaux du vaisseau et des armes), ou le bouton HUD</translation>
     </message>
@@ -765,6 +1191,30 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Win by taking every planet of the enemy factions. Menu: Esc or &apos;menu&apos;.</source>
         <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
+    </message>
+    <message>
+        <source>Weapons</source>
+        <translation>Armes</translation>
+    </message>
+    <message>
+        <source>Defense</source>
+        <translation>Défense</translation>
+    </message>
+    <message>
+        <source>Industry</source>
+        <translation>Industrie</translation>
+    </message>
+    <message>
+        <source>done</source>
+        <translation>terminée</translation>
+    </message>
+    <message>
+        <source>in progress %1%</source>
+        <translation>en cours %1%</translation>
+    </message>
+    <message>
+        <source>%1 naquadah, %2 s</source>
+        <translation>%1 naquadah, %2 s</translation>
     </message>
     <message>
         <source>No fleet in the galaxy</source>
@@ -793,6 +1243,34 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>yours</source>
         <translation>à vous</translation>
+    </message>
+    <message>
+        <source>Your fleet %1 joins the battle</source>
+        <translation>Votre flotte %1 rejoint la bataille</translation>
+    </message>
+    <message>
+        <source>Allied %1 ships join the battle</source>
+        <translation>Des vaisseaux %1 alliés rejoignent la bataille</translation>
+    </message>
+    <message>
+        <source>Worlds held: %1 of %2</source>
+        <translation>Mondes contrôlés : %1 sur %2</translation>
+    </message>
+    <message>
+        <source>Fleets: %1</source>
+        <translation>Flottes : %1</translation>
+    </message>
+    <message>
+        <source>Flagship battles: %1 won, %2 lost</source>
+        <translation>Batailles du vaisseau amiral : %1 gagnées, %2 perdues</translation>
+    </message>
+    <message>
+        <source>Technologies: %1 of %2</source>
+        <translation>Technologies : %1 sur %2</translation>
+    </message>
+    <message>
+        <source>Time of this session: %1 min %2 s</source>
+        <translation>Durée de cette session : %1 min %2 s</translation>
     </message>
 </context>
 <context>
@@ -1042,6 +1520,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Ruche alimentée par un E2PZ : elle grandit, se régénère et lance des essaims infinis de Darts.</translation>
     </message>
     <message>
+        <source>Line ship of the Asgard fleet: few in number, but shielded and armed far beyond the younger races.</source>
+        <translation>Vaisseau de ligne de la flotte asgard : peu nombreux, mais protégés et armés bien au-delà des jeunes races.</translation>
+    </message>
+    <message>
+        <source>Small Asgard escort ship with an ion cannon.</source>
+        <translation>Petit vaisseau d&apos;escorte asgard armé d&apos;un canon ionique.</translation>
+    </message>
+    <message>
+        <source>Ancient warship of the Lantean fleet, launching drones and firing energy batteries.</source>
+        <translation>Vaisseau de guerre des Anciens de la flotte lantienne, lanceur de drones et de batteries d&apos;énergie.</translation>
+    </message>
+    <message>
+        <source>Ori crusade mothership, powered by the Ori themselves. Its main beam crosses any shield.</source>
+        <translation>Vaisseau-mère de la croisade ori, alimenté par les Ori eux-mêmes. Son rayon principal traverse tous les boucliers.</translation>
+    </message>
+    <message>
+        <source>Small Ori attack craft escorting the warships of the crusade.</source>
+        <translation>Petit appareil d&apos;attaque ori escortant les vaisseaux de guerre de la croisade.</translation>
+    </message>
+    <message>
         <source>Main tower</source>
         <translation>Tour principale</translation>
     </message>
@@ -1172,6 +1670,26 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Endless swarm</source>
         <translation>Essaim sans fin</translation>
+    </message>
+    <message>
+        <source>Ion bolts</source>
+        <translation>Rayons ioniques</translation>
+    </message>
+    <message>
+        <source>Ion bolt</source>
+        <translation>Rayon ionique</translation>
+    </message>
+    <message>
+        <source>Ori main beam</source>
+        <translation>Rayon principal ori</translation>
+    </message>
+    <message>
+        <source>Plasma batteries</source>
+        <translation>Batteries à plasma</translation>
+    </message>
+    <message>
+        <source>Plasma bolt</source>
+        <translation>Rayon de plasma</translation>
     </message>
     <message>
         <source>Heavy shot from the main tower on the locked target (command &apos;maintower&apos;).</source>
@@ -1312,6 +1830,22 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Releases five Darts.</source>
         <translation>Libère cinq Darts.</translation>
+    </message>
+    <message>
+        <source>Pair of ion bolts.</source>
+        <translation>Paire de rayons ioniques.</translation>
+    </message>
+    <message>
+        <source>Light ion bolt.</source>
+        <translation>Rayon ionique léger.</translation>
+    </message>
+    <message>
+        <source>Three homing Ancient drones.</source>
+        <translation>Trois drones des Anciens à tête chercheuse.</translation>
+    </message>
+    <message>
+        <source>The main beam of the crusade: half of its energy goes through shields.</source>
+        <translation>Le rayon principal de la croisade : la moitié de son énergie traverse les boucliers.</translation>
     </message>
 </context>
 <context>
@@ -1600,6 +2134,14 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>Menu: menu or Esc - pause, save, settings, quit</source>
         <translation>Menu : menu ou Échap - pause, sauvegarde, réglages, quitter</translation>
+    </message>
+    <message>
+        <source>Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle</source>
+        <translation>Hangar : launch [n] - les Puddle Jumpers combattent à vos côtés et rentrent après la bataille</translation>
+    </message>
+    <message>
+        <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
+        <translation>Énergie : turrets on|off, railguns on|off, power shields|weapons|balanced (power : bilan)</translation>
     </message>
     <message>
         <source>Repairs use resources (showressource); &lt;n&gt; = target number shown as T1, T2…</source>
@@ -2359,6 +2901,49 @@ T%1  %2  coque %3%  distance %4 km</translation>
     </message>
 </context>
 <context>
+    <name>TechTreeWidget</name>
+    <message>
+        <source>Research started: %1</source>
+        <translation>Recherche lancée : %1</translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <translation>%1 : %2</translation>
+    </message>
+    <message>
+        <source>WEAPONS</source>
+        <translation>ARMES</translation>
+    </message>
+    <message>
+        <source>DEFENSE</source>
+        <translation>DÉFENSE</translation>
+    </message>
+    <message>
+        <source>INDUSTRY</source>
+        <translation>INDUSTRIE</translation>
+    </message>
+    <message>
+        <source>needs %1</source>
+        <translation>nécessite %1</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>RESEARCHED</source>
+        <translation>RECHERCHÉE</translation>
+    </message>
+    <message>
+        <source>%1 naquadah - %2 s</source>
+        <translation>%1 naquadah - %2 s</translation>
+    </message>
+    <message>
+        <source>%1 - click to research</source>
+        <translation>%1 - cliquez pour rechercher</translation>
+    </message>
+</context>
+<context>
     <name>TitleScreen</name>
     <message>
         <source>STARGATE</source>
@@ -2409,6 +2994,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Grande - 40 planètes, 3 factions ennemies (1 h 30 et plus)</translation>
     </message>
     <message>
+        <source>Huge - 56 planets, every other faction (6 enemies)</source>
+        <translation>Immense - 56 planètes, toutes les autres factions (6 ennemies)</translation>
+    </message>
+    <message>
         <source>Start a new conquest</source>
         <translation>Nouvelle conquête</translation>
     </message>
@@ -2433,12 +3022,20 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Vaisseaux-ruches, croiseurs et essaims de Darts.</translation>
     </message>
     <message>
-        <source>Smugglers and mercenaries: stolen Ha&apos;taks and Gliders.</source>
-        <translation>Contrebandiers et mercenaires : Ha&apos;tak et planeurs volés.</translation>
+        <source>The oldest allies of Earth: few ships, but far ahead in technology.</source>
+        <translation>Les plus anciens alliés de la Terre : peu de vaisseaux, mais très en avance technologiquement.</translation>
     </message>
     <message>
-        <source>Faction traits (culling, slavery, technology) come in a later step.</source>
-        <translation>Les traits de faction (prélèvement, esclavage, technologie) arriveront dans une prochaine étape.</translation>
+        <source>The builders of the Stargates: Lantean warships, drones and Puddle Jumpers.</source>
+        <translation>Les bâtisseurs des portes des étoiles : vaisseaux de guerre lantiens, drones et Puddle Jumpers.</translation>
+    </message>
+    <message>
+        <source>The crusade of Origin: Ori warships, fighters and Priors.</source>
+        <translation>La croisade de l&apos;Origine : vaisseaux de guerre ori, chasseurs et Prieurs.</translation>
+    </message>
+    <message>
+        <source>Smugglers and mercenaries: stolen Ha&apos;taks and Gliders.</source>
+        <translation>Contrebandiers et mercenaires : Ha&apos;tak et planeurs volés.</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2488,6 +3085,10 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>tir auto %1% - rafale : secondarytower</translation>
     </message>
     <message>
+        <source>auto-fire OFF (&apos;turrets on&apos;) - burst: secondarytower</source>
+        <translation>tir auto COUPÉ (&apos;turrets on&apos;) - rafale : secondarytower</translation>
+    </message>
+    <message>
         <source>AUTO</source>
         <translation>AUTO</translation>
     </message>
@@ -2506,6 +3107,30 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <source>point defense %1 km - %2 missiles shot down - vs fighters x2.5</source>
         <translation>défense rapprochée %1 km - %2 missiles abattus - contre chasseurs x2,5</translation>
+    </message>
+    <message>
+        <source>POWER free %1 - priority %2 (&apos;power shields|weapons|balanced&apos;)</source>
+        <translation>ÉNERGIE libre %1 - priorité %2 (&apos;power shields|weapons|balanced&apos;)</translation>
+    </message>
+    <message>
+        <source>shields</source>
+        <translation>boucliers</translation>
+    </message>
+    <message>
+        <source>weapons</source>
+        <translation>armes</translation>
+    </message>
+    <message>
+        <source>balanced</source>
+        <translation>équilibrée</translation>
+    </message>
+    <message>
+        <source>HANGAR</source>
+        <translation>HANGAR</translation>
+    </message>
+    <message>
+        <source>launch [n] - %1 fighter(s) out, %2 friendly ship(s) in battle</source>
+        <translation>launch [n] - %1 chasseur(s) dehors, %2 vaisseau(x) ami(s) au combat</translation>
     </message>
     <message>
         <source>HIT </source>

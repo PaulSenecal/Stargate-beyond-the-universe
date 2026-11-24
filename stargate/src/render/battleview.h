@@ -1,6 +1,8 @@
 #ifndef BATTLEVIEW_H
 #define BATTLEVIEW_H
 
+#include <map>
+#include <memory>
 #include <QElapsedTimer>
 #include <QMatrix4x4>
 #include <QOpenGLBuffer>
@@ -59,6 +61,14 @@ struct WeaponReadiness {
     float targetHealth = 0;     // percent
     int hostiles = 0;
     int kills = 0;
+    // Hangar fighters and friendly ships
+    int hangar = 0, hangarMax = 0;
+    int fightersOut = 0;
+    int allies = 0;
+    // Energy
+    bool turretsOn = true, railgunsOn = true;
+    int freePower = 0;
+    QString priority;           // balanced | shields | weapons
     // Railguns (point defense)
     float railgunReach = 0;
     int interceptions = 0;
@@ -129,7 +139,7 @@ public:
     WeaponReadiness weaponReadiness() const;
 
     // Radar feed, in ship-local coordinates (x forward, z starboard)
-    struct RadarBlip { QVector3D local; int index; bool mothership; bool locked; float health; };
+    struct RadarBlip { QVector3D local; int index; bool mothership; bool locked; float health; bool ally; };
     struct RadarShot { QVector3D local; bool fromDestiny; bool missile; };
     QList<RadarBlip> radarContacts() const;
     QList<RadarShot> radarShots() const;
@@ -144,9 +154,44 @@ public:
     // Conquest: no automatic wave; fleets come from spawnFleet() and
     // sectorCleared() tells when one is destroyed
     void setAutoWaves(bool on) { m_autoWaves = on; }
+    // Conquest technologies: damage of the Destiny's shots, shield recharge
+    void setDamageBonus(float factor) { m_damageBonus = factor; }
+    void setShieldRegenBonus(float factor) { m_shieldRegenBonus = factor; }
+
+    // --- Energy: the power core gives 100; every active system draws its
+    // share, the rest boosts the shields or the weapon recharge
+    enum class PowerPriority { Balanced, Shields, Weapons };
+    void setTurretsActive(bool on);             // secondary towers auto-fire
+    void setRailgunsActive(bool on);            // point defense
+    void setPowerPriority(PowerPriority priority);
+    bool turretsActive() const { return m_turretsOn; }
+    bool railgunsActive() const { return m_railgunsOn; }
+    int freePower() const;
+    float shieldPowerBoost() const;
+    float weaponPowerBoost() const;
+    QString powerReport() const;
     // Fleet of any faction of the library (bosses excluded), even ships
     // that never come in survival waves (Tau'ri…)
     bool spawnFleet(const QString &faction, int motherships, int fighters);
+
+    // --- Friendly ships: allied or own fleets and the Destiny's hangar
+    // fighters. They fly and fight at the Destiny's side; `group` tags
+    // them (a conquest fleet id) to report the survivors, -1 = hangar.
+    bool spawnAllies(const QString &faction, int motherships, int fighters, int group);
+    void setHangar(const QString &fighterClass, int capacity);
+    int launchFighters(int count = -1);         // how many took off
+    int hangarFighters() const { return m_hangar; }
+    int hangarCapacity() const { return m_hangarCapacity; }
+    struct AllySurvivors { int group; int motherships; int fighters; };
+    QList<AllySurvivors> allySurvivors() const;
+    void clearAllies();                         // fleets leave, hangar fighters land
+    int allyCount() const;
+    // Flash of the Destiny entering or leaving hyperspace
+    void hyperspaceFlash();
+    // Look of the player's ship: "" = the Destiny (campaign), else the
+    // conquest faction: Tau'ri (BC-304), Goa'uld / Lucian Alliance (Ha'tak),
+    // Wraith (hive ship). Same size, shield and hit points as the Destiny.
+    void setFlagshipStyle(const QString &faction) { m_flagshipStyle = faction; update(); }
     // Lines drawn in the bottom-right corner of the view
     void setNavigationLines(const QStringList &lines);
     void setPlanetLook(const PlanetLook &look);
@@ -198,6 +243,11 @@ private:
         QVector3D diveAim;          // ship-local impact point
         QVector3D pos, facing{1, 0, 0};
         bool alive = true;
+        // Friendly ships only
+        int group = -1;             // conquest fleet id, -1 = hangar fighter
+        int targetId = -1;          // enemy it attacks
+        QVector3D vel;
+        float idle = 0;             // seconds without enemy (hangar fighters land)
     };
 
     struct Projectile {
@@ -208,6 +258,8 @@ private:
         bool dead = false;
         bool fromDestiny = true;
         int targetId = -1;          // -1 = the Destiny
+        int targetAlly = -1;        // enemy shot at a friendly ship
+        bool fromAlly = false;
         QVector3D pos, vel;
         QVector3D aimLocal;         // aim point on the Destiny hull (local space)
         QVector3D color;
@@ -235,7 +287,10 @@ private:
     void fireRailguns(float dt);
     void performAttack(Enemy &e, const ShipAttack &attack);
     void ram(Enemy &e);
-    Enemy &spawnEnemy(int classIndex);
+    // fromHyperspace: appears far away in a flash, then flies to its orbit
+    Enemy &spawnEnemy(int classIndex, bool fromHyperspace = false);
+    void hyperspaceWindow(const QVector3D &pos, float size);
+    void preferLineShips(QList<int> &motherships) const;
     int classIndexOf(const QString &name) const;
     const ShipClass &classOf(const Enemy &e) const { return m_classes[e.classIndex]; }
     QStringList hostileFactions() const;
@@ -253,6 +308,19 @@ private:
     std::vector<int> aliveIds() const;
     int indexOfId(int id) const;
     Enemy *findEnemy(int id);
+    Enemy *findAlly(int id);
+    Enemy *nearestEnemy(const QVector3D &from, bool fighterFirst);
+    Enemy *nearestAlly(const QVector3D &from);
+    Enemy &spawnAlly(int classIndex, const QVector3D &from, int group);
+    void updateAlly(Enemy &a, float dt);
+    void allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &target);
+    void hitAlly(Enemy &a, const Projectile &p);
+    void drawAllies();
+    // Ship models of the mod (local assets), loaded once on first use
+    Mesh *modMesh(const QString &key);
+    static QString meshKeyOf(const ShipClass &shipClass);
+    QString flagshipMeshKey() const;
+    bool drawModShip(const QString &key, const QMatrix4x4 &model, float length, const QVector3D &color, float flash);
     const Enemy *findEnemy(int id) const;
     const Enemy *pickTarget();
     Subsystem *subsystem(const QString &key);
@@ -298,6 +366,13 @@ private:
     float m_time = 0;
     QMatrix4x4 m_destinyModel, m_destinyInverse;
     std::vector<Enemy> m_enemies;
+    std::vector<Enemy> m_allies;
+    std::map<QString, std::unique_ptr<Mesh>> m_modMeshes;     // nullptr: no model for that key
+    std::vector<std::pair<int, QVector3D>> m_allyLaunches;
+    int m_nextAllyId = 100000;
+    QString m_hangarClass;
+    int m_hangar = 0, m_hangarCapacity = 0;
+    float m_hangarRefill = 0;
     std::vector<Projectile> m_projectiles;
     std::vector<Effect> m_effects;
     std::vector<QVector3D> m_fires;           // burning hull spots (local space)
@@ -309,6 +384,12 @@ private:
     int m_kills = 0;
     float m_waveTimer = -1;
     bool m_autoWaves = true;
+    float m_damageBonus = 1.0f;
+    float m_shieldRegenBonus = 1.0f;
+    QString m_flagshipStyle;
+    bool m_turretsOn = true;
+    bool m_railgunsOn = true;
+    PowerPriority m_priority = PowerPriority::Balanced;
     QStringList m_navigationLines;
     PlanetLook m_planetLook;
     QStringList m_objectiveLines;

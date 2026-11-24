@@ -431,7 +431,7 @@ private slots:
         QVERIFY(ShipLibraryRepository::migrate());          // idempotent
 
         const QList<ShipClass> ships = ShipLibraryRepository::all();
-        QCOMPARE(ships.size(), 20);
+        QCOMPARE(ships.size(), 25);
         QStringList hostileFactions;
         for (const ShipClass &c : ships) {
             QVERIFY2(!c.attacks.isEmpty(), qPrintable(c.name));
@@ -514,6 +514,7 @@ private slots:
         QTest::newRow("small") << int(Conquest::Size::Small) << 12 << 2;
         QTest::newRow("medium") << int(Conquest::Size::Medium) << 24 << 3;
         QTest::newRow("large") << int(Conquest::Size::Large) << 40 << 4;
+        QTest::newRow("huge") << int(Conquest::Size::Huge) << 56 << 7;
     }
 
     void generation()
@@ -714,6 +715,244 @@ private slots:
         run(game, 0.5);
         QVERIFY(!game.skirmishAt(1));
         QCOMPARE(game.fleetCount(1), 0);
+    }
+
+    // The small galaxy with another enemy faction
+    static QJsonObject withEnemy(const QString &faction, const QList<std::array<int, 4>> &fleets = {})
+    {
+        QJsonObject json = withFleets(fleets);
+        QJsonArray factions = json["factions"].toArray();
+        QJsonObject enemy = factions[1].toObject();
+        enemy["id"] = faction;
+        factions[1] = enemy;
+        json["factions"] = factions;
+        return json;
+    }
+
+    static bool said(const QSignalSpy &spy, const QString &text)
+    {
+        for (const QList<QVariant> &args : spy)
+            if (args.value(0).toString().contains(text))
+                return true;
+        return false;
+    }
+
+    void wraithCulling()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withEnemy("Wraith", {{1, 3, 6, 1}})));
+        game.setSeed(1);
+        run(game, 15);
+        QCOMPARE(game.planets()[1].owner, 1);
+        QVERIFY(game.planets()[1].population < 2.0);    // 5 M, -25% battle, then halved
+    }
+
+    void goauldSlavery()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withEnemy("Goa'uld")));
+        // Same population (5 M): Chulak (Goa'uld) yields 1.6x Earth (Tau'ri)
+        QCOMPARE(qRound(game.naquadahRate(game.planets()[2]) * 1000),
+                 qRound(game.naquadahRate(game.planets()[0]) * 1600));
+
+        // A Goa'uld world without a fleet eventually rises
+        QJsonObject json = withEnemy("Goa'uld");
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["owner"] = 1;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        ConquestGame revolt;
+        QVERIFY(revolt.fromJson(json));
+        revolt.setSeed(8);
+        QSignalSpy messages(&revolt, &ConquestGame::message);
+        run(revolt, 1500);
+        QVERIFY(said(messages, "Jaffa revolt"));
+    }
+
+    void tauriTechnologyAndDiplomacy()
+    {
+        QJsonObject json = smallGalaxy();
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject earth = planets[0].toObject();
+        earth["bonus"] = int(Conquest::Bonus::AncientSite);
+        planets[0] = earth;
+        json["planets"] = planets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+        QCOMPARE(game.powerMultiplier(0), 1.08);
+        QCOMPARE(game.powerMultiplier(1), 1.0);
+
+        // The neutral neighbour of the Tau'ri joins them peacefully (no
+        // shipyard anywhere: only diplomacy can change its owner)
+        for (int i : {0, 2}) {
+            QJsonObject planet = planets[i].toObject();
+            planet["capital"] = false;
+            planets[i] = planet;
+        }
+        json["planets"] = planets;
+        // A Goa'uld fleet holding Chulak (no revolt, no AI move)
+        json["version"] = 2;
+        json["fleets"] = QJsonArray{QJsonObject{{"id", 1}, {"owner", 1}, {"motherships", 0}, {"fighters", 1},
+                                                {"at", 2}, {"ordered", true}}};
+        ConquestGame peace;
+        QVERIFY(peace.fromJson(json));
+        peace.setSeed(6);
+        QSignalSpy messages(&peace, &ConquestGame::message);
+        run(peace, 1800);
+        QVERIFY(said(messages, "through diplomacy"));
+        QCOMPARE(peace.planets()[1].owner, 0);
+    }
+
+    void lucianRaid()
+    {
+        ConquestGame game;
+        // A big Lucian fleet attacks Earth while the flagship is away
+        QJsonObject json = withEnemy("Lucian Alliance", {{1, 4, 10, 0}});
+        json["at"] = 1;
+        QVERIFY(game.fromJson(json));
+        game.setSeed(3);
+        QSignalSpy messages(&game, &ConquestGame::message);
+        run(game, 60);
+        QCOMPARE(game.planets()[0].owner, 1);
+        QVERIFY(said(messages, "Lucian raid"));
+    }
+
+    void research()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(smallGalaxy()));      // 100 naquadah
+        QString error;
+        QVERIFY(!game.startResearch("weapons2", &error));   // needs weapons1
+        QVERIFY(game.startResearch("weapons1", &error));
+        QVERIFY(!game.startResearch("defense1", &error));   // one at a time
+        QCOMPARE(qRound(game.player().naquadah), 0);
+        run(game, 61);
+        QVERIFY(game.hasTech(0, "weapons1"));
+        QCOMPARE(game.powerMultiplier(0), 1.1);
+        QCOMPARE(game.flagshipDamageBonus(), 1.15);
+        QCOMPARE(game.findTech("2"), 1);
+        QCOMPARE(game.findTech("weapons3"), 2);
+
+        // Saved and loaded with the game
+        ConquestGame copy;
+        QVERIFY(copy.fromJson(game.toJson()));
+        QVERIFY(copy.hasTech(0, "weapons1"));
+    }
+
+    void alliances()
+    {
+        // Three factions: the player (Tau'ri), Goa'uld (1 world) and Wraith (2 worlds)
+        QJsonObject json = withFleets({});
+        QJsonArray factions = json["factions"].toArray();
+        factions.append(QJsonObject{{"id", "Wraith"}, {"player", false}, {"naquadah", 0.0}, {"trinium", 0.0}});
+        json["factions"] = factions;
+        // Two Wraith worlds off the Earth - Abydos - Chulak route
+        QJsonArray planets = json["planets"].toArray();
+        planets.append(QJsonObject{{"name", "Sateda"}, {"x", 380.0}, {"y", 300.0}, {"owner", 2},
+                                   {"population", 5.0}, {"maxPopulation", 8.0}, {"defense", 3},
+                                   {"lanes", QJsonArray{2, 4}}});
+        planets.append(QJsonObject{{"name", "Taranis"}, {"x", 520.0}, {"y", 300.0}, {"owner", 2},
+                                   {"population", 5.0}, {"maxPopulation", 8.0}, {"defense", 3},
+                                   {"lanes", QJsonArray{3}}});
+        QJsonObject chulak = planets[2].toObject();
+        chulak["lanes"] = QJsonArray{1, 3};
+        planets[2] = chulak;
+        json["planets"] = planets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+
+        QString answer;
+        QVERIFY(!game.proposeAlliance("wraith", &answer));   // no enemy stronger than them
+        QVERIFY(game.proposeAlliance("goa", &answer));       // the Wraith are stronger
+        QVERIFY(game.isAllied(1));
+        QVERIFY(!game.hostile(0, 1));
+        QVERIFY(game.hostile(1, 2));
+
+        // Allied worlds are crossed without a battle
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        QVERIFY(game.orderTravel(2));
+        run(game, 6);
+        QCOMPARE(game.flagshipPlanet(), 2);
+        QCOMPARE(battles.size(), 0);
+        QVERIFY(!game.proposeAlliance("goa", &answer));      // already allies
+        QVERIFY(game.breakAlliance("goa", &answer));
+        QVERIFY(game.hostile(0, 1));
+    }
+
+    void fleetLossesAfterBattle()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(withFleets({{0, 2, 8, 0}, {0, 1, 3, 1}})));
+        game.setFleetStrength(1, 1, 5);         // survivors of a 3D battle
+        QCOMPARE(game.fleets()[0].motherships, 1);
+        QCOMPARE(game.fleets()[0].fighters, 5);
+        game.setFleetStrength(2, 0, 0);         // wiped out
+        QCOMPARE(game.fleetCount(0), 1);
+        QCOMPARE(ConquestGame::hangarFighter("Wraith"), QStringLiteral("Wraith Dart"));
+        QCOMPARE(ConquestGame::hangarFighter("Tau'ri"), QStringLiteral("F-302"));
+    }
+
+    // A chain of worlds: Tau'ri 0, Goa'uld 1, Wraith 2, Lucian 3..8 (no shipyard)
+    static QJsonObject fourFactions(const QStringList &goauldPacts = {}, const QStringList &wraithPacts = {})
+    {
+        QJsonArray factions;
+        for (const QString &id : {QStringLiteral("Tau'ri"), QStringLiteral("Goa'uld"), QStringLiteral("Wraith"),
+                                  QStringLiteral("Lucian Alliance")})
+            factions.append(QJsonObject{{"id", id}, {"player", id == "Tau'ri"}, {"naquadah", 0.0}, {"trinium", 0.0},
+                                        {"pacts", QJsonArray::fromStringList(id == "Goa'uld" ? goauldPacts
+                                                                             : id == "Wraith" ? wraithPacts
+                                                                                              : QStringList())}});
+        QJsonArray planets;
+        for (int i = 0; i < 9; ++i) {
+            QJsonArray lanes;
+            if (i > 0)
+                lanes.append(i - 1);
+            if (i < 8)
+                lanes.append(i + 1);
+            planets.append(QJsonObject{{"name", QStringLiteral("W%1").arg(i)}, {"x", 50.0 + 100 * i}, {"y", 100.0},
+                                       {"owner", i < 3 ? i : 3}, {"population", 5.0}, {"maxPopulation", 8.0},
+                                       {"defense", 5}, {"lanes", lanes}});
+        }
+        return {{"version", 4}, {"factions", factions}, {"planets", planets}, {"at", 0}, {"hull", 100.0}};
+    }
+
+    void aiPactsAgainstAStrongEnemy()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(fourFactions()));
+        QVERIFY(game.hostile(1, 2));
+        game.setSeed(9);
+        QSignalSpy messages(&game, &ConquestGame::message);
+        run(game, 1500);                        // 50 diplomacy periods
+        QVERIFY(said(messages, "ally against the Lucian Alliance"));
+        QVERIFY(game.hasPact(1, 2));
+        QVERIFY(!game.hostile(1, 2));
+        QVERIFY(game.hostile(1, 3));
+        QVERIFY(game.hostile(0, 1));            // pacts are between AI factions only
+
+        ConquestGame copy;
+        QVERIFY(copy.fromJson(game.toJson()));
+        QVERIFY(copy.hasPact(2, 1));
+    }
+
+    void aiPactEndsWithoutThreat()
+    {
+        // Goa'uld and Wraith allied, but the Lucian Alliance holds a single world
+        QJsonObject json = fourFactions({"Wraith"}, {"Goa'uld"});
+        QJsonArray planets = json["planets"].toArray();
+        for (int i = 4; i < 9; ++i) {
+            QJsonObject planet = planets[i].toObject();
+            planet["owner"] = -1;
+            planets[i] = planet;
+        }
+        json["planets"] = planets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+        QVERIFY(game.hasPact(1, 2));
+        game.setSeed(4);
+        run(game, 600);
+        QVERIFY(!game.hasPact(1, 2));
     }
 
     void orderedFleet()

@@ -168,6 +168,26 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     y += smallLine + 4;
 
     // Hangar: fighters to launch ('launch'), friendly ships in the battle
+    if (w.dronesMax > 0) {
+        p.setFont(font);
+        p.setPen(kText);
+        p.drawText(QRectF(left, y, labelWidth, line), Qt::AlignLeft | Qt::AlignVCenter, tr("DRONES"));
+        const QRectF bar(barLeft, y + line / 2 - 4, barWidth, 8);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60));
+        p.drawRect(bar);
+        p.setBrush(QColor(255, 210, 90));
+        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * w.drones / std::max(1, w.dronesMax), bar.height()));
+        p.setPen(w.drones > 0 ? kOk : kCharging);
+        p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
+                   QStringLiteral("%1/%2").arg(w.drones).arg(w.dronesMax));
+        y += line;
+        p.setFont(small);
+        p.setPen(kDim);
+        p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
+                   tr("drones <n> - salvo through the shields, rebuilt out of battle"));
+        y += smallLine + 4;
+    }
     if (w.hangarMax > 0 || w.allies > 0) {
         p.setFont(font);
         p.setPen(kText);

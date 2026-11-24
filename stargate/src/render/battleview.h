@@ -144,6 +144,9 @@ public:
     // Conquest: no automatic wave; fleets come from spawnFleet() and
     // sectorCleared() tells when one is destroyed
     void setAutoWaves(bool on) { m_autoWaves = on; }
+    // Conquest technologies: damage of the Destiny's shots, shield recharge
+    void setDamageBonus(float factor) { m_damageBonus = factor; }
+    void setShieldRegenBonus(float factor) { m_shieldRegenBonus = factor; }
     // Fleet of any faction of the library (bosses excluded), even ships
     // that never come in survival waves (Tau'ri…)
     bool spawnFleet(const QString &faction, int motherships, int fighters);
@@ -309,6 +312,8 @@ private:
     int m_kills = 0;
     float m_waveTimer = -1;
     bool m_autoWaves = true;
+    float m_damageBonus = 1.0f;
+    float m_shieldRegenBonus = 1.0f;
     QStringList m_navigationLines;
     PlanetLook m_planetLook;
     QStringList m_objectiveLines;

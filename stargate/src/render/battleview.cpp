@@ -652,7 +652,7 @@ void BattleView::step(float dt)
     // Shield regeneration (slower while under fire)
     if (m_shieldOrdered) {
         const float base = m_time - m_lastShieldHit > 1.5f ? 6.0f : 3.0f;
-        const float rate = base * std::max(0.2f, subsystemHealth("shields") / 100.0f);
+        const float rate = base * m_shieldRegenBonus * std::max(0.2f, subsystemHealth("shields") / 100.0f);
         m_shieldStrength = std::min(100.0f, m_shieldStrength + rate * dt);
         if (m_shieldCollapsed && m_shieldStrength >= 35.0f) {
             m_shieldCollapsed = false;
@@ -943,7 +943,7 @@ void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, co
     p.targetId = targetId;
     p.pos = from;
     p.aimLocal = aimLocal;
-    p.damage = damage;
+    p.damage = fromDestiny ? damage * m_damageBonus : damage;
     p.color = color;
     p.length = length;
     p.width = width;

@@ -817,6 +817,68 @@ private slots:
         QVERIFY(said(messages, "Lucian raid"));
     }
 
+    void research()
+    {
+        ConquestGame game;
+        QVERIFY(game.fromJson(smallGalaxy()));      // 100 naquadah
+        QString error;
+        QVERIFY(!game.startResearch("weapons2", &error));   // needs weapons1
+        QVERIFY(game.startResearch("weapons1", &error));
+        QVERIFY(!game.startResearch("defense1", &error));   // one at a time
+        QCOMPARE(qRound(game.player().naquadah), 0);
+        run(game, 61);
+        QVERIFY(game.hasTech(0, "weapons1"));
+        QCOMPARE(game.powerMultiplier(0), 1.1);
+        QCOMPARE(game.flagshipDamageBonus(), 1.15);
+        QCOMPARE(game.findTech("2"), 1);
+        QCOMPARE(game.findTech("weapons3"), 2);
+
+        // Saved and loaded with the game
+        ConquestGame copy;
+        QVERIFY(copy.fromJson(game.toJson()));
+        QVERIFY(copy.hasTech(0, "weapons1"));
+    }
+
+    void alliances()
+    {
+        // Three factions: the player (Tau'ri), Goa'uld (1 world) and Wraith (2 worlds)
+        QJsonObject json = withFleets({});
+        QJsonArray factions = json["factions"].toArray();
+        factions.append(QJsonObject{{"id", "Wraith"}, {"player", false}, {"naquadah", 0.0}, {"trinium", 0.0}});
+        json["factions"] = factions;
+        // Two Wraith worlds off the Earth - Abydos - Chulak route
+        QJsonArray planets = json["planets"].toArray();
+        planets.append(QJsonObject{{"name", "Sateda"}, {"x", 380.0}, {"y", 300.0}, {"owner", 2},
+                                   {"population", 5.0}, {"maxPopulation", 8.0}, {"defense", 3},
+                                   {"lanes", QJsonArray{2, 4}}});
+        planets.append(QJsonObject{{"name", "Taranis"}, {"x", 520.0}, {"y", 300.0}, {"owner", 2},
+                                   {"population", 5.0}, {"maxPopulation", 8.0}, {"defense", 3},
+                                   {"lanes", QJsonArray{3}}});
+        QJsonObject chulak = planets[2].toObject();
+        chulak["lanes"] = QJsonArray{1, 3};
+        planets[2] = chulak;
+        json["planets"] = planets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+
+        QString answer;
+        QVERIFY(!game.proposeAlliance("wraith", &answer));   // no enemy stronger than them
+        QVERIFY(game.proposeAlliance("goa", &answer));       // the Wraith are stronger
+        QVERIFY(game.isAllied(1));
+        QVERIFY(!game.hostile(0, 1));
+        QVERIFY(game.hostile(1, 2));
+
+        // Allied worlds are crossed without a battle
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        QVERIFY(game.orderTravel(2));
+        run(game, 6);
+        QCOMPARE(game.flagshipPlanet(), 2);
+        QCOMPARE(battles.size(), 0);
+        QVERIFY(!game.proposeAlliance("goa", &answer));      // already allies
+        QVERIFY(game.breakAlliance("goa", &answer));
+        QVERIFY(game.hostile(0, 1));
+    }
+
     void orderedFleet()
     {
         ConquestGame game;

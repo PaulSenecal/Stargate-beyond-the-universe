@@ -12,6 +12,8 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 
+#include "src/Menu/uipalette.h"
+
 namespace {
 const QColor kPanel(75, 70, 50);
 const QColor kGrid(92, 86, 63);
@@ -27,7 +29,7 @@ CommandConsole::CommandConsole(QWidget *parent)
     setMinimumHeight(170);
 
     QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    mono.setPixelSize(17);
+    mono.setPixelSize(UiPalette::scaled(17));
 
     m_log->setReadOnly(true);
     m_log->setFont(mono);
@@ -42,10 +44,10 @@ CommandConsole::CommandConsole(QWidget *parent)
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }");
 
     QFont inputFont = mono;
-    inputFont.setPixelSize(19);
+    inputFont.setPixelSize(UiPalette::scaled(19));
     inputFont.setBold(true);
     m_input->setFont(inputFont);
-    m_input->setFixedHeight(34);
+    m_input->setFixedHeight(UiPalette::scaled(34));
     m_input->setFrame(false);
     m_input->setPlaceholderText(tr("Type a command — Tab completes, 'help' for the list"));
     m_input->setStyleSheet("QLineEdit { background: transparent; color: #111; }");
@@ -76,9 +78,9 @@ void CommandConsole::appendLine(const QString &text, Tone tone)
     switch (tone) {
     case Tone::Echo:     color = "#a9a28a"; prefix = QStringLiteral("&gt; "); break;
     case Tone::Info:     color = "#e8e2c8"; break;
-    case Tone::Success:  color = "#8be07a"; break;
+    case Tone::Success:  color = gameConfig().colorBlind ? "#6ab8ff" : "#8be07a"; break;
     case Tone::Warning:  color = "#f2c94c"; break;
-    case Tone::Critical: color = "#ff5a48"; break;
+    case Tone::Critical: color = gameConfig().colorBlind ? "#ff9a1a" : "#ff5a48"; break;
     }
     // Follow new lines only when the reader is already at the bottom:
     // if they scrolled up to read, keep their position

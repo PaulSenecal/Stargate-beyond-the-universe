@@ -1,5 +1,6 @@
 #include "conquestgame.h"
 #include "src/core/balance.h"
+#include "src/core/gameconfig.h"
 
 #include <QJsonArray>
 #include <QLineF>
@@ -14,7 +15,7 @@ using namespace Conquest;
 namespace {
 
 using namespace Balance;               // all the tunable values: src/core/balance.h
-constexpr double kBattleRate = kAutoBattleRate;
+
 
 const QStringList kNamedWorlds{"Abydos", "Dakara", "Tollana", "Langara", "Cimmeria", "Hebridan", "Kheb",
                                "Hala", "Vis Uban", "Delmak", "Netu", "Hasara", "Juna", "Orban", "Edora",
@@ -1609,8 +1610,8 @@ void ConquestGame::updateSkirmishes(double seconds)
         int defense = sidePower(battle.planet, battle.defender);
         if (attack > 0 && defense > 0) {
             battle.elapsed += seconds;
-            battle.defenderPending += attack * kBattleRate * seconds * (0.8 + 0.4 * m_rng.generateDouble());
-            battle.attackerPending += defense * kBattleRate * seconds * (0.8 + 0.4 * m_rng.generateDouble());
+            battle.defenderPending += attack * gameConfig().autoBattleRate * seconds * (0.8 + 0.4 * m_rng.generateDouble());
+            battle.attackerPending += defense * gameConfig().autoBattleRate * seconds * (0.8 + 0.4 * m_rng.generateDouble());
             applyDamage(battle.planet, battle.defender, battle.defenderPending);
             applyDamage(battle.planet, battle.attacker, battle.attackerPending);
             attack = sidePower(battle.planet, battle.attacker);

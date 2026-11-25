@@ -1,5 +1,6 @@
 #include "conquestscreen.h"
 #include "src/core/balance.h"
+#include "src/core/gameconfig.h"
 
 #include <QDir>
 #include <QEvent>
@@ -180,7 +181,8 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     // --- Console
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
                                "send", "build", "fighter", "mothership", "engage", "research", "ally", "break",
-                               "diplomacy", "launch", "drones", "turrets", "railguns", "power", "attack",
+                               "diplomacy", "launch", "drones", "turrets", "railguns", "power", "attack", "target",
+                               "missiles", "evade",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -258,6 +260,19 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), loadout.hangar);
     m_battle->setFlagshipStyle(m_game->player().id);
     m_battle->setDroneBay(loadout.drones);
+    m_battle->setMissileBay(Balance::flagshipMissiles(m_game->player().id), Balance::flagshipMissiles(m_game->player().id));
+    if (loaded) {
+        // Supplies of the flagship (saved next to the game)
+        QFile file(savePath());
+        if (file.open(QIODevice::ReadOnly)) {
+            const QJsonObject supplies = QJsonDocument::fromJson(file.readAll()).object().value("flagshipSupplies").toObject();
+            if (!supplies.isEmpty()) {
+                m_battle->setRailgunAmmo(supplies.value("railgunAmmo").toInt(BattleView::kRailgunAmmoMax()));
+                m_battle->setMissileBay(m_battle->missileCapacity(), supplies.value("missiles").toInt(m_battle->missileCapacity()));
+                m_battle->setDrones(supplies.value("drones").toInt(m_battle->droneCapacity()));
+            }
+        }
+    }
     m_wasTravelling = m_game->travelling();
     m_end = new ConquestEndScreen(this);
     connect(m_end, &ConquestEndScreen::titleRequested, this, &ConquestScreen::quitToTitleRequested);
@@ -294,7 +309,13 @@ bool ConquestScreen::save()
     QSaveFile file(savePath());
     if (!file.open(QIODevice::WriteOnly))
         return false;
-    file.write(QJsonDocument(m_game->toJson()).toJson(QJsonDocument::Compact));
+    QJsonObject json = m_game->toJson();
+    QJsonObject supplies;
+    supplies.insert("railgunAmmo", m_battle->railgunAmmo());
+    supplies.insert("missiles", m_battle->missiles());
+    supplies.insert("drones", m_battle->drones());
+    json.insert("flagshipSupplies", supplies);
+    file.write(QJsonDocument(json).toJson(QJsonDocument::Compact));
     return file.commit();
 }
 
@@ -304,16 +325,32 @@ bool ConquestScreen::save()
 
 void ConquestScreen::tick()
 {
-    const double dt = kTickMs / 1000.0;
+    const double dt = kTickMs / 1000.0 * gameConfig().gameSpeed;
     // The hull is simulated by the battle view during a battle, by the game otherwise
     if (m_game->inBattle()) {
         m_game->setFlagshipHull(m_battle->hull());
     } else {
         m_battle->restoreDefenses(float(m_game->flagshipHull()), m_battle->shieldStrength(), m_battle->shieldActive());
         const Conquest::Planet &here = m_game->planets()[m_game->flagshipPlanet()];
-        if (here.owner == m_game->playerIndex() && !m_game->travelling())
+        if (here.owner == m_game->playerIndex() && !m_game->travelling()) {
             for (const QString &key : BattleView::systemKeys())
                 m_battle->setSubsystemHealth(key, 100.0f);         // repaired at home
+            // Restocked at home: slugs everywhere, missiles at shipyards,
+            // drones on Ancient sites (one salvo every 30 s)
+            m_supplyClock += dt;
+            if (m_supplyClock >= 1.0) {
+                m_supplyClock -= 1.0;
+                m_battle->setRailgunAmmo(m_battle->railgunAmmo() + 40);
+                if (here.hasShipyard() && ++m_missileClock >= 5) {
+                    m_missileClock = 0;
+                    m_battle->setMissileBay(m_battle->missileCapacity(), m_battle->missiles() + 1);
+                }
+                if (here.bonus == Conquest::Bonus::AncientSite && ++m_droneClock >= 30) {
+                    m_droneClock = 0;
+                    m_battle->setDrones(m_battle->drones() + 1);
+                }
+            }
+        }
     }
     m_game->tick(dt);
     m_playSeconds += dt;
@@ -606,6 +643,17 @@ void ConquestScreen::onCommand(const QString &command)
         m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
     } else if (name == "launch") {
         m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
+    } else if (name == "target" || name == "aim") {
+        bool ok = false;
+        const int target = words.value(1).toInt(&ok);
+        if (!ok || target < 1)
+            warn(tr("Usage: target <n> [weapons|shields|engines|hangar|hull]"));
+        else
+            m_battle->aimAt(target - 1, words.value(2));
+    } else if (name == "missiles" || name == "missile") {
+        m_battle->fireMissiles(arg.isEmpty() ? -1 : arg.toInt() - 1);
+    } else if (name == "evade" || name == "evasive") {
+        m_battle->setEvasion(arg.toLower() != "off");
     } else if (name == "engage") {
         QString error;
         if (!m_game->engage(arg, &error))
@@ -671,7 +719,10 @@ void ConquestScreen::showHelp()
         tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
         tr("Battles between other factions last a while: watch them, or 'engage <faction>' to fight one side"),
         tr("Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle"),
-        tr("Drones (Ancients): drones <n> - a salvo that goes through the shields, limited stock"),
+        tr("Drones (Ancients): drones <n> - a salvo through the shields; needs %1 free power, restocked on your "
+           "worlds with an Ancient site").arg(Balance::kDronePower),
+        tr("Tactics: target <n> weapons|shields|engines|hangar, missiles [n] (BC-304, Lucian), evade on|off"),
+        tr("Supplies: railgun slugs and missiles are restocked on your worlds (missiles at shipyards)"),
         tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"),
         tr("Research: research (tree), research <n> - weapons, defense and industry, 3 tiers each"),
         tr("Diplomacy: diplomacy (relations), ally <faction> (against a common enemy), break <faction>"),

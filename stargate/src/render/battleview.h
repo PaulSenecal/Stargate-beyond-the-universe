@@ -79,6 +79,27 @@ struct WeaponReadiness {
     float railgunReach = 0;
     int interceptions = 0;
     int incomingMissiles = 0;
+    float railgunHeat = 0;              // 0..100, overheated at 100
+    bool railgunOverheated = false;
+    int railgunAmmo = 0, railgunAmmoMax = 0;
+    int missiles = 0, missilesMax = 0;  // the player's missiles
+    // Tactics
+    QString aimSystem;                  // enemy subsystem aimed at ("" = hull)
+    bool evading = false;
+    float accuracy = 100;               // percent, on the current target
+    float ftlCountdown = -1;            // seconds before the FTL jump, -1 = none
+};
+
+// Statistics of one battle (summary at the end, achievements)
+struct BattleStats {
+    float seconds = 0;
+    int shots = 0, hits = 0;
+    int kills = 0, motherships = 0;
+    float damageDealt = 0;
+    float hullLost = 0, shieldLost = 0;
+    int interceptions = 0;
+    int alliesLost = 0;
+    QString faction;
 };
 
 // A recent impact on the Destiny, in ship-local coordinates
@@ -105,7 +126,16 @@ public:
     bool fireSecondaryBurst();
     void setShieldActive(bool active);
     bool lockTarget(int enemyIndex);
+    // Aims at a subsystem of an enemy: weapons, shields, engines, hangar
+    // ("" or "hull" = the hull). Harder to hit, but disables it.
+    bool aimAt(int enemyIndex, const QString &system);
+    static QStringList enemySystems();
+    bool fireMissiles(int enemyIndex = -1);     // the player's missile bay
+    void setEvasion(bool on);                   // evasive maneuvers (engines, power)
+    bool evading() const { return m_evading; }
     bool repairSubsystem(const QString &name);
+    // Repairs a system by `amount` percent (crew repair jobs)
+    void repairBy(const QString &key, float amount);
 
     // --- Ship systems: engines, shields, weapons, lifesupport (+ hull)
     // Normalizes a typed name ("engine", "Life Support"…) to a system
@@ -114,6 +144,29 @@ public:
     static QStringList systemKeys();
     void setSubsystemHealth(const QString &key, float health);
     float systemHealth(const QString &key) const;   // also accepts "hull"
+
+    // --- Supplies (finite): railgun slugs, missiles, drone salvos.
+    // They are only restocked on planets (campaign) or worlds (conquest).
+    int railgunAmmo() const { return m_railgunAmmo; }
+    void setRailgunAmmo(int ammo) { m_railgunAmmo = std::clamp(ammo, 0, kRailgunAmmoMax()); }
+    static int kRailgunAmmoMax() { return Balance::kRailgunAmmo; }
+    int missiles() const { return m_missiles; }
+    int missileCapacity() const { return m_missileBay; }
+    void setMissileBay(int capacity, int stock);
+    int drones() const { return m_drones; }
+    int droneCapacity() const { return m_droneBay; }
+    void setDrones(int salvos) { m_drones = std::clamp(salvos, 0, m_droneBay); }
+
+    // --- FTL jump under fire: the drive spools for `seconds`, hangar
+    // fighters fly back; jumpReady() when it is time to jump
+    void startJumpSequence(float seconds);
+    void abortJumpSequence();
+    bool jumpPending() const { return m_jumpCountdown >= 0.0f; }
+    // Hangar fighters left too far: lost at the jump. Returns how many.
+    int dockForJump();
+    // Fighters launched by order before a jump take off again after it
+    void relaunchAfterJump();
+    const BattleStats &battleStats() const { return m_stats; }
 
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
@@ -219,6 +272,8 @@ signals:
     void enemyDestroyed(bool mothership);
     void sectorCleared();               // last enemy destroyed (no auto waves)
     void hullBreached();                // hull reached 0 (emergency repairs follow)
+    void jumpReady();                   // the FTL drive is spooled (startJumpSequence)
+    void battleEnded(const BattleStats &stats);     // last enemy of a battle destroyed
     // delay: seconds before the sound starts (salvos)
     void sound(SoundCue cue, const QString &faction, float delay);
 
@@ -284,7 +339,13 @@ private:
         int targetId = -1;          // enemy it attacks
         QVector3D vel;
         float idle = 0;             // seconds without enemy (hangar fighters land)
+        // Subsystems of the ship (percent): weapons, shields, engines, hangar
+        float systems[4] = {100, 100, 100, 100};
+        float retreat = 0;          // seconds left falling back to recharge (motherships)
     };
+    enum EnemySystem { SysWeapons = 0, SysShields = 1, SysEngines = 2, SysHangar = 3 };
+    // Which weapon fired a shot (adaptive drones, statistics)
+    enum class Weapon { None, Main, Pulse, Towers, Railgun, Drones, Missiles, Ally };
 
     struct Projectile {
         enum class Kind { Bolt, Missile, Slug, Beam };
@@ -297,6 +358,10 @@ private:
         int targetAlly = -1;        // enemy shot at a friendly ship
         bool fromAlly = false;
         bool drone = false;         // Ancient drone: goes through the shields
+        bool miss = false;          // flies past its target (distance, sensors, evasion)
+        bool rolled = false;        // hit chance already rolled
+        int aimSystem = -1;         // enemy subsystem aimed at (EnemySystem)
+        Weapon weapon = Weapon::None;
         QVector3D pos, vel;
         QVector3D aimLocal;         // aim point on the Destiny hull (local space)
         QVector3D color;
@@ -306,6 +371,20 @@ private:
     struct Effect {
         QVector3D pos, color;
         float age = 0, duration = 0.5f, maxRadius = 1;
+    };
+
+    // Continuous beam (Asgard, Ori…): a ray from its ship to the target
+    // for kBeamDuration, its damage delivered in ticks
+    struct Ray {
+        int sourceEnemy = -1, sourceAlly = -1;  // -1 / -1 = the player's ship
+        QVector3D sourceLocal;                  // on the player's ship
+        int targetEnemy = -1, targetAlly = -1;  // -1 / -1 = the player's ship
+        QVector3D aimLocal;
+        QVector3D missOffset;                   // non-zero: it misses
+        QVector3D color;
+        float width = 0.3f, age = 0, damageLeft = 0, tick = 0;
+        bool fromDestiny = false;
+        Weapon weapon = Weapon::None;
     };
 
     struct Subsystem {
@@ -344,6 +423,17 @@ private:
     void shoot(bool fromDestiny, const QVector3D &from, int targetId, const QVector3D &aimLocal,
                float damage, float speed, const QVector3D &color, float length, float width,
                float delay = 0.0f);
+    // Rolls the hit chance of the last shot (distance, sensors, evasion…)
+    void rollAccuracy(Projectile &p, const QVector3D &target, float floor = 0.0f);
+    float hitChance(const QVector3D &from, const QVector3D &to, bool fromPlayer, const Enemy *target) const;
+    void fireRay(Ray ray, float damage);
+    void updateRays(float dt);
+    void drawRays();
+    QVector3D rayStart(const Ray &r) const;
+    QVector3D rayEnd(const Ray &r) const;
+    float adaptedDamage(const Enemy &e, Weapon weapon, float damage);
+    void damageEnemySystem(Enemy &e, int system, float hullDamage);
+    void finishBattle();
 
     // Helpers
     std::vector<int> aliveIds() const;
@@ -481,6 +571,23 @@ private:
     int m_nextShotId = 1;
     int m_interceptions = 0;
     float m_lastMissileLog = -100;
+    // Tactics
+    std::vector<Ray> m_rays;
+    int m_aimSystem = -1;                   // subsystem aimed on the locked target
+    bool m_evading = false;
+    float m_evadeBlend = 0;                 // 0..1, smooth start of the maneuvers
+    float m_railgunHeat = 0;
+    bool m_railgunOverheated = false;
+    int m_railgunAmmo = Balance::kRailgunAmmo;
+    int m_missiles = 0, m_missileBay = 0;
+    int m_dronesInFlight = 0;
+    float m_jumpCountdown = -1;
+    int m_relaunch = 0;                     // fighters to launch again after a jump
+    int m_launchedByOrder = 0;
+    std::map<int, int> m_weaponHits;        // Weapon -> hits on the drones this battle
+    int m_adaptedWeapon = -1;               // weapon the drones resist (-1 = none)
+    BattleStats m_stats;
+    bool m_inBattle = false;
 };
 
 #endif // BATTLEVIEW_H

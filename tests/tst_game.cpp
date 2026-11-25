@@ -17,6 +17,7 @@
 #include "src/conquest/conquestgame.h"
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
+#include "src/core/gameconfig.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
@@ -254,7 +255,9 @@ private slots:
     void createsTheDestiny()
     {
         QVERIFY(m_destiny.load("Tester"));
-        QCOMPARE(m_destiny.components().size(), 12);
+        QCOMPARE(m_destiny.components().size(), 13);       // 12 + the sensor array added by migration
+        QCOMPARE(m_destiny.systemHealth("sensors"), 100.0f);
+        QVERIFY(!m_destiny.repairCost("sensors").isEmpty());
         QCOMPARE(m_destiny.stockOf("water"), 250);
         QCOMPARE(m_destiny.stockOf("food"), 150);          // migration re-created the resource
         QCOMPARE(m_destiny.stockOf("naquadah"), 20);
@@ -343,6 +346,7 @@ private slots:
         s.hull = 55.5f;
         s.shield = 0.0f;
         s.shieldOn = false;
+        s.extra = QJsonObject{{"railgunAmmo", 412}, {"crew", QJsonArray{1, 2}}};
         QVERIFY(SaveRepository::save(session, s, "Othala"));
 
         const std::optional<GameSave> l = SaveRepository::load(session);
@@ -355,6 +359,8 @@ private slots:
         QCOMPARE(l->collected, (QList<int>{0, 2}));
         QCOMPARE(l->hull, 55.5f);
         QCOMPARE(l->shieldOn, false);
+        QCOMPARE(l->extra.value("railgunAmmo").toInt(), 412);
+        QCOMPARE(l->extra.value("crew").toArray().size(), 2);
 
         QVERIFY(SaveRepository::reset(session));
         QVERIFY(!SaveRepository::load(session).has_value());
@@ -980,6 +986,80 @@ private slots:
 };
 
 // ================================================================
+//  Config file: difficulty presets, custom values, accuracy
+// ================================================================
+
+class ConfigTest : public QObject
+{
+    Q_OBJECT
+
+private:
+    QTemporaryDir m_dir;
+
+private slots:
+    void initTestCase()
+    {
+        QVERIFY(m_dir.isValid());
+        GameConfig::instance().setPath(m_dir.filePath("config.json"));
+    }
+
+    void createdWithDefaults()
+    {
+        QVERIFY(GameConfig::instance().load());
+        QVERIFY(QFile::exists(m_dir.filePath("config.json")));
+        QCOMPARE(gameConfig().difficulty, GameConfig::Difficulty::Normal);
+        QCOMPARE(gameConfig().gameSpeed, 1.0f);
+    }
+
+    void presets()
+    {
+        const GameConfig::Values easy = GameConfig::preset(GameConfig::Difficulty::Easy);
+        const GameConfig::Values hard = GameConfig::preset(GameConfig::Difficulty::Hard);
+        QVERIFY(easy.damageToPlayer < 1.0f && hard.damageToPlayer > 1.0f);
+        QVERIFY(easy.autoBattleRate < hard.autoBattleRate);     // easy: longer battles
+        GameConfig::instance().setGameSpeed(0.5f);
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Hard);
+        QVERIFY(GameConfig::instance().load());
+        QCOMPARE(gameConfig().difficulty, GameConfig::Difficulty::Hard);
+        QCOMPARE(gameConfig().gameSpeed, 0.5f);                 // kept by the preset
+        QCOMPARE(gameConfig().damageToPlayer, hard.damageToPlayer);
+    }
+
+    void customValuesAreReadAndClamped()
+    {
+        QFile file(m_dir.filePath("config.json"));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(R"({"difficulty": "custom", "shipHullScale": 2.5, "damageToPlayer": 99,
+                       "gameSpeed": 0.01, "colorBlind": true, "textScale": 1.25})");
+        file.close();
+        QVERIFY(GameConfig::instance().load());
+        QCOMPARE(gameConfig().difficulty, GameConfig::Difficulty::Custom);
+        QCOMPARE(gameConfig().shipHullScale, 2.5f);
+        QCOMPARE(gameConfig().damageToPlayer, 10.0f);            // clamped
+        QCOMPARE(gameConfig().gameSpeed, 0.25f);
+        QVERIFY(gameConfig().colorBlind);
+        QCOMPARE(gameConfig().textScale, 1.25f);
+    }
+
+    void accuracyFallsWithDistance()
+    {
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Normal);
+        const GameConfig &c = GameConfig::instance();
+        QCOMPARE(c.accuracyAt(5.0f), 1.0f);
+        QVERIFY(c.accuracyAt(40.0f) < 1.0f);
+        QVERIFY(c.accuracyAt(40.0f) > c.accuracyAt(55.0f));
+        QCOMPARE(c.accuracyAt(500.0f), gameConfig().longRangeAccuracy);
+    }
+
+    void cleanupTestCase()
+    {
+        // Back to the defaults for the other tests
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Normal);
+        GameConfig::instance().setGameSpeed(1.0f);
+    }
+};
+
+// ================================================================
 
 int main(int argc, char *argv[])
 {
@@ -999,6 +1079,10 @@ int main(int argc, char *argv[])
     }
     {
         ConquestTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        ConfigTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

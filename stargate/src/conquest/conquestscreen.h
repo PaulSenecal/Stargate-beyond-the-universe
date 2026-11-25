@@ -96,6 +96,9 @@ private:
     struct Joined { int spawnedMotherships, spawnedFighters, motherships, fighters; };
     QHash<int, Joined> m_joined;        // fleet id -> ships sent into the 3D battle
     double m_playSeconds = 0;
+    double m_supplyClock = 0;       // restocking of the flagship on its worlds
+    int m_missileClock = 0;
+    int m_droneClock = 0;
     int m_battlesWon = 0;
     int m_battlesLost = 0;
     bool m_wasTravelling = false;

@@ -1,6 +1,7 @@
 #ifndef SAVEREPOSITORY_H
 #define SAVEREPOSITORY_H
 
+#include <QJsonObject>
 #include <QList>
 #include <optional>
 
@@ -28,6 +29,9 @@ struct GameSave
     float hull = 100;
     float shield = 100;
     bool shieldOn = true;
+    // Everything added later (supplies, crew, compartments, statistics…),
+    // stored as JSON in Session_State.extra
+    QJsonObject extra;
 };
 
 class SaveRepository

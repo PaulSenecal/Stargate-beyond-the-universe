@@ -21,6 +21,7 @@
 #include "src/audio/soundsystem.h"
 #include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
+#include "src/core/gameconfig.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
@@ -144,6 +145,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     connect(m_menuButton, &QPushButton::clicked, this, &GameMenu::openPauseMenu);
     m_battle->installEventFilter(this);
     connect(m_route, &DestinyRoute::notice, this, &GameMenu::onRouteNotice);
+    connect(m_battle, &BattleView::jumpReady, this, &GameMenu::performJump);
     connect(m_simTimer, &QTimer::timeout, this, &GameMenu::simulate);
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] { saveGame(false); });
 
@@ -151,7 +153,8 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         QStringList words;
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
-        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu" << "launch" << "turrets" << "railguns" << "power";
+        words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu" << "launch" << "turrets" << "railguns" << "power"
+              << "target" << "missiles" << "drones" << "evade" << "ftl" << "star";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -164,7 +167,9 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
                                          QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
                                          QStringLiteral("sound"), QStringLiteral("music"),
                                          QStringLiteral("menu"), QStringLiteral("launch"), QStringLiteral("turrets"),
-                                         QStringLiteral("railguns"), QStringLiteral("power")})
+                                         QStringLiteral("railguns"), QStringLiteral("power"), QStringLiteral("target"),
+                                         QStringLiteral("missiles"), QStringLiteral("drones"), QStringLiteral("evade"),
+                                         QStringLiteral("ftl"), QStringLiteral("star")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -294,6 +299,8 @@ void GameMenu::onCommandEntered(const QString &command)
             m_console->appendLine(m_battle->powerReport());
         return;
     }
+    if (localCommand(first, command.split(' ', Qt::SkipEmptyParts)))
+        return;
     if (first == "launch") {
         const QString count = command.section(' ', 1, 1, QString::SectionSkipEmpty);
         m_battle->launchFighters(count.isEmpty() ? -1 : std::max(1, count.toInt()));
@@ -323,6 +330,45 @@ void GameMenu::onCommandEntered(const QString &command)
         return;
     }
     dispatch(parsed.name, parsed.args);
+}
+
+// Tactical orders that are not in commands.json
+bool GameMenu::localCommand(const QString &first, const QStringList &words)
+{
+    const QString arg = words.value(1).toLower();
+    if (first == "target" || first == "aim") {
+        bool ok = false;
+        const int target = words.value(1).toInt(&ok);
+        if (!ok || target < 1)
+            m_console->appendLine(tr("Usage: target <n> [weapons|shields|engines|hangar|hull]"), CommandConsole::Tone::Warning);
+        else
+            m_battle->aimAt(target - 1, words.value(2));
+        return true;
+    }
+    if (first == "missiles" || first == "missile") {
+        m_battle->fireMissiles(arg.isEmpty() ? -1 : arg.toInt() - 1);
+        return true;
+    }
+    if (first == "drones") {
+        m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
+        return true;
+    }
+    if (first == "evade" || first == "evasive") {
+        m_battle->setEvasion(arg != "off");
+        return true;
+    }
+    if (first == "ftl" || first == "jump") {
+        if (arg == "abort" || arg == "cancel")
+            m_battle->abortJumpSequence();
+        else
+            jumpFtl();
+        return true;
+    }
+    if (first == "star" || first == "dive") {
+        diveIntoStar();
+        return true;
+    }
+    return false;
 }
 
 void GameMenu::dispatch(const QString &name, const QStringList &args)
@@ -387,6 +433,11 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Menu: menu or Esc - pause, save, settings, quit"));
     m_console->appendLine(tr("Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle"));
     m_console->appendLine(tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"));
+    m_console->appendLine(tr("Tactics: target <n> weapons|shields|engines|hangar (aim at a subsystem), missiles [n], "
+                             "drones [n] (Ancient caches only, need %1 free power), evade on|off").arg(Balance::kDronePower));
+    m_console->appendLine(tr("FTL: engine ftl (under fire the drive spools %1 s; fighters dock, those too far are left behind), "
+                             "ftl abort - star: dive into a star to recharge (shields up!)").arg(qRound(Balance::kFtlSpoolUnderFire)));
+    m_console->appendLine(tr("Supplies: railgun slugs (mineral planets), missiles (naquadah planets), drones (Ancient sites)"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -543,6 +594,9 @@ void GameMenu::loadSave()
             m_library = library;
             m_battle->setShipClasses(m_library);
             m_battle->setHangar(QStringLiteral("Puddle Jumper"), 4);   // the Destiny's shuttle bay
+            m_battle->setDroneBay(4);           // empty: drones come from Ancient caches
+            m_battle->setDrones(0);
+            m_battle->setMissileBay(Balance::flagshipMissiles(QString()), Balance::flagshipMissiles(QString()));
         }
     } else {
         m_console->appendLine(tr("Ship library unavailable - built-in enemies only"), CommandConsole::Tone::Warning);
@@ -622,6 +676,7 @@ void GameMenu::onRouteNotice(const QString &text, DestinyRoute::Severity severit
 
 void GameMenu::simulate()
 {
+    const double kHoursPerTick = ::kHoursPerTick * gameConfig().gameSpeed;
     m_route->tick(kHoursPerTick);
     updateMusic(false);
 
@@ -761,6 +816,11 @@ void GameMenu::restoreGame()
     state.teamPlanet = save->teamPlanet;
     m_route->restore(save->routeIndex, state, save->collected);
     m_battle->restoreDefenses(save->hull, save->shield, save->shieldOn);
+    m_extra = save->extra;
+    m_battle->setRailgunAmmo(m_extra.value("railgunAmmo").toInt(BattleView::kRailgunAmmoMax()));
+    m_battle->setMissileBay(m_battle->missileCapacity(), m_extra.value("missiles").toInt(m_battle->missileCapacity()));
+    m_battle->setDrones(m_extra.value("drones").toInt(0));
+    m_starUsedAt = m_extra.value("starUsedAt").toInt(-1);
 
     const RouteStop &stop = m_route->currentStop();
     m_console->appendLine(tr("Game restored: day %1, G%2 %3 system %4, crew %5")
@@ -795,6 +855,11 @@ bool GameMenu::saveGame(bool announce)
     save.hull = m_battle->hull();
     save.shield = m_battle->shieldStrength();
     save.shieldOn = m_battle->shieldActive();
+    save.extra = m_extra;
+    save.extra.insert("railgunAmmo", m_battle->railgunAmmo());
+    save.extra.insert("missiles", m_battle->missiles());
+    save.extra.insert("drones", m_battle->drones());
+    save.extra.insert("starUsedAt", m_starUsedAt);
 
     const bool ok = SaveRepository::save(m_sessionId, save, m_route->galaxyName(m_route->currentStop().galaxy));
     if (announce)
@@ -879,8 +944,34 @@ void GameMenu::recordCurrentSystem()
 
 void GameMenu::jumpFtl()
 {
+    if (m_battle->jumpPending()) {
+        m_console->appendLine(tr("The FTL drive is already spooling ('ftl abort' to cancel)"), CommandConsole::Tone::Warning);
+        return;
+    }
+    QString reason;
+    if (!m_route->canJump(&reason)) {
+        m_console->appendLine(tr("FTL jump impossible: %1").arg(reason), CommandConsole::Tone::Warning);
+        return;
+    }
+    // Under fire the drive needs time to spool; fighters outside must dock
+    if (m_battle->hostileCount() > 0)
+        m_battle->startJumpSequence(Balance::kFtlSpoolUnderFire);
+    else if (m_battle->weaponReadiness().fightersOut > 0)
+        m_battle->startJumpSequence(Balance::kFtlSpoolDocking);
+    else
+        performJump();
+}
+
+void GameMenu::performJump()
+{
     GameEvent event;
     QString reason;
+    // The gate window may have changed during the countdown
+    if (!m_route->canJump(&reason)) {
+        m_console->appendLine(tr("FTL jump impossible: %1").arg(reason), CommandConsole::Tone::Warning);
+        return;
+    }
+    m_battle->dockForJump();
     if (!m_route->jump(&event, &reason)) {
         m_console->appendLine(tr("FTL jump impossible: %1").arg(reason), CommandConsole::Tone::Warning);
         return;
@@ -916,6 +1007,7 @@ void GameMenu::jumpFtl()
 
     if (event.hostiles)
         m_battle->spawnWave(true);
+    m_battle->relaunchAfterJump();      // fighters sent out by order take off again
 
     recordCurrentSystem();
     saveGame(false);
@@ -928,6 +1020,41 @@ void GameMenu::jumpFtl()
                               .arg(stop.numVariants)
                               .arg(m_route->state().gateRemaining, 0, 'f', 1),
                           CommandConsole::Tone::Success);
+    updateNavigation();
+}
+
+// The Destiny skims a star to refill its energy: the shields take the heat
+void GameMenu::diveIntoStar()
+{
+    if (!m_route->hasUsableStar()) {
+        m_console->appendLine(tr("The star of this system is not suitable - jump on and try further"),
+                              CommandConsole::Tone::Warning);
+        return;
+    }
+    if (m_starUsedAt == m_route->currentIndex()) {
+        m_console->appendLine(tr("Already recharged in this star"), CommandConsole::Tone::Warning);
+        return;
+    }
+    if (m_battle->hostileCount() > 0) {
+        m_console->appendLine(tr("Not under fire - clear the sector first"), CommandConsole::Tone::Warning);
+        return;
+    }
+    m_starUsedAt = m_route->currentIndex();
+    const RouteState &s = m_route->state();
+    const double gained = 1.0 - s.power;
+    m_route->addPower(gained);
+    m_route->addFtlCharge(0.5);
+    // Shields absorb the heat; without them the hull burns
+    const float shield = m_battle->shieldActive() ? m_battle->shieldStrength() : 0.0f;
+    const float heat = 70.0f;
+    const float hullDamage = std::max(0.0f, heat - shield) * 0.5f;
+    m_battle->restoreDefenses(std::max(5.0f, m_battle->hull() - hullDamage), std::max(0.0f, shield - heat),
+                              m_battle->shieldActive());
+    m_console->appendLine(tr("Dive into the star: power %1%, FTL charge +50%").arg(qRound(m_route->state().power * 100)),
+                          CommandConsole::Tone::Success);
+    if (hullDamage > 0.0f)
+        m_console->appendLine(tr("The shields could not hold the heat: hull -%1%").arg(qRound(hullDamage)),
+                              CommandConsole::Tone::Critical);
     updateNavigation();
 }
 
@@ -992,6 +1119,26 @@ void GameMenu::explore()
     m_console->appendLine(tr("Exploration of %1: %2").arg(p.code, result), CommandConsole::Tone::Success);
     if (p.isAncientSite())
         m_console->appendLine(tr("Ancient site found: \"%1\"").arg(p.ancientName), CommandConsole::Tone::Success);
+
+    // Supplies: slugs from minerals, missiles from naquadah, drones from Ancient caches
+    QStringList supplies;
+    if (p.conditions.minerals >= 0.4f && m_battle->railgunAmmo() < BattleView::kRailgunAmmoMax()) {
+        const int before = m_battle->railgunAmmo();
+        m_battle->setRailgunAmmo(before + qRound(500 * p.conditions.minerals));
+        supplies << tr("%1 railgun slugs").arg(m_battle->railgunAmmo() - before);
+    }
+    if (p.conditions.energy >= 0.35f && m_battle->missiles() < m_battle->missileCapacity()) {
+        const int before = m_battle->missiles();
+        m_battle->setMissileBay(m_battle->missileCapacity(), before + 3);
+        supplies << tr("%1 missile(s)").arg(m_battle->missiles() - before);
+    }
+    if (p.isAncientSite() && m_battle->drones() < m_battle->droneCapacity()) {
+        const int before = m_battle->drones();
+        m_battle->setDrones(before + 1 + QRandomGenerator::global()->bounded(2));
+        supplies << tr("%1 drone salvo(s) from an Ancient cache").arg(m_battle->drones() - before);
+    }
+    if (!supplies.isEmpty())
+        m_console->appendLine(tr("Supplies loaded: %1").arg(supplies.join(", ")), CommandConsole::Tone::Success);
 
     // Hostile surfaces can cost a team member
     const float danger = p.conditions.toxicity + p.conditions.radiation;

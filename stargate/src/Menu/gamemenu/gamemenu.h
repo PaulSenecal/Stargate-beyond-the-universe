@@ -1,6 +1,7 @@
 #ifndef GAMEMENU_H
 #define GAMEMENU_H
 
+#include <QJsonObject>
 #include <QWidget>
 
 #include "src/core/destinystate.h"
@@ -73,6 +74,9 @@ private:
 
     // Exploration (DestinyRoute)
     void jumpFtl();
+    void performJump();             // after the FTL drive spooled
+    void diveIntoStar();
+    bool localCommand(const QString &first, const QStringList &words);
     void dialGate(const QString &address);
     void explore();
     void recordCurrentSystem();
@@ -110,6 +114,8 @@ private:
     bool m_lowWaterWarned = false;
     bool m_lowFoodWarned = false;
     int m_calmSeconds = 0;          // without enemy, before the calm music
+    int m_starUsedAt = -1;
+    QJsonObject m_extra;            // save data of the newer systems (see GameSave::extra)          // route stop where the Destiny last dived into a star
 };
 
 #endif // GAMEMENU_H

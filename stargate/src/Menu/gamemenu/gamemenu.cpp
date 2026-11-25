@@ -71,6 +71,7 @@ const QList<HelpCategory> &helpCatalog()
             {"drones [n]", QT_TRANSLATE_NOOP("GameMenu", "drone salvo through the shields (needs free power)")},
             {"shield on|off", QT_TRANSLATE_NOOP("GameMenu", "raise or lower the shields")},
             {"evade on|off", QT_TRANSLATE_NOOP("GameMenu", "evasive maneuvers: harder to hit")},
+            {"auto <weapon|all> on|off", QT_TRANSLATE_NOOP("GameMenu", "automatic fire: main, pulse, missiles, drones, towers, railguns")},
             {"launch [n]", QT_TRANSLATE_NOOP("GameMenu", "fighters out of the hangar")},
             {"board <n>", QT_TRANSLATE_NOOP("GameMenu", "capture a crippled mothership")},
             {"replay", QT_TRANSLATE_NOOP("GameMenu", "watch the last battle again")}}},
@@ -288,7 +289,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
               << "target" << "missiles" << "drones" << "evade" << "ftl" << "star"
               << "plan" << "crew" << "jobs" << "cancel" << "seal" << "unseal" << "vent" << "unlock" << "install"
               << "blueprints" << "defend" << "board" << "choose" << "stones" << "kino" << "jumper" << "salvage"
-              << "observe" << "stats" << "achievements" << "seed" << "mods" << "replay" << "coop";
+              << "observe" << "stats" << "achievements" << "seed" << "mods" << "replay" << "coop" << "auto";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -504,6 +505,13 @@ bool GameMenu::localCommand(const QString &first, const QStringList &words)
     }
     if (first == "drones") {
         m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
+        return true;
+    }
+    if (first == "auto") {
+        if (words.size() < 2)
+            m_console->appendLine(m_battle->autoFireReport());
+        else
+            m_battle->setAutoFire(words.value(1), words.value(2).toLower() != "off");
         return true;
     }
     if (first == "evade" || first == "evasive") {
@@ -1146,6 +1154,8 @@ QStringList GameMenu::argumentChoices(const QStringList &before) const
             return onOff;
         if (command == "ftl")
             return {"abort"};
+        if (command == "auto")
+            return {"main", "pulse", "missiles", "drones", "towers", "railguns", "all"};
         if (command == "cancel") {
             QStringList ids;
             for (const Interior::Job &j : m_interior.jobs())
@@ -1179,6 +1189,8 @@ QStringList GameMenu::argumentChoices(const QStringList &before) const
         }
         if (command == "coop" && before.value(1).toLower() == "host")
             return {"tactical", "engineering"};
+        if (command == "auto")
+            return {"on", "off"};
     }
     return {};
 }

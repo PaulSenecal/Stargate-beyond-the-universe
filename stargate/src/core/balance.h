@@ -185,6 +185,8 @@ constexpr int kRailgunPower = 15;
 constexpr int kShieldPower = 25;
 constexpr int kDronePower = 20;             // guidage des drones : il faut ce surplus pour lancer une salve
 constexpr int kEvasionPower = 15;           // manœuvres d'évitement ('evade on')
+constexpr int kAutoFirePower = 5;           // tir automatique : par arme confiée à l'ordinateur ('auto ...')
+constexpr float kAutoFireAim = 0.9f;        // …dont les tirs sont un peu moins précis (x0.9)
 
 // ----------------------------------------------------------------
 //  6b. TACTIQUE : précision, rayons, railguns, missiles, saut FTL

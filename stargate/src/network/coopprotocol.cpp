@@ -30,7 +30,7 @@ QStringList commandsOf(Role role)
                              "showressource", "clear"};
     if (role == Role::Tactical)
         return shared + QStringList{"attack", "maintower", "pulseweapon", "secondarytower", "scan", "target", "aim",
-                                    "missiles", "missile", "drones", "launch", "shield", "evade", "evasive"};
+                                    "missiles", "missile", "drones", "launch", "shield", "evade", "evasive", "auto"};
     return shared + QStringList{"repair", "jobs", "cancel", "crew", "seal", "unseal", "vent", "unlock", "install",
                                 "blueprints", "defend", "power", "turrets", "railguns"};
 }

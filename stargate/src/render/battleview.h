@@ -89,6 +89,11 @@ struct WeaponReadiness {
     bool evading = false;
     float accuracy = 100;               // percent, on the current target
     float ftlCountdown = -1;            // seconds before the FTL jump, -1 = none
+    // Automatic fire of the other weapons ('auto ...')
+    bool autoMain = false, autoPulse = false, autoMissiles = false, autoDrones = false;
+    // Energy: total of the core and what each active system draws
+    int powerTotal = 100;
+    QList<std::pair<QString, int>> powerUse;    // untranslated names (context BattleView)
 };
 
 // One moment of a recorded battle, seen from above (world x, z)
@@ -148,6 +153,13 @@ public:
     static QStringList enemySystems();
     bool fireMissiles(int enemyIndex = -1);     // the player's missile bay
     void setEvasion(bool on);                   // evasive maneuvers (engines, power)
+    // Automatic fire: main, pulse, missiles, drones (also towers, railguns),
+    // or all. False when the ship has no such weapon.
+    bool setAutoFire(const QString &weapon, bool on);
+    QString autoFireReport() const;
+    // Energy drawn by each active system (name, power)
+    QList<std::pair<QString, int>> powerUse() const;
+    int powerTotal() const;
     bool evading() const { return m_evading; }
     bool repairSubsystem(const QString &name);
     // Repairs a system by `amount` percent (crew repair jobs)
@@ -429,6 +441,7 @@ private:
         bool miss = false;          // flies past its target (distance, sensors, evasion)
         bool rolled = false;        // hit chance already rolled
         int sprite = -1;            // Sprite of the mod for this shot (-1 = plain shape)
+        bool autoFired = false;     // fired by the automatic fire control
         int aimSystem = -1;         // enemy subsystem aimed at (EnemySystem)
         Weapon weapon = Weapon::None;
         QVector3D pos, vel;
@@ -667,6 +680,11 @@ private:
     float m_accuracyBonus = 1.0f;
     bool m_externalFires = false;
     bool m_redAlert = false;
+    bool m_autoMain = false, m_autoPulse = false, m_autoMissiles = false, m_autoDrones = false;
+    bool m_autoFiring = false;              // the shots below come from the auto-fire: no log line
+    float m_autoMissileTimer = 0, m_autoDroneTimer = 0;
+    void autoFire(float dt);
+    int autoWeapons() const;
     bool m_hasShield = true;
     float m_armor = 1.0f;
     float m_incomingDamage = 0;

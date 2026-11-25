@@ -79,6 +79,24 @@ inline float shipShieldShare(const QString &faction, bool mothership)
         return 0.25f;                           // Ha'tak récupérés, mal entretenus
     return 0.0f;                                // Wraith (coque organique), Drones
 }
+// Vaisseaux wraith : pas de bouclier, mais une coque organique très épaisse.
+// 1.35 = 35 % de points de coque en plus pour les ruches, croiseurs et Darts.
+constexpr float kWraithHullScale = 1.35f;
+
+// Ton vaisseau amiral : a-t-il un bouclier ? (la ruche wraith n'en a pas)
+inline bool flagshipShield(const QString &faction)
+{
+    return faction != "Wraith";
+}
+
+// Dégâts reçus par ton vaisseau amiral selon sa coque (1.0 = normal).
+// Ruche wraith : 0.3 = elle encaisse ~3 fois plus de tirs, pour compenser
+// l'absence de bouclier (et elle se régénère, voir hullRegen plus bas).
+inline float flagshipArmor(const QString &faction)
+{
+    return faction == "Wraith" ? 0.3f : 1.0f;
+}
+
 // Missiles et drones : munitions limitées (nombre de salves par vaisseau).
 // Les drones des Anciens traversent les boucliers : arme très forte, donc rare.
 constexpr int kMissileSalvos = 6;
@@ -119,7 +137,7 @@ inline FlagshipLoadout flagshipLoadout(const QString &faction)
     if (faction == "Lucian Alliance")   // Ha'tak récupéré, moins bien armé
         return {QT_TRANSLATE_NOOP("Balance", "Staff cannons"), 120.0f, false, true, false, 8, 0, 0.0f};
     if (faction == "Wraith")            // Ruche : nuées de Darts, coque organique qui se régénère
-        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.4f};
+        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.8f};
     if (faction == "Asgard")            // O'Neill : rayons très puissants, peu de chasseurs
         return {QT_TRANSLATE_NOOP("Balance", "Asgard beam"), 230.0f, true, false, false, 2, 0, 0.0f};
     if (faction == "Ancients")          // Aurora : armes à énergie et drones

@@ -174,4 +174,6 @@ QT_TRANSLATE_NOOP("Database", "Light, fast energy bolt.")
 QT_TRANSLATE_NOOP("Database", "Three heavy bolts from the armored batteries.")
 QT_TRANSLATE_NOOP("Database", "Two homing missiles. Railguns can shoot them down.")
 QT_TRANSLATE_NOOP("Database", "Fast kinetic slug.")
+QT_TRANSLATE_NOOP("Database", "Sensor Array")
+QT_TRANSLATE_NOOP("Database", "Drone Bay")
 #endif

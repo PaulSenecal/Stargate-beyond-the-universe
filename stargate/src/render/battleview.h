@@ -137,6 +137,10 @@ public:
     bool firePulseVolley();
     bool fireSecondaryBurst();
     void setShieldActive(bool active);
+    // Flagship without shield (Wraith hive) and how much its hull resists
+    // (damage taken x armor)
+    void setShipEquipment(bool shield, float armor);
+    bool hasShield() const { return m_hasShield; }
     bool lockTarget(int enemyIndex);
     // Aims at a subsystem of an enemy: weapons, shields, engines, hangar
     // ("" or "hull" = the hull). Harder to hit, but disables it.
@@ -649,6 +653,8 @@ private:
     float m_accuracyBonus = 1.0f;
     bool m_externalFires = false;
     bool m_redAlert = false;
+    bool m_hasShield = true;
+    float m_armor = 1.0f;
     float m_incomingDamage = 0;
     void updateEnemyInterior(Enemy &e, float dt);
     void enemyBoarding(Enemy &e, float dt);

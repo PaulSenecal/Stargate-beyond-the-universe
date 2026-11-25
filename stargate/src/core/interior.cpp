@@ -140,7 +140,7 @@ QList<RoomDef> roomsFor(const QString &style)
             {"batteries", QT_TRANSLATE_NOOP("Interior", "Energy Batteries"), {1.5, -1.5, 3.5, 3}, "weapons", ""},
             {"healing", QT_TRANSLATE_NOOP("Interior", "Healing Chamber"), {-5, -4, 3.5, 2.5}, "", "infirmary"},
             {"neural", QT_TRANSLATE_NOOP("Interior", "Neural Sensors"), {1.5, -4, 3.5, 2.5}, "sensors", ""},
-            {"shieldnode", QT_TRANSLATE_NOOP("Interior", "Shield Node"), {-5, 1.5, 3.5, 2.5}, "shields", ""},
+            {"regeneration", QT_TRANSLATE_NOOP("Interior", "Regeneration Node"), {-5, 1.5, 3.5, 2.5}, "", "regeneration"},
             {"feeding", QT_TRANSLATE_NOOP("Interior", "Feeding Hall"), {1.5, 1.5, 3.5, 2.5}, "", "morale"},
             {"membrane", QT_TRANSLATE_NOOP("Interior", "Life Membrane"), {-7, -2, 2, 4}, "lifesupport", ""},
             {"culling", QT_TRANSLATE_NOOP("Interior", "Culling Beam Bay"), {5, -2, 2, 4}, "", "beam"},
@@ -1124,10 +1124,11 @@ Interior::Effects Interior::tick(float seconds, float lifeSupport, bool inBattle
     }
 
     // --- Organic hull (Wraith): the hive heals its structure and closes
-    // its own breaches little by little
+    // its own breaches little by little (twice faster with its
+    // regeneration node intact)
     if (m_faction == "Wraith")
         for (Compartment &c : m_compartments) {
-            c.integrity = std::min(100.0f, c.integrity + 0.4f * seconds);
+            c.integrity = std::min(100.0f, c.integrity + (hasCapability("regeneration") ? 0.8f : 0.4f) * seconds);
             if (c.breach && c.integrity > 70.0f) {
                 c.breach = false;
                 say(QCoreApplication::translate("Interior", "The hive closed the breach in %1").arg(shown(c.name)), 0);

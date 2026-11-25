@@ -552,8 +552,26 @@ bool BattleView::fireSecondaryBurst()
     return true;
 }
 
+void BattleView::setShipEquipment(bool shield, float armor)
+{
+    m_hasShield = shield;
+    m_armor = std::max(0.1f, armor);
+    if (!shield) {
+        m_shieldOrdered = false;
+        m_shieldStrength = 0.0f;
+        m_shieldCollapsed = true;
+    } else if (!m_shieldOrdered && m_shieldStrength <= 0.0f) {
+        m_shieldOrdered = true;
+        m_shieldCollapsed = false;
+    }
+}
+
 void BattleView::setShieldActive(bool active)
 {
+    if (!m_hasShield) {
+        emit logMessage(tr("No shield on this ship - its organic hull takes the blows"), LogLevel::Warning);
+        return;
+    }
     m_shieldOrdered = active;
     if (active)
         emit logMessage(tr("Shields raised (%1%)").arg(qRound(m_shieldStrength)), LogLevel::Success);
@@ -654,8 +672,8 @@ void BattleView::setSubsystemHealth(const QString &key, float health)
 void BattleView::restoreDefenses(float hull, float shield, bool shieldOn)
 {
     m_hull = hull > 0.0f ? std::min(hull, 100.0f) : 35.0f;
-    m_shieldStrength = std::clamp(shield, 0.0f, 100.0f);
-    m_shieldOrdered = shieldOn;
+    m_shieldStrength = m_hasShield ? std::clamp(shield, 0.0f, 100.0f) : 0.0f;
+    m_shieldOrdered = shieldOn && m_hasShield;
     m_shieldCollapsed = m_shieldStrength <= 0.0f;
 }
 
@@ -746,12 +764,14 @@ QString BattleView::weaponReport() const
         target = tr("T%1 %2 (%3%)").arg(indexOfId(e->id) + 1).arg(className(*e))
                      .arg(qRound(100.0f * e->hp / e->maxHp));
 
-    QString report = tr("Main tower: %1\nPulse weapons: %2\nSecondary towers: %3 (auto-fire, %4% efficiency)\n"
-                        "Current target: %5 | Kills: %6")
-                         .arg(state(m_mainCooldown), state(m_pulseCooldown), state(m_secondaryCooldown))
-                         .arg(qRound(subsystemHealth("weapons")))
-                         .arg(target)
-                         .arg(m_kills);
+    // Only the weapons of this ship
+    QString report = tr("%1: %2").arg(QCoreApplication::translate("Balance", m_loadout.mainName), state(m_mainCooldown));
+    if (m_loadout.pulse)
+        report += tr("\nPulse weapons: %1").arg(state(m_pulseCooldown));
+    if (m_loadout.towers)
+        report += tr("\nSecondary towers: %1 (auto-fire, %2% efficiency)").arg(state(m_secondaryCooldown))
+                      .arg(qRound(subsystemHealth("weapons")));
+    report += tr("\nCurrent target: %1 | Kills: %2").arg(target).arg(m_kills);
     if (const Enemy *e = findEnemy(m_lockedId); e && e->alive) {
         report += tr("\nHit chance on the target: %1% (distance %2 km, sensors %3%)")
                       .arg(qRound(100.0f * hitChance(destinyWorld(kMainTowerLocal), e->pos, true, e)
@@ -937,7 +957,7 @@ void BattleView::step(float dt)
         m_hull = std::min(100.0f, m_hull + m_loadout.hullRegen * dt);
 
     // Shield regeneration (slower while under fire)
-    if (m_shieldOrdered) {
+    if (m_shieldOrdered && m_hasShield) {
         const float base = m_time - m_lastShieldHit > 1.5f ? kPlayerShieldRegen : kPlayerShieldRegenUnderFire;
         const float rate = base * m_shieldRegenBonus * shieldPowerBoost()
                          * std::max(0.2f, subsystemHealth("shields") / 100.0f);
@@ -1483,6 +1503,11 @@ bool BattleView::aimAt(int enemyIndex, const QString &system)
     }
     if (!lockTarget(enemyIndex))
         return false;
+    if (index == SysShields && classOf(*findEnemy(m_lockedId)).faction == QLatin1String("Wraith")) {
+        emit logMessage(tr("T%1 has no shield generator - a Wraith ship relies on its organic hull").arg(enemyIndex + 1),
+                        LogLevel::Warning);
+        return false;
+    }
     m_aimSystem = index;
     const Enemy *e = findEnemy(m_lockedId);
     if (index < 0)
@@ -1651,8 +1676,9 @@ void BattleView::updateEnemyInterior(Enemy &e, float seconds)
         else if (c.fire > 0.0f || c.breach || c.leak)
             in.orderRepair(c.id, nullptr);
     }
+    const bool organic = classOf(e).faction == QLatin1String("Wraith");     // no shield generator
     for (int i = 0; i < 4; ++i)
-        if (e.systems[i] < 65.0f)
+        if (e.systems[i] < 65.0f && !(organic && i == SysShields))
             in.orderRepair(keys[i], nullptr);
     if (in.freeWorkers() == 0)
         in.rotate();
@@ -2125,14 +2151,21 @@ QString BattleView::powerReport() const
     const QString priority = m_priority == PowerPriority::Shields   ? tr("shields")
                            : m_priority == PowerPriority::Weapons ? tr("weapons")
                                                                   : tr("balanced");
-    return tr("Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5) - towers %6, railguns %7")
-               .arg(kCorePower)
-               .arg(freePower())
-               .arg(priority)
-               .arg(shieldPowerBoost(), 0, 'f', 2)
-               .arg(weaponPowerBoost(), 0, 'f', 2)
-               .arg(m_turretsOn ? tr("on") : tr("off"), m_railgunsOn ? tr("on") : tr("off"))
-           + tr(" - evasion %1, drones need %2 free").arg(m_evading ? tr("on") : tr("off")).arg(kDronePower)
+    QString report = tr("Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5)")
+                         .arg(kCorePower)
+                         .arg(freePower())
+                         .arg(priority)
+                         .arg(shieldPowerBoost(), 0, 'f', 2)
+                         .arg(weaponPowerBoost(), 0, 'f', 2);
+    if (m_loadout.towers)
+        report += tr(" - towers %1").arg(m_turretsOn ? tr("on") : tr("off"));
+    if (m_loadout.railguns)
+        report += tr(" - railguns %1").arg(m_railgunsOn ? tr("on") : tr("off"));
+    if (!m_hasShield)
+        report += tr(" - no shield");
+    return report
+           + tr(" - evasion %1").arg(m_evading ? tr("on") : tr("off"))
+           + (m_droneBay > 0 ? tr(", drones need %1 free").arg(kDronePower) : QString())
            + (m_powerLoss > 0 ? tr(" - LEAKS -%1").arg(m_powerLoss) : QString())
            + (m_powerBonus > 0 ? tr(" - generator +%1").arg(m_powerBonus) : QString());
 }
@@ -2847,7 +2880,9 @@ float BattleView::adaptedDamage(const Enemy &e, Weapon weapon, float damage)
 void BattleView::setupShip(Enemy &ship)
 {
     const ShipClass &sc = m_classes[ship.classIndex];
-    ship.hp = ship.maxHp = std::max(1.0f, float(sc.hull) * gameConfig().shipHullScale);
+    // Wraith ships have no shield but a very thick organic hull
+    const float organic = sc.faction == QLatin1String("Wraith") ? kWraithHullScale : 1.0f;
+    ship.hp = ship.maxHp = std::max(1.0f, float(sc.hull) * gameConfig().shipHullScale * organic);
     ship.shield = ship.maxShield
         = float(sc.hull) * shipShieldShare(sc.faction, ship.cls == EnemyClass::Mothership) * gameConfig().shipShieldScale;
     ship.ammo.clear();
@@ -2986,7 +3021,7 @@ void BattleView::hitShield(const Projectile &p)
 void BattleView::hitHull(const Projectile &p)
 {
     const float before = m_hull;
-    m_hull = std::max(0.0f, m_hull - p.damage * gameConfig().damageToPlayer);
+    m_hull = std::max(0.0f, m_hull - p.damage * gameConfig().damageToPlayer * m_armor);
     m_stats.hullLost += before - m_hull;
     m_shake = std::min(1.0f, m_shake + p.damage / 40.0f);
     const bool missile = p.kind == Projectile::Kind::Missile;
@@ -4064,7 +4099,16 @@ void BattleView::drawOverlay()
             if (!project(m.map(it->first / float(it->second)), &a))
                 continue;
             const QString &kind = it.key();
-            const QString label = kind == "main" ? QCoreApplication::translate("Balance", m_loadout.mainName)
+            // Only the weapons this ship really carries
+            const bool mainIsBeam = QString::fromLatin1(m_loadout.mainName).contains(QLatin1String("beam"), Qt::CaseInsensitive);
+            const bool carried = kind == "main" || (kind == "beam" && mainIsBeam)
+                              || (kind == "pulse" && m_loadout.pulse) || (kind == "turret" && m_loadout.towers)
+                              || (kind.contains("drone") && m_droneBay > 0)
+                              || (kind.contains("missile") && m_missileBay > 0)
+                              || (kind.contains("railgun") && m_loadout.railguns);
+            if (!carried)
+                continue;
+            const QString label = kind == "main" || kind == "beam" ? QCoreApplication::translate("Balance", m_loadout.mainName)
                                 : kind == "pulse"               ? tr("Pulse")
                                 : kind == "turret"              ? tr("Towers")
                                 : kind == "beam"                ? tr("Beam")
@@ -4116,8 +4160,15 @@ void BattleView::drawOverlay()
     p.drawRoundedRect(panel, 4, 4);
     drawStatusBar(p, QRectF(22, 18, 250, 22), tr("HULL"), m_hull, healthColor(m_hull), QString());
     const QString shieldSuffix = m_shieldCollapsed ? tr(" DOWN") : (m_shieldOrdered ? QString() : tr(" OFF"));
-    drawStatusBar(p, QRectF(22, 44, 250, 22), tr("SHIELD"), m_shieldStrength,
-                  shieldProtecting() ? QColor(90, 170, 255) : QColor(110, 110, 110), shieldSuffix);
+    if (m_hasShield)
+        drawStatusBar(p, QRectF(22, 44, 250, 22), tr("SHIELD"), m_shieldStrength,
+                      shieldProtecting() ? QColor(90, 170, 255) : QColor(110, 110, 110), shieldSuffix);
+    else {
+        // No shield: the organic hull heals itself
+        p.setPen(QColor(190, 150, 230));
+        p.drawText(QRectF(22, 44, 250, 22), Qt::AlignVCenter,
+                   tr("ORGANIC HULL - heals %1%/s").arg(double(m_loadout.hullRegen), 0, 'f', 1));
+    }
 
     // --- Contacts (top right) and hint (bottom left)
     p.setPen(ids.empty() ? QColor(70, 230, 100) : red);

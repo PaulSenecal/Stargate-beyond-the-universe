@@ -1401,7 +1401,8 @@ private slots:
             Interior ship(QStringLiteral("flagship"), QString::fromLatin1(faction));
             QVERIFY2(ship.compartments().size() >= 10, faction);
             for (const char *system : {"engines", "shields", "weapons", "lifesupport", "sensors"})
-                QVERIFY2(ship.compartmentOfSystem(system) >= 0, qPrintable(QStringLiteral("%1 %2").arg(faction, system)));
+                if (QString(system) != "shields" || QString(faction) != "Wraith")      // a hive has no shield
+                    QVERIFY2(ship.compartmentOfSystem(system) >= 0, qPrintable(QStringLiteral("%1 %2").arg(faction, system)));
             for (const Interior::Compartment &c : ship.compartments())
                 QVERIFY2(!c.neighbours.isEmpty(), qPrintable(QStringLiteral("%1 %2").arg(faction, c.id)));
             QVERIFY2(ship.hasRings() || ship.hasBeam() || ship.hasGate(), faction);     // a way to board
@@ -1412,6 +1413,7 @@ private slots:
         QVERIFY(Interior("flagship", "Goa'uld").hasGate());           // Ha'tak gate room
         QVERIFY(Interior("flagship", "Tau'ri").hasBeam());            // Asgard beam of the BC-304
         QVERIFY(Interior().hasGate());                                // the Destiny
+        QCOMPARE(Interior("flagship", "Wraith").compartmentOfSystem("shields"), -1);
         Interior enemy("enemy", "generic");
         QVERIFY(enemy.compartmentOfSystem("hangar") >= 0);
         QString error;

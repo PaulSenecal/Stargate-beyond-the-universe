@@ -262,6 +262,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     // Weapons, hangar and drones of the flagship of the faction (balance.h)
     const Balance::FlagshipLoadout loadout = Balance::flagshipLoadout(m_game->player().id);
     m_battle->setLoadout(loadout);
+    m_battle->setShipEquipment(Balance::flagshipShield(m_game->player().id), Balance::flagshipArmor(m_game->player().id));
     m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), loadout.hangar);
     m_battle->setFlagshipStyle(m_game->player().id);
     m_battle->setDroneBay(loadout.drones);
@@ -1020,18 +1021,33 @@ void ConquestScreen::setHudVisible(bool visible)
 
 void ConquestScreen::setupHud()
 {
-    // The flagship has no component table: its parts follow the battle systems
+    // The flagship has no component table: its parts follow the battle
+    // systems, and only those it carries (no shield on a hive, no railguns
+    // on a Ha'tak...)
     struct Part
     {
-        const char *name;
+        QString name;
         const char *system;
         bool weapon;
     };
-    static const Part kParts[] = {
-        {"Life Support", "lifesupport", false}, {"Shield Generator", "shields", false},
-        {"Power Core", "", false},              {"FTL Drive", "engines", false},
-        {"Sublight Engine", "engines", false},  {"Energy Cannon", "weapons", true},
-        {"Railgun", "weapons", true},           {"Missile Bay", "weapons", true},
+    auto parts = [this] {
+        const WeaponReadiness w = m_battle->weaponReadiness();
+        QList<Part> list{{QStringLiteral("Life Support"), "lifesupport", false}};
+        if (m_battle->hasShield())
+            list.append({QStringLiteral("Shield Generator"), "shields", false});
+        list.append({QStringLiteral("Power Core"), "", false});
+        list.append({QStringLiteral("FTL Drive"), "engines", false});
+        list.append({QStringLiteral("Sublight Engine"), "engines", false});
+        list.append({QCoreApplication::translate("Balance", w.mainName.toLatin1().constData()), "weapons", true});
+        if (w.hasTowers)
+            list.append({QStringLiteral("Energy Cannon"), "weapons", true});
+        if (w.hasRailguns)
+            list.append({QStringLiteral("Railgun"), "weapons", true});
+        if (w.missilesMax > 0)
+            list.append({QStringLiteral("Missile Bay"), "weapons", true});
+        if (w.dronesMax > 0)
+            list.append({QStringLiteral("Drone Bay"), "weapons", true});
+        return list;
     };
     auto health = [this](const char *system) {
         return *system ? qRound(m_battle->subsystemHealth(QString::fromLatin1(system))) : 100;
@@ -1040,18 +1056,19 @@ void ConquestScreen::setupHud()
         return *system && m_battle->secondsSinceHit(QString::fromLatin1(system)) < 1.5f;
     };
 
-    m_shipStatus->setProvider([this, health, hit] {
+    m_shipStatus->setProvider([this, parts, health, hit] {
         ShipStatusData data;
         data.hull = m_battle->hull();
         data.shield = m_battle->shieldStrength();
         data.shieldUp = m_battle->shieldActive();
+        data.hasShield = m_battle->hasShield();
         const BattleView::Schematic schematic = m_battle->schematic();
         data.silhouette = schematic.silhouette;
         data.silhouetteRect = schematic.rect;
         data.shieldCenter = schematic.shieldCenter;
         data.shieldRadii = schematic.shieldRadii;
-        for (const Part &part : kParts)
-            data.components.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
+        for (const Part &part : parts())
+            data.components.append({part.name, health(part.system), 100, hit(part.system)});
         for (const QVector3D &f : m_battle->fireSpots())
             data.fires << QPointF(f.x(), f.z());
         for (const HitMark &h : m_battle->recentHits())
@@ -1067,12 +1084,12 @@ void ConquestScreen::setupHud()
             picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny, s.missile});
         return picture;
     });
-    m_weapons->setProvider([this, health, hit] {
+    m_weapons->setProvider([this, parts, health, hit] {
         WeaponStatusData data;
         data.readiness = m_battle->weaponReadiness();
-        for (const Part &part : kParts)
+        for (const Part &part : parts())
             if (part.weapon)
-                data.weapons.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
+                data.weapons.append({part.name, health(part.system), 100, hit(part.system)});
         return data;
     });
 }

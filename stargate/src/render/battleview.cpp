@@ -1545,6 +1545,57 @@ void BattleView::relaunchAfterJump()
         launchFighters(count);
 }
 
+void BattleView::setFireSpots(const QList<QVector3D> &spots)
+{
+    m_externalFires = true;
+    m_fires.assign(spots.begin(), spots.end());
+}
+
+bool BattleView::canBoard(int enemyIndex, QString *why) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size())) {
+        if (why) *why = tr("no contact T%1").arg(enemyIndex + 1);
+        return false;
+    }
+    const Enemy *e = findEnemy(ids[enemyIndex]);
+    if (e->cls != EnemyClass::Mothership) {
+        if (why) *why = tr("only motherships can be boarded");
+        return false;
+    }
+    if (e->shield > 1.0f) {
+        if (why) *why = tr("its shield is still up (%1%)").arg(qRound(100.0f * e->shield / std::max(1.0f, e->maxShield)));
+        return false;
+    }
+    if (e->hp > 0.35f * e->maxHp) {
+        if (why) *why = tr("not crippled enough (hull %1%, needs 35%)").arg(qRound(100.0f * e->hp / e->maxHp));
+        return false;
+    }
+    if (e->pos.length() > 45.0f) {
+        if (why) *why = tr("too far for the shuttles");
+        return false;
+    }
+    return true;
+}
+
+QString BattleView::captureEnemy(int enemyIndex)
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return QString();
+    Enemy *e = findEnemy(ids[enemyIndex]);
+    e->alive = false;
+    ++m_kills;
+    ++m_stats.kills;
+    ++m_stats.motherships;
+    if (m_lockedId == e->id)
+        m_lockedId = -1;
+    hyperspaceWindow(e->pos, 1.2f);
+    emit logMessage(tr("T%1 %2 captured - its crew surrendered").arg(enemyIndex + 1).arg(className(*e)), LogLevel::Success);
+    emit enemyDestroyed(true);
+    return classOf(*e).faction;
+}
+
 void BattleView::finishBattle()
 {
     m_inBattle = false;
@@ -1761,7 +1812,7 @@ int BattleView::freePower() const
         used += kDronePower;                // guidance of the drones in flight
     if (m_evading)
         used += kEvasionPower;
-    return std::max(0, kCorePower - used);
+    return std::max(0, kCorePower + m_powerBonus - m_powerLoss - used);
 }
 
 float BattleView::shieldPowerBoost() const
@@ -1788,7 +1839,9 @@ QString BattleView::powerReport() const
                .arg(shieldPowerBoost(), 0, 'f', 2)
                .arg(weaponPowerBoost(), 0, 'f', 2)
                .arg(m_turretsOn ? tr("on") : tr("off"), m_railgunsOn ? tr("on") : tr("off"))
-           + tr(" - evasion %1, drones need %2 free").arg(m_evading ? tr("on") : tr("off")).arg(kDronePower);
+           + tr(" - evasion %1, drones need %2 free").arg(m_evading ? tr("on") : tr("off")).arg(kDronePower)
+           + (m_powerLoss > 0 ? tr(" - LEAKS -%1").arg(m_powerLoss) : QString())
+           + (m_powerBonus > 0 ? tr(" - generator +%1").arg(m_powerBonus) : QString());
 }
 
 // Blue-white window of a ship dropping out of (or entering) hyperspace
@@ -2060,7 +2113,7 @@ float BattleView::hitChance(const QVector3D &from, const QVector3D &to, bool fro
 {
     float chance = GameConfig::instance().accuracyAt((to - from).length());
     if (fromPlayer) {
-        chance *= 0.4f + 0.6f * subsystemHealth("sensors") / 100.0f;    // damaged sensors: poor aim
+        chance *= (0.4f + 0.6f * subsystemHealth("sensors") / 100.0f) * m_accuracyBonus;  // damaged sensors: poor aim
         if (m_evading)
             chance *= kEvasionOwnAim;
     }
@@ -2581,8 +2634,9 @@ void BattleView::hitHull(const Projectile &p)
     }
     damageSubsystemNear(p.aimLocal, p.damage * 1.6f);
     m_hits.push_back({p.aimLocal, {m_time, false}});
-    if (m_fires.size() < kMaxFires && randRange(0, 1) < 0.35f)
+    if (!m_externalFires && m_fires.size() < kMaxFires && randRange(0, 1) < 0.35f)
         m_fires.push_back(p.aimLocal);
+    emit hullHit(p.aimLocal, p.damage * gameConfig().damageToPlayer);
 
     for (float threshold : {75.0f, 50.0f, 25.0f}) {
         if (before > threshold && m_hull <= threshold)

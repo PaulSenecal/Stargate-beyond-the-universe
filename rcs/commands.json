@@ -108,7 +108,7 @@
           },
           "repair": {
             "name": "Repair",
-            "params": [{ "name": "system", "values": ["engines", "engine", "shields", "shield", "weapons", "weapon", "lifesupport", "life", "hull"] }]
+            "params": [{ "name": "system or room", "pattern": "^[A-Za-z_]+$" }]
           },
           "sector_derivate_energy": {
             "name": "Sectordereivateenegy",

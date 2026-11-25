@@ -15,6 +15,7 @@
 #include "routemapwidget.h"
 #include "radarwidget.h"
 #include "shiplibrarydialog.h"
+#include "shipplandialog.h"
 #include "shipstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
 #include "src/audio/musicplayer.h"
@@ -146,6 +147,9 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     m_battle->installEventFilter(this);
     connect(m_route, &DestinyRoute::notice, this, &GameMenu::onRouteNotice);
     connect(m_battle, &BattleView::jumpReady, this, &GameMenu::performJump);
+    connect(m_battle, &BattleView::hullHit, this, [this](const QVector3D &local, float damage) {
+        m_interior.damageAt(QPointF(local.x(), local.z()), damage);
+    });
     connect(m_simTimer, &QTimer::timeout, this, &GameMenu::simulate);
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] { saveGame(false); });
 
@@ -154,7 +158,9 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
         for (const QString &cmd : m_commands->getAvailableCommands())
             words << cmd.toLower();
         words << "help" << "clear" << "save" << "quests" << "hint" << "library" << "sound" << "music" << "menu" << "launch" << "turrets" << "railguns" << "power"
-              << "target" << "missiles" << "drones" << "evade" << "ftl" << "star";
+              << "target" << "missiles" << "drones" << "evade" << "ftl" << "star"
+              << "plan" << "crew" << "jobs" << "cancel" << "seal" << "unseal" << "vent" << "unlock" << "install"
+              << "blueprints" << "defend" << "board";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -169,7 +175,11 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
                                          QStringLiteral("menu"), QStringLiteral("launch"), QStringLiteral("turrets"),
                                          QStringLiteral("railguns"), QStringLiteral("power"), QStringLiteral("target"),
                                          QStringLiteral("missiles"), QStringLiteral("drones"), QStringLiteral("evade"),
-                                         QStringLiteral("ftl"), QStringLiteral("star")})
+                                         QStringLiteral("ftl"), QStringLiteral("star"), QStringLiteral("plan"),
+                                         QStringLiteral("crew"), QStringLiteral("jobs"), QStringLiteral("seal"),
+                                         QStringLiteral("unseal"), QStringLiteral("vent"), QStringLiteral("unlock"),
+                                         QStringLiteral("install"), QStringLiteral("blueprints"), QStringLiteral("defend"),
+                                         QStringLiteral("board"), QStringLiteral("cancel")})
                 if (!text.trimmed().isEmpty() && local.startsWith(text.trimmed(), Qt::CaseInsensitive)
                     && !text.contains(' '))
                     lines << local;
@@ -368,7 +378,268 @@ bool GameMenu::localCommand(const QString &first, const QStringList &words)
         diveIntoStar();
         return true;
     }
+    return interiorCommand(first, words);
+}
+
+bool GameMenu::payFor(const QList<std::pair<QString, int>> &cost)
+{
+    QList<RepairCost> list;
+    for (const auto &[resource, quantity] : cost)
+        list.append({0, resource, quantity});
+    QString missing;
+    if (!m_destiny.consume(list, &missing)) {
+        m_console->appendLine(tr("Missing: %1").arg(missing), CommandConsole::Tone::Warning);
+        return false;
+    }
+    return true;
+}
+
+// Orders for the inside of the ship and its crew
+bool GameMenu::interiorCommand(const QString &first, const QStringList &words)
+{
+    const QString arg = words.mid(1).join(' ');
+    QString error;
+    auto failed = [this, &error] {
+        m_console->appendLine(error, CommandConsole::Tone::Warning);
+    };
+    if (first == "plan" || first == "ship") {
+        showPlan();
+        if (!arg.isEmpty()) {
+            const int room = m_interior.find(arg);
+            for (const QString &line : ShipPlanDialog::describe(m_interior, room))
+                m_console->appendLine(line);
+        }
+        return true;
+    }
+    if (first == "crew") {
+        const QString sub = words.value(1).toLower();
+        if (sub == "rest") {
+            if (m_interior.rest(words.mid(2).join(' '), &error))
+                m_console->appendLine(tr("%1 goes to rest").arg(words.mid(2).join(' ')), CommandConsole::Tone::Info);
+            else
+                failed();
+        } else if (sub == "rotate") {
+            m_console->appendLine(tr("Rotation: %1 tired crew member(s) sent to rest").arg(m_interior.rotate()),
+                                  CommandConsole::Tone::Info);
+        } else {
+            showCrew();
+        }
+        return true;
+    }
+    if (first == "jobs") {
+        if (m_interior.jobs().isEmpty())
+            m_console->appendLine(tr("No repair job under way"));
+        for (const Interior::Job &j : m_interior.jobs()) {
+            QStringList names;
+            for (int w : j.workers)
+                names << m_interior.people()[w].name;
+            m_console->appendLine(tr("#%1 %2 %3 - %4% - %5")
+                                      .arg(j.id)
+                                      .arg(j.kind, j.target)
+                                      .arg(qRound(100.0f * (1.0f - j.work / std::max(0.01f, j.total))))
+                                      .arg(names.isEmpty() ? tr("waiting for free hands") : names.join(", ")));
+        }
+        return true;
+    }
+    if (first == "cancel") {
+        if (!m_interior.cancelJob(arg.toInt()))
+            m_console->appendLine(tr("No job #%1 ('jobs' for the list)").arg(arg), CommandConsole::Tone::Warning);
+        return true;
+    }
+    if (first == "seal" || first == "unseal") {
+        if (!m_interior.setSealed(arg, first == "seal", &error))
+            failed();
+        flushInteriorMessages();
+        return true;
+    }
+    if (first == "vent") {
+        if (!m_interior.vent(arg, &error))
+            failed();
+        flushInteriorMessages();
+        return true;
+    }
+    if (first == "unlock") {
+        const int room = m_interior.find(arg);
+        if (room < 0 || !m_interior.compartments()[room].locked) {
+            m_interior.orderUnlock(arg, &error);
+            failed();
+            return true;
+        }
+        if (!payFor(m_interior.compartments()[room].unlockCost))
+            return true;
+        if (m_interior.orderUnlock(arg, &error) < 0)
+            failed();
+        else
+            m_console->appendLine(tr("Teams sent to open %1").arg(arg), CommandConsole::Tone::Info);
+        return true;
+    }
+    if (first == "install") {
+        const InteriorDef::Module *module = InteriorDef::module(words.value(1));
+        const QString room = words.mid(2).join(' ');
+        // Check everything before paying
+        if (!module || !m_interior.blueprints().contains(module->id)) {
+            m_interior.orderInstall(words.value(1), room, &error);
+            failed();
+            return true;
+        }
+        Interior probe = m_interior;
+        if (probe.orderInstall(module->id, room, &error) < 0) {
+            failed();
+            return true;
+        }
+        if (payFor(module->cost) && m_interior.orderInstall(module->id, room, &error) >= 0)
+            m_console->appendLine(tr("Installation of the %1 started")
+                                      .arg(QCoreApplication::translate("Interior", module->name.toUtf8().constData())),
+                                  CommandConsole::Tone::Info);
+        return true;
+    }
+    if (first == "blueprints") {
+        if (m_interior.blueprints().isEmpty())
+            m_console->appendLine(tr("No blueprint yet - explore Ancient sites, open the archives, capture ships"));
+        for (const QString &id : m_interior.blueprints())
+            if (const InteriorDef::Module *m = InteriorDef::module(id)) {
+                QStringList cost;
+                for (const auto &[resource, quantity] : m->cost)
+                    cost << QStringLiteral("%1 %2").arg(quantity).arg(DbText::tr(resource));
+                m_console->appendLine(QStringLiteral("%1 (%2): %3 - %4")
+                                          .arg(QCoreApplication::translate("Interior", m->name.toUtf8().constData()), m->id,
+                                               QCoreApplication::translate("Interior", m->effect.toUtf8().constData()),
+                                               cost.join(", ")));
+            }
+        return true;
+    }
+    if (first == "defend") {
+        if (!m_interior.defend(arg, &error))
+            failed();
+        flushInteriorMessages();
+        return true;
+    }
+    if (first == "board") {
+        bool ok = false;
+        const int target = words.value(1).toInt(&ok);
+        if (!ok || target < 1) {
+            m_console->appendLine(tr("Usage: board <n> - a crippled mothership (shield down, hull under 35%)"),
+                                  CommandConsole::Tone::Warning);
+            return true;
+        }
+        if (!m_battle->canBoard(target - 1, &error)) {
+            m_console->appendLine(tr("Cannot board: %1").arg(error), CommandConsole::Tone::Warning);
+            return true;
+        }
+        m_console->appendLine(tr("Boarding team away (success chance %1%)").arg(qRound(m_interior.boardingChance() * 100)),
+                              CommandConsole::Tone::Info);
+        if (m_interior.boardEnemy()) {
+            const QString faction = m_battle->captureEnemy(target - 1);
+            // Its stores and its technology
+            const QString gained = m_destiny.addResources({{"naquadah", 12}, {"trinium", 4}, {"minerals", 8}});
+            if (!gained.isEmpty())
+                m_console->appendLine(tr("Salvage from the captured ship: %1").arg(gained), CommandConsole::Tone::Success);
+            const QString blueprint = faction == "Goa'uld" || faction == "Lucian Alliance" ? QStringLiteral("goauld_cannon")
+                                    : faction == "Asgard"                                 ? QStringLiteral("asgard_shield")
+                                    : faction == "Ancients"                               ? QStringLiteral("sensor_suite")
+                                                                                          : m_interior.randomUnknownBlueprint();
+            m_interior.learnBlueprint(blueprint);
+        } else {
+            m_console->appendLine(tr("The boarding failed - the team falls back with wounded"), CommandConsole::Tone::Critical);
+        }
+        flushInteriorMessages();
+        return true;
+    }
     return false;
+}
+
+void GameMenu::showCrew()
+{
+    m_console->appendLine(tr("Crew %1 - morale %2% - free workers %3").arg(m_route->state().crew)
+                              .arg(qRound(m_interior.morale())).arg(m_interior.freeWorkers()));
+    for (const Interior::Person &p : m_interior.people()) {
+        QString state = p.injury > 0.0f ? tr("INJURED (%1 s)").arg(qRound(p.injury))
+                      : p.resting        ? tr("resting")
+                      : p.job >= 0       ? tr("repair job #%1").arg(p.job)
+                                         : tr("available");
+        const int room = m_interior.find(p.location);
+        const QString where = room >= 0
+            ? QCoreApplication::translate("Interior", m_interior.compartments()[room].name.toUtf8().constData())
+            : p.location;
+        m_console->appendLine(tr("%1%2 - fatigue %3% - %4 - %5")
+                                  .arg(p.name)
+                                  .arg(p.bonus.isEmpty() ? QString() : QStringLiteral(" [%1]").arg(p.bonus))
+                                  .arg(qRound(p.fatigue))
+                                  .arg(state, where),
+                              p.injury > 0.0f ? CommandConsole::Tone::Warning : CommandConsole::Tone::Info);
+    }
+    m_console->appendLine(tr("Orders: crew rest <name>, crew rotate (tired ones rest), jobs, cancel <job>"));
+}
+
+void GameMenu::showPlan()
+{
+    if (!m_planDialog)
+        m_planDialog = new ShipPlanDialog(&m_interior, [this] {
+            QHash<QString, float> health;
+            for (const QString &key : BattleView::systemKeys())
+                health.insert(key, m_battle->systemHealth(key));
+            return health;
+        }, this);
+    m_planDialog->show();
+    m_planDialog->raise();
+}
+
+void GameMenu::flushInteriorMessages()
+{
+    for (const Interior::Message &m : m_interior.takeMessages()) {
+        const CommandConsole::Tone tone = m.tone == 1 ? CommandConsole::Tone::Success
+                                        : m.tone == 2 ? CommandConsole::Tone::Warning
+                                        : m.tone == 3 ? CommandConsole::Tone::Critical
+                                                      : CommandConsole::Tone::Info;
+        m_console->appendLine(m.text, tone);
+    }
+}
+
+// The interior runs with the game clock: fires, air, jobs, crew
+void GameMenu::updateInterior(float seconds)
+{
+    m_interior.setCrewCount(m_route->state().crew);
+    const bool battle = m_battle->hostileCount() > 0;
+    const Interior::Effects e = m_interior.tick(seconds, m_battle->systemHealth("lifesupport"), battle);
+    for (const auto &[key, amount] : e.systemDamage) {
+        const float health = std::max(0.0f, m_battle->systemHealth(key) - amount);
+        m_battle->setSubsystemHealth(key, health);
+        m_destiny.setSystemHealth(key, health);
+    }
+    for (const auto &[key, amount] : e.systemRepair)
+        m_battle->repairBy(key, amount);
+    if (e.hullRepair > 0.0f)
+        m_battle->repairBy(QStringLiteral("hull"), e.hullRepair);
+    if (e.crewLost > 0)
+        m_route->changeCrew(-e.crewLost);
+    if (e.food >= 1.0f || e.water >= 1.0f)
+        m_destiny.addResources({{"food", int(e.food)}, {"water", int(e.water)}});
+    // Boarding parties: Jaffa, Lucian Alliance and Wraith come aboard
+    const QString faction = m_battle->waveFaction();
+    if (battle && (faction == "Goa'uld" || faction == "Lucian Alliance" || faction == "Wraith")
+        && QRandomGenerator::global()->generateDouble() < 0.004 * seconds)
+        m_interior.board(2 + QRandomGenerator::global()->bounded(4));
+    // Burning compartments on the 3D hull
+    QList<QVector3D> fires;
+    for (const Interior::Compartment &c : m_interior.compartments())
+        if (c.fire > 0.0f)
+            fires << QVector3D(float(c.rect.center().x()), 0.3f, float(c.rect.center().y()));
+    m_battle->setFireSpots(fires);
+    applyBonuses();
+    flushInteriorMessages();
+}
+
+// Key characters and modules change the ship
+void GameMenu::applyBonuses()
+{
+    m_battle->setPowerLoss(m_interior.powerLoss());
+    m_battle->setPowerBonus(m_interior.hasModule("naquadah_generator") ? 15 : 0);
+    m_battle->setDamageBonus((m_interior.bonusActive("combat") ? 1.1f : 1.0f)
+                             * (m_interior.hasModule("goauld_cannon") ? 1.15f : 1.0f));
+    m_battle->setShieldRegenBonus(m_interior.hasModule("asgard_shield") ? 1.3f : 1.0f);
+    m_battle->setAccuracyBonus((m_interior.bonusActive("ancient") ? 1.05f : 1.0f)
+                               * (m_interior.hasModule("sensor_suite") ? 1.1f : 1.0f)
+                               * (m_interior.hasCapability("command") ? 1.0f : 0.9f));
 }
 
 void GameMenu::dispatch(const QString &name, const QStringList &args)
@@ -438,6 +709,10 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("FTL: engine ftl (under fire the drive spools %1 s; fighters dock, those too far are left behind), "
                              "ftl abort - star: dive into a star to recharge (shields up!)").arg(qRound(Balance::kFtlSpoolUnderFire)));
     m_console->appendLine(tr("Supplies: railgun slugs (mineral planets), missiles (naquadah planets), drones (Ancient sites)"));
+    m_console->appendLine(tr("Ship: plan (zoomable plan of the compartments), repair <system|hull|room> (a crew job), "
+                             "jobs, cancel <job>, seal|unseal|vent <room>, unlock <room>, install <module> [room], blueprints"));
+    m_console->appendLine(tr("Crew: crew (list), crew rest <name>, crew rotate - defend <room> (boarders), "
+                             "board <n> (crippled mothership)"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -615,23 +890,35 @@ void GameMenu::loadSave()
                           CommandConsole::Tone::Success);
 }
 
+// Repairs are jobs for the crew: resources are paid now, the work takes time
 void GameMenu::repair(const QString &system)
 {
-    const QString key = BattleView::systemKey(system);
-    if (key.isEmpty()) {
-        m_battle->repairSubsystem(system);      // prints the list of valid systems
-        return;
-    }
-    if (m_battle->systemHealth(key) >= 99.5f) {
+    const QString what = system.trimmed().toLower();
+    const QString key = BattleView::systemKey(what);
+    if (!key.isEmpty() && m_battle->systemHealth(key) >= 99.5f) {
         m_console->appendLine(tr("%1 already at 100%").arg(key));
         return;
     }
-
-    const QList<RepairCost> cost = m_destiny.repairCost(key);
+    QList<RepairCost> cost;
+    if (!key.isEmpty()) {
+        cost = m_destiny.repairCost(key);
+    } else if (const int room = m_interior.find(what); room >= 0) {
+        const Interior::Compartment &c = m_interior.compartments()[room];
+        if (c.fire <= 0.0f && c.breach)
+            cost.append({0, QStringLiteral("minerals"), 3});           // hull plates
+        else if (c.fire <= 0.0f && !c.leak && c.integrity < 99.0f)
+            cost.append({0, QStringLiteral("minerals"), 2});
+    }
+    QString error;
+    const int job = m_interior.orderRepair(key.isEmpty() ? what : key, &error);
+    if (job < 0) {
+        m_console->appendLine(tr("Cannot repair: %1").arg(error), CommandConsole::Tone::Warning);
+        return;
+    }
     QString missing;
     if (!m_destiny.consume(cost, &missing)) {
-        m_console->appendLine(tr("Cannot repair %1 - missing: %2").arg(key, missing),
-                              CommandConsole::Tone::Warning);
+        m_interior.cancelJob(job);
+        m_console->appendLine(tr("Cannot repair %1 - missing: %2").arg(what, missing), CommandConsole::Tone::Warning);
         return;
     }
     if (m_destiny.isLoaded() && !cost.isEmpty()) {
@@ -640,7 +927,15 @@ void GameMenu::repair(const QString &system)
             used << QStringLiteral("%1 %2").arg(c.quantity).arg(DbText::tr(c.resourceName));
         m_console->appendLine(tr("Resources used: %1").arg(used.join(", ")));
     }
-    if (m_battle->repairSubsystem(key))
+    const Interior::Job *created = nullptr;
+    for (const Interior::Job &j : m_interior.jobs())
+        if (j.id == job)
+            created = &j;
+    m_console->appendLine(created && created->workers.isEmpty()
+                              ? tr("Repair job #%1 queued - no free hands yet ('jobs', 'crew rotate')").arg(job)
+                              : tr("Repair job #%1 started (%2 worker(s))").arg(job).arg(created ? created->workers.size() : 0),
+                          CommandConsole::Tone::Info);
+    if (!key.isEmpty())
         for (const QString &component : m_destiny.componentNames(key))
             m_quests->notify("REPAIR", component);
 }
@@ -679,10 +974,13 @@ void GameMenu::simulate()
     const double kHoursPerTick = ::kHoursPerTick * gameConfig().gameSpeed;
     m_route->tick(kHoursPerTick);
     updateMusic(false);
+    updateInterior(gameConfig().gameSpeed);
 
     // Crew supplies
     if (m_destiny.isLoaded()) {
-        const bool fed = m_destiny.consumeSupplies(m_route->state().crew, kHoursPerTick);
+        // Camile Wray rations the stores
+        const int eaters = m_interior.bonusActive("supplies") ? qRound(m_route->state().crew * 0.9) : m_route->state().crew;
+        const bool fed = m_destiny.consumeSupplies(eaters, kHoursPerTick);
         if (!fed) {
             if (!m_starving) {
                 m_starving = true;
@@ -821,6 +1119,9 @@ void GameMenu::restoreGame()
     m_battle->setMissileBay(m_battle->missileCapacity(), m_extra.value("missiles").toInt(m_battle->missileCapacity()));
     m_battle->setDrones(m_extra.value("drones").toInt(0));
     m_starUsedAt = m_extra.value("starUsedAt").toInt(-1);
+    m_interior.fromJson(m_extra.value("interior").toObject());
+    m_interior.setCrewCount(save->crew);
+    m_interior.takeMessages();
 
     const RouteStop &stop = m_route->currentStop();
     m_console->appendLine(tr("Game restored: day %1, G%2 %3 system %4, crew %5")
@@ -860,6 +1161,7 @@ bool GameMenu::saveGame(bool announce)
     save.extra.insert("missiles", m_battle->missiles());
     save.extra.insert("drones", m_battle->drones());
     save.extra.insert("starUsedAt", m_starUsedAt);
+    save.extra.insert("interior", m_interior.toJson());
 
     const bool ok = SaveRepository::save(m_sessionId, save, m_route->galaxyName(m_route->currentStop().galaxy));
     if (announce)
@@ -955,7 +1257,7 @@ void GameMenu::jumpFtl()
     }
     // Under fire the drive needs time to spool; fighters outside must dock
     if (m_battle->hostileCount() > 0)
-        m_battle->startJumpSequence(Balance::kFtlSpoolUnderFire);
+        m_battle->startJumpSequence(Balance::kFtlSpoolUnderFire * (m_interior.bonusActive("energy") ? 0.7f : 1.0f));
     else if (m_battle->weaponReadiness().fightersOut > 0)
         m_battle->startJumpSequence(Balance::kFtlSpoolDocking);
     else
@@ -1131,6 +1433,12 @@ void GameMenu::explore()
         const int before = m_battle->missiles();
         m_battle->setMissileBay(m_battle->missileCapacity(), before + 3);
         supplies << tr("%1 missile(s)").arg(m_battle->missiles() - before);
+    }
+    if (p.isAncientSite() && QRandomGenerator::global()->generateDouble() < 0.4) {
+        const QString blueprint = m_interior.randomUnknownBlueprint();
+        if (!blueprint.isEmpty())
+            m_interior.learnBlueprint(blueprint);
+        flushInteriorMessages();
     }
     if (p.isAncientSite() && m_battle->drones() < m_battle->droneCapacity()) {
         const int before = m_battle->drones();

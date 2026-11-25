@@ -22,6 +22,7 @@
 #include "meshbuilder.h"
 #include "planetlook.h"
 #include "src/audio/soundcue.h"
+#include "src/core/interior.h"
 #include "src/core/shipclass.h"
 
 class QPainter;
@@ -198,6 +199,22 @@ public:
     // The boarded ship is taken: it leaves the battle. Returns its faction.
     QString captureEnemy(int enemyIndex);
 
+    // --- Inside the enemy motherships (conquest and campaign)
+    std::shared_ptr<Interior> enemyInterior(int enemyIndex) const;
+    QString enemyClass(int enemyIndex) const;
+    QString enemyFaction(int enemyIndex) const;
+    bool enemyShieldDown(int enemyIndex) const;
+    // A team or a fire in a room of an enemy ship damages the system there
+    void damageEnemyRoom(int enemyIndex, const QString &room, float damage);
+    // A hangar fighter flies to an enemy ship and latches on it: a team
+    // can then go aboard through it
+    bool dockShuttle(int enemyIndex, QString *error);
+    bool shuttleDocked(int enemyIndex) const;
+    // Damage of the enemy motherships still alive (0..1), and damage they
+    // start with (a fleet that fled comes back hurt)
+    float enemyDamage() const;
+    void setIncomingDamage(float damage) { m_incomingDamage = std::clamp(damage, 0.0f, 0.9f); }
+
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
     void simulate(float seconds);
@@ -304,6 +321,8 @@ signals:
     void hullBreached();                // hull reached 0 (emergency repairs follow)
     void jumpReady();                   // the FTL drive is spooled (startJumpSequence)
     void hullHit(const QVector3D &local, float damage);    // ship-local impact (interior damage)
+    // Enemies come aboard: via = "rings" (a ship latched or close), "beam"
+    void boardingParty(int strength, const QString &faction, const QString &via);
     void battleEnded(const BattleStats &stats);     // last enemy of a battle destroyed
     // delay: seconds before the sound starts (salvos)
     void sound(SoundCue cue, const QString &faction, float delay);
@@ -373,6 +392,13 @@ private:
         // Subsystems of the ship (percent): weapons, shields, engines, hangar
         float systems[4] = {100, 100, 100, 100};
         float retreat = 0;          // seconds left falling back to recharge (motherships)
+        // Motherships: the inside of the ship, run by the AI (see Interior)
+        std::shared_ptr<Interior> interior;
+        float interiorClock = 0, lastInteriorLog = -100;
+        // Fighters: latched on a ship to bring a team over (rings, airlock)
+        int latchedOn = -1;         // enemy id (friendly fighter) or 0 = the player's ship
+        float latchTime = 0;        // seconds latched
+        QVector3D latchLocal;       // where on the player's hull
     };
     enum EnemySystem { SysWeapons = 0, SysShields = 1, SysEngines = 2, SysHangar = 3 };
     // Which weapon fired a shot (adaptive drones, statistics)
@@ -623,6 +649,10 @@ private:
     float m_accuracyBonus = 1.0f;
     bool m_externalFires = false;
     bool m_redAlert = false;
+    float m_incomingDamage = 0;
+    void updateEnemyInterior(Enemy &e, float dt);
+    void enemyBoarding(Enemy &e, float dt);
+    static QString layoutOf(const QString &faction);
     QList<ReplayFrame> m_replay, m_lastReplay;
     QString m_lastReplayFaction;
     float m_replayClock = 0;

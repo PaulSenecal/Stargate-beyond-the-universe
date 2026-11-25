@@ -27,6 +27,7 @@ SOURCES += \
     src/Menu/gamemenu/routemapwidget.cpp \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipplandialog.cpp \
+    src/Menu/gamemenu/shipcrew.cpp \
     src/Menu/gamemenu/replaydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
@@ -83,6 +84,7 @@ HEADERS += \
     src/Menu/gamemenu/routemapwidget.h \
     src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipplandialog.h \
+    src/Menu/gamemenu/shipcrew.h \
     src/Menu/gamemenu/replaydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \

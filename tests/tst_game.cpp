@@ -963,6 +963,40 @@ private slots:
         QCOMPARE(game.toJson()["version"].toInt(), 5);
     }
 
+    void damagedFleetsComeBack()
+    {
+        // A Goa'uld fleet waits at Abydos (theirs); the flagship attacks and flees
+        QJsonObject json = withFleets({{1, 2, 3, 1}});
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["owner"] = 1;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        ConquestGame game;
+        game.setRandomEvents(false);
+        QVERIFY(game.fromJson(json));
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        QVERIFY(game.orderTravel(1));
+        run(game, 8);
+        QVERIFY(game.inBattle());
+        QCOMPARE(game.battleDamage(), 0.0);
+        game.battleLost(0.6);
+        QCOMPARE(game.fleets().first().damage, 0.6);
+        QCOMPARE(game.toJson()["fleets"].toArray().first().toObject()["damage"].toDouble(), 0.6);
+        run(game, 10);                                      // repaired on their own world
+        QVERIFY(game.fleets().first().damage < 0.6);
+        // Spending
+        QString missing;
+        QVERIFY(!game.spend(1000, 0, &missing));
+        QVERIFY(missing.contains("naquadah"));
+        const double before = game.player().trinium;
+        QVERIFY(game.spend(0, 5));
+        QCOMPARE(game.player().trinium, before - 5);
+        game.addCapturedShip();
+        QVERIFY(std::any_of(game.fleets().begin(), game.fleets().end(),
+                            [](const Conquest::Fleet &f) { return f.owner == 0 && f.motherships == 1; }));
+    }
+
     void galacticEvents()
     {
         ConquestGame game;
@@ -1359,6 +1393,52 @@ private slots:
         QVERIFY(ship.defend(where, nullptr));
         run(ship, 120);
         QCOMPARE(ship.boarders(), 0);
+    }
+
+    void factionPlans()
+    {
+        for (const char *faction : {"Tau'ri", "Goa'uld", "Lucian Alliance", "Wraith", "Asgard", "Ancients", "Ori"}) {
+            Interior ship(QStringLiteral("flagship"), QString::fromLatin1(faction));
+            QVERIFY2(ship.compartments().size() >= 10, faction);
+            for (const char *system : {"engines", "shields", "weapons", "lifesupport", "sensors"})
+                QVERIFY2(ship.compartmentOfSystem(system) >= 0, qPrintable(QStringLiteral("%1 %2").arg(faction, system)));
+            for (const Interior::Compartment &c : ship.compartments())
+                QVERIFY2(!c.neighbours.isEmpty(), qPrintable(QStringLiteral("%1 %2").arg(faction, c.id)));
+            QVERIFY2(ship.hasRings() || ship.hasBeam() || ship.hasGate(), faction);     // a way to board
+            QVERIFY(ship.freeWorkers() > 0);
+            QString error;
+            QVERIFY2(ship.orderRepair("engines", &error) > 0, qPrintable(error));
+        }
+        QVERIFY(Interior("flagship", "Goa'uld").hasGate());           // Ha'tak gate room
+        QVERIFY(Interior("flagship", "Tau'ri").hasBeam());            // Asgard beam of the BC-304
+        QVERIFY(Interior().hasGate());                                // the Destiny
+        Interior enemy("enemy", "generic");
+        QVERIFY(enemy.compartmentOfSystem("hangar") >= 0);
+        QString error;
+        QVERIFY(enemy.orderRepair("hangar", &error) > 0);
+        // Named crew only on the player's ships
+        int named = 0;
+        for (const Interior::Person &p : enemy.people())
+            named += p.generic ? 0 : 1;
+        QCOMPARE(named, 0);
+    }
+
+    void wraithHiveHealsItself()
+    {
+        Interior hive("flagship", "Wraith");
+        Interior hatak("flagship", "Goa'uld");
+        for (Interior *ship : {&hive, &hatak})
+            ship->damageAt(ship->compartments()[ship->compartmentOfSystem("engines")].rect.center(), 60.0f);
+        for (int i = 0; i < 60; ++i) {
+            hive.tick(1.0f, 100.0f, false);
+            hatak.tick(1.0f, 100.0f, false);
+        }
+        const float hiveIntegrity = hive.compartments()[hive.compartmentOfSystem("engines")].integrity;
+        const float hatakIntegrity = hatak.compartments()[hatak.compartmentOfSystem("engines")].integrity;
+        QVERIFY(hiveIntegrity > hatakIntegrity);
+        // Dock crews of a friendly world fix everything
+        hatak.dockRepair(60.0f);
+        QCOMPARE(hatak.compartments()[hatak.compartmentOfSystem("engines")].integrity, 100.0f);
     }
 
     void saveRoundTrip()

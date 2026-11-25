@@ -64,56 +64,247 @@ const InteriorDef::Module *InteriorDef::module(const QString &id)
 //  Construction
 // ================================================================
 
-Interior::Interior()
+namespace {
+
+struct RoomDef {
+    const char *id;
+    const char *name;
+    QRectF rect;                // x1, z1, width, depth (ship-local, bow toward +x)
+    const char *system;
+    const char *capability;
+    bool locked = false;
+    QList<std::pair<QString, int>> cost = {};
+    float work = 0;
+    int bays = 0;
+};
+
+struct CrewDef {
+    const char *id;
+    const char *name;
+    InteriorDef::Role role;
+    const char *bonus;
+    float skill;
+    const char *location;
+};
+
+// Plans of the ships, seen from above. Each faction has its own.
+QList<RoomDef> roomsFor(const QString &style)
 {
+    if (style == "Goa'uld" || style == "Lucian Alliance") {
+        // Ha'tak: a pyramid on its ring, five sections across, three deep
+        const bool lucian = style == "Lucian Alliance";
+        return {
+            {"gliderbay", QT_TRANSLATE_NOOP("Interior", "Glider Bay"), {-7.5, -3, 3, 2}, "hangar", "hangar"},
+            {"rings", QT_TRANSLATE_NOOP("Interior", "Ring Room"), {-4.5, -3, 3, 2}, "", "rings"},
+            {"cargo", lucian ? QT_TRANSLATE_NOOP("Interior", "Smuggler Hold") : QT_TRANSLATE_NOOP("Interior", "Cargo Hold"), {-1.5, -3, 3, 2}, "", lucian ? "supplies" : ""},
+            {"battery", QT_TRANSLATE_NOOP("Interior", "Staff Cannon Battery"), {1.5, -3, 3, 2}, "weapons", ""},
+            {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensor Chamber"), {4.5, -3, 3, 2}, "sensors", ""},
+            {"engines", QT_TRANSLATE_NOOP("Interior", "Engine Room"), {-7.5, -1, 3, 2}, "engines", ""},
+            {"reactor", QT_TRANSLATE_NOOP("Interior", "Naquadah Reactor"), {-4.5, -1, 3, 2}, "", "power"},
+            {"gateroom", QT_TRANSLATE_NOOP("Interior", "Gate Room"), {-1.5, -1, 3, 2}, "", "gate"},
+            {"peltak", QT_TRANSLATE_NOOP("Interior", "Peltak"), {1.5, -1, 3, 2}, "", "command"},
+            {"throne", lucian ? QT_TRANSLATE_NOOP("Interior", "Command Deck") : QT_TRANSLATE_NOOP("Interior", "Throne Room"), {4.5, -1, 3, 2}, "", "morale"},
+            {"shields", QT_TRANSLATE_NOOP("Interior", "Shield Generator"), {-7.5, 1, 3, 2}, "shields", ""},
+            {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-4.5, 1, 3, 2}, "lifesupport", ""},
+            {"barracks", QT_TRANSLATE_NOOP("Interior", "Jaffa Barracks"), {-1.5, 1, 3, 2}, "", "rest"},
+            {"sarcophagus", lucian ? QT_TRANSLATE_NOOP("Interior", "Infirmary") : QT_TRANSLATE_NOOP("Interior", "Sarcophagus Chamber"), {1.5, 1, 3, 2}, "", "infirmary"},
+            {"armory", QT_TRANSLATE_NOOP("Interior", "Armory"), {4.5, 1, 3, 2}, "", "armory"},
+        };
+    }
+    if (style == "Tau'ri") {
+        // BC-304: a long hull, a hangar pod on each side
+        return {
+            {"engineering", QT_TRANSLATE_NOOP("Interior", "Engineering"), {-7, -1, 2.5, 2}, "engines", ""},
+            {"hyperdrive", QT_TRANSLATE_NOOP("Interior", "Hyperdrive Room"), {-4.5, -1, 2.5, 2}, "", "power"},
+            {"asgardcore", QT_TRANSLATE_NOOP("Interior", "Asgard Core"), {-2, -1, 2.5, 2}, "shields", ""},
+            {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {0.5, -1, 2, 2}, "lifesupport", ""},
+            {"bridge", QT_TRANSLATE_NOOP("Interior", "Bridge"), {2.5, -1, 2, 2}, "", "command"},
+            {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensor Suite"), {4.5, -1, 2.5, 2}, "sensors", ""},
+            {"quarters", QT_TRANSLATE_NOOP("Interior", "Crew Quarters"), {-7, -2.5, 2, 1.5}, "", "rest"},
+            {"portbay", QT_TRANSLATE_NOOP("Interior", "F-302 Bay (port)"), {-5, -2.5, 3.5, 1.5}, "hangar", "hangar"},
+            {"railguns", QT_TRANSLATE_NOOP("Interior", "Railgun Battery"), {-1.5, -2.5, 3.5, 1.5}, "weapons", ""},
+            {"infirmary", QT_TRANSLATE_NOOP("Interior", "Infirmary"), {2, -2.5, 2.5, 1.5}, "", "infirmary"},
+            {"mess", QT_TRANSLATE_NOOP("Interior", "Mess Hall"), {-7, 1, 2, 1.5}, "", "morale"},
+            {"starboardbay", QT_TRANSLATE_NOOP("Interior", "F-302 Bay (starboard)"), {-5, 1, 3.5, 1.5}, "", "hangar"},
+            {"missiles", QT_TRANSLATE_NOOP("Interior", "Missile Bay"), {-1.5, 1, 3.5, 1.5}, "", "armory"},
+            {"transporter", QT_TRANSLATE_NOOP("Interior", "Asgard Beam Room"), {2, 1, 2.5, 1.5}, "", "beam"},
+        };
+    }
+    if (style == "Wraith") {
+        // Hive: rooms grown around the queen's throne
+        return {
+            {"throne", QT_TRANSLATE_NOOP("Interior", "Queen's Throne"), {-1.5, -1.5, 3, 3}, "", "command"},
+            {"dartbay", QT_TRANSLATE_NOOP("Interior", "Dart Bay"), {-1.5, -4, 3, 2.5}, "hangar", "hangar"},
+            {"hibernation", QT_TRANSLATE_NOOP("Interior", "Hibernation Pods"), {-1.5, 1.5, 3, 2.5}, "", "rest"},
+            {"engines", QT_TRANSLATE_NOOP("Interior", "Organic Engines"), {-5, -1.5, 3.5, 3}, "engines", ""},
+            {"batteries", QT_TRANSLATE_NOOP("Interior", "Energy Batteries"), {1.5, -1.5, 3.5, 3}, "weapons", ""},
+            {"healing", QT_TRANSLATE_NOOP("Interior", "Healing Chamber"), {-5, -4, 3.5, 2.5}, "", "infirmary"},
+            {"neural", QT_TRANSLATE_NOOP("Interior", "Neural Sensors"), {1.5, -4, 3.5, 2.5}, "sensors", ""},
+            {"shieldnode", QT_TRANSLATE_NOOP("Interior", "Shield Node"), {-5, 1.5, 3.5, 2.5}, "shields", ""},
+            {"feeding", QT_TRANSLATE_NOOP("Interior", "Feeding Hall"), {1.5, 1.5, 3.5, 2.5}, "", "morale"},
+            {"membrane", QT_TRANSLATE_NOOP("Interior", "Life Membrane"), {-7, -2, 2, 4}, "lifesupport", ""},
+            {"culling", QT_TRANSLATE_NOOP("Interior", "Culling Beam Bay"), {5, -2, 2, 4}, "", "beam"},
+        };
+    }
+    if (style == "Asgard") {
+        // O'Neill class: compact, run by its computer core
+        return {
+            {"engines", QT_TRANSLATE_NOOP("Interior", "Engines"), {-6, -1, 3, 2}, "engines", ""},
+            {"core", QT_TRANSLATE_NOOP("Interior", "Power Core"), {-3, -1, 2, 2}, "", "power"},
+            {"computer", QT_TRANSLATE_NOOP("Interior", "Computer Core"), {-1, -1, 2, 2}, "", "computer"},
+            {"bridge", QT_TRANSLATE_NOOP("Interior", "Bridge"), {1, -1, 2, 2}, "", "command"},
+            {"emitters", QT_TRANSLATE_NOOP("Interior", "Beam Emitters"), {3, -1, 3, 2}, "weapons", ""},
+            {"scoutbay", QT_TRANSLATE_NOOP("Interior", "Scout Bay"), {-6, -2.5, 3, 1.5}, "hangar", "hangar"},
+            {"shieldmatrix", QT_TRANSLATE_NOOP("Interior", "Shield Matrix"), {-3, -2.5, 3, 1.5}, "shields", ""},
+            {"transporter", QT_TRANSLATE_NOOP("Interior", "Transport Beam"), {0, -2.5, 3, 1.5}, "", "beam"},
+            {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensors"), {-6, 1, 3, 1.5}, "sensors", ""},
+            {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-3, 1, 3, 1.5}, "lifesupport", ""},
+            {"cloning", QT_TRANSLATE_NOOP("Interior", "Cloning Lab"), {0, 1, 3, 1.5}, "", "infirmary"},
+        };
+    }
+    if (style == "Ancients") {
+        // Aurora class
+        return {
+            {"engines", QT_TRANSLATE_NOOP("Interior", "Engines"), {-7, -1, 2.5, 2}, "engines", ""},
+            {"zpm", QT_TRANSLATE_NOOP("Interior", "ZPM Room"), {-4.5, -1, 2.5, 2}, "", "power"},
+            {"chair", QT_TRANSLATE_NOOP("Interior", "Control Chair"), {-2, -1, 2.5, 2}, "weapons", ""},
+            {"bridge", QT_TRANSLATE_NOOP("Interior", "Bridge"), {0.5, -1, 2.5, 2}, "", "command"},
+            {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensors"), {3, -1, 3, 2}, "sensors", ""},
+            {"jumperbay", QT_TRANSLATE_NOOP("Interior", "Jumper Bay"), {-6, -2.5, 4, 1.5}, "hangar", "hangar"},
+            {"shields", QT_TRANSLATE_NOOP("Interior", "Shield Emitters"), {-2, -2.5, 4, 1.5}, "shields", ""},
+            {"drones", QT_TRANSLATE_NOOP("Interior", "Drone Storage"), {2, -2.5, 3, 1.5}, "", "armory"},
+            {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-6, 1, 4, 1.5}, "lifesupport", ""},
+            {"infirmary", QT_TRANSLATE_NOOP("Interior", "Infirmary"), {-2, 1, 4, 1.5}, "", "infirmary"},
+            {"transporter", QT_TRANSLATE_NOOP("Interior", "Transporter"), {2, 1, 3, 1.5}, "", "rings"},
+        };
+    }
+    if (style == "Ori") {
+        // Ori warship: a ring around the Prior's chamber
+        return {
+            {"prior", QT_TRANSLATE_NOOP("Interior", "Prior Chamber"), {-1.5, -1.5, 3, 3}, "", "command"},
+            {"mainbeam", QT_TRANSLATE_NOOP("Interior", "Main Beam Emitter"), {-1.5, -4, 3, 2.5}, "weapons", ""},
+            {"sanctuary", QT_TRANSLATE_NOOP("Interior", "Sanctuary"), {-1.5, 1.5, 3, 2.5}, "", "morale"},
+            {"engines", QT_TRANSLATE_NOOP("Interior", "Engines"), {-5, -1.5, 3.5, 3}, "engines", ""},
+            {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensors"), {1.5, -1.5, 3.5, 3}, "sensors", ""},
+            {"core", QT_TRANSLATE_NOOP("Interior", "Power Core"), {-5, -4, 3.5, 2.5}, "", "power"},
+            {"shields", QT_TRANSLATE_NOOP("Interior", "Shield Generator"), {1.5, -4, 3.5, 2.5}, "shields", ""},
+            {"fighterbay", QT_TRANSLATE_NOOP("Interior", "Fighter Bay"), {-5, 1.5, 3.5, 2.5}, "hangar", "hangar"},
+            {"infirmary", QT_TRANSLATE_NOOP("Interior", "Infirmary"), {1.5, 1.5, 3.5, 2.5}, "", "infirmary"},
+            {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-7, -2, 2, 4}, "lifesupport", ""},
+            {"rings", QT_TRANSLATE_NOOP("Interior", "Ring Room"), {5, -2, 2, 4}, "", "rings"},
+        };
+    }
+    if (style == "generic") {
+        // Any other mothership (Nakai, Ursini, mods): a simple layout
+        return {
+            {"hangar", QT_TRANSLATE_NOOP("Interior", "Hangar"), {-4.5, -3, 3, 2}, "hangar", "hangar"},
+            {"battery", QT_TRANSLATE_NOOP("Interior", "Weapons Battery"), {-1.5, -3, 3, 2}, "weapons", ""},
+            {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensors"), {1.5, -3, 3, 2}, "sensors", ""},
+            {"engines", QT_TRANSLATE_NOOP("Interior", "Engines"), {-4.5, -1, 3, 2}, "engines", ""},
+            {"bridge", QT_TRANSLATE_NOOP("Interior", "Bridge"), {-1.5, -1, 3, 2}, "", "command"},
+            {"shields", QT_TRANSLATE_NOOP("Interior", "Shield Generator"), {1.5, -1, 3, 2}, "shields", ""},
+            {"reactor", QT_TRANSLATE_NOOP("Interior", "Reactor"), {-4.5, 1, 3, 2}, "", "power"},
+            {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-1.5, 1, 3, 2}, "lifesupport", ""},
+            {"quarters", QT_TRANSLATE_NOOP("Interior", "Crew Quarters"), {1.5, 1, 3, 2}, "", "rest"},
+        };
+    }
+    // The Destiny: spire forward (x > 1.2), fan behind; see the status schematic
+    return {
+        {"maintower", QT_TRANSLATE_NOOP("Interior", "Main Tower"), {6.0, -0.6, 2.0, 1.2}, "weapons", ""},
+        {"bridge", QT_TRANSLATE_NOOP("Interior", "Bridge"), {4.2, -0.7, 1.8, 1.4}, "", "command"},
+        {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensor Room"), {2.8, -0.8, 1.4, 0.8}, "sensors", ""},
+        {"observation", QT_TRANSLATE_NOOP("Interior", "Observation Deck"), {2.8, 0.0, 1.4, 0.8}, "", "observation"},
+        {"control", QT_TRANSLATE_NOOP("Interior", "Control Interface Room"), {1.2, -0.9, 1.6, 1.8}, "", "ancient"},
+        {"gateroom", QT_TRANSLATE_NOOP("Interior", "Gate Room"), {-0.6, -1.2, 1.8, 2.4}, "", "gate"},
+        {"shields", QT_TRANSLATE_NOOP("Interior", "Shield Emitters"), {-0.6, 1.2, 1.8, 1.8}, "shields", ""},
+        {"infirmary", QT_TRANSLATE_NOOP("Interior", "Infirmary"), {-0.6, -3.0, 1.8, 1.8}, "", "infirmary"},
+        {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-2.0, 2.0, 1.4, 2.0}, "lifesupport", ""},
+        {"mess", QT_TRANSLATE_NOOP("Interior", "Mess Hall"), {-2.0, -2.0, 1.4, 2.0}, "", "morale"},
+        {"quarters", QT_TRANSLATE_NOOP("Interior", "Crew Quarters"), {-2.0, 0.0, 1.4, 2.0}, "", "rest"},
+        {"shuttlebay", QT_TRANSLATE_NOOP("Interior", "Shuttle Bay"), {-2.0, -4.0, 1.4, 2.0}, "", "hangar"},
+        {"engines", QT_TRANSLATE_NOOP("Interior", "Engine Room"), {-4.6, -1.5, 1.6, 3.0}, "engines", ""},
+        {"core", QT_TRANSLATE_NOOP("Interior", "Power Core"), {-3.0, -1.5, 1.0, 3.0}, "", "power"},
+        {"hydroponics", QT_TRANSLATE_NOOP("Interior", "Hydroponics"), {-3.0, 1.5, 1.0, 2.5}, "", "food", true, {{"minerals", 6}, {"water", 30}}, 70},
+        {"reclamation", QT_TRANSLATE_NOOP("Interior", "Water Reclamation"), {-3.0, -4.0, 1.0, 2.5}, "", "water", true, {{"minerals", 6}, {"crystal", 1}}, 70},
+        {"archives", QT_TRANSLATE_NOOP("Interior", "Ancient Archives"), {-4.6, 1.5, 1.6, 2.5}, "", "archives", true, {{"crystal", 2}, {"ancient_alloy", 1}}, 90},
+        {"armory", QT_TRANSLATE_NOOP("Interior", "Armory"), {-4.6, -4.0, 1.6, 2.5}, "", "armory", true, {{"trinium", 3}, {"minerals", 4}}, 60},
+        {"upperdeck", QT_TRANSLATE_NOOP("Interior", "Upper Module Bay"), {-0.6, 3.0, 1.8, 2.0}, "", "modules", true, {{"trinium", 2}, {"minerals", 6}}, 60, 2},
+        {"lowerdeck", QT_TRANSLATE_NOOP("Interior", "Lower Module Bay"), {-0.6, -5.0, 1.8, 2.0}, "", "modules", true, {{"trinium", 2}, {"minerals", 6}}, 60, 2},
+    };
+}
+
+// Key characters of each ship (an enemy ship has only its generic teams)
+QList<CrewDef> crewFor(const QString &style)
+{
+    using InteriorDef::Role;
+    if (style == "Tau'ri")
+        return {{"caldwell", "Steven Caldwell", Role::Military, "combat", 1.0f, "bridge"},
+                {"hermiod", "Hermiod", Role::Scientist, "energy", 2.2f, "asgardcore"},
+                {"novak", "Lindsey Novak", Role::Scientist, "ancient", 1.6f, "hyperdrive"},
+                {"marks", "Kevin Marks", Role::Pilot, "pilot", 1.0f, "bridge"},
+                {"lam", "Carolyn Lam", Role::Medic, "medicine", 1.0f, "infirmary"},
+                {"sgteam", "SG-1", Role::Military, "sabotage", 1.0f, "transporter"}};
+    if (style == "Goa'uld")
+        return {{"firstprime", "First Prime Kar'yn", Role::Military, "boarding", 1.0f, "peltak"},
+                {"lotaur", "Lo'taur Nerus", Role::Civilian, "supplies", 1.0f, "throne"},
+                {"artisan", "Tor'el the artisan", Role::Engineer, "energy", 1.8f, "reactor"},
+                {"healer", "Healer Ka'ra", Role::Medic, "medicine", 1.0f, "sarcophagus"}};
+    if (style == "Lucian Alliance")
+        return {{"kiva", "Kiva", Role::Military, "combat", 1.0f, "throne"},
+                {"varro", "Varro", Role::Military, "boarding", 1.0f, "rings"},
+                {"simeon", "Simeon", Role::Engineer, "energy", 1.6f, "reactor"},
+                {"ginn", "Ginn", Role::Scientist, "ancient", 1.8f, "sensors"}};
+    if (style == "Wraith")
+        return {{"commander", "Commander Todd", Role::Military, "combat", 1.0f, "throne"},
+                {"keeper", "Hive Keeper", Role::Medic, "medicine", 1.2f, "healing"},
+                {"scientist", "Wraith Scientist", Role::Scientist, "energy", 1.9f, "engines"},
+                {"blade", "Blade", Role::Military, "boarding", 1.0f, "dartbay"}};
+    if (style == "Asgard")
+        return {{"thor", "Thor", Role::Military, "combat", 1.2f, "bridge"},
+                {"heimdall", "Heimdall", Role::Scientist, "ancient", 2.4f, "computer"},
+                {"kvasir", "Kvasir", Role::Engineer, "energy", 2.2f, "core"}};
+    if (style == "Ancients")
+        return {{"helia", "Helia", Role::Military, "combat", 1.0f, "bridge"},
+                {"janus", "Janus", Role::Scientist, "ancient", 2.4f, "chair"},
+                {"moros", "Moros", Role::Scientist, "energy", 2.0f, "zpm"},
+                {"healer", "Ancient healer", Role::Medic, "medicine", 1.2f, "infirmary"}};
+    if (style == "Ori")
+        return {{"adria", "Adria", Role::Civilian, "morale", 1.0f, "prior"},
+                {"tomin", "Tomin", Role::Military, "combat", 1.0f, "mainbeam"},
+                {"damaris", "Prior Damaris", Role::Medic, "medicine", 1.2f, "infirmary"}};
+    if (style == "enemy")
+        return {};
+    return {{"young", "Everett Young", Role::Military, "combat", 1.0f, "bridge"},
+            {"rush", "Nicholas Rush", Role::Scientist, "energy", 2.0f, "control"},
+            {"eli", "Eli Wallace", Role::Scientist, "ancient", 1.8f, "control"},
+            {"greer", "Ronald Greer", Role::Military, "boarding", 1.0f, "gateroom"},
+            {"tj", "Tamara Johansen", Role::Medic, "medicine", 1.0f, "infirmary"},
+            {"scott", "Matthew Scott", Role::Pilot, "pilot", 1.0f, "shuttlebay"},
+            {"chloe", "Chloe Armstrong", Role::Civilian, "morale", 1.0f, "mess"},
+            {"wray", "Camile Wray", Role::Civilian, "supplies", 1.0f, "quarters"},
+            {"brody", "Adam Brody", Role::Engineer, "", 2.0f, "engines"},
+            {"volker", "Dale Volker", Role::Scientist, "", 1.6f, "sensors"},
+            {"park", "Lisa Park", Role::Scientist, "", 1.6f, "lifesupport"}};
+}
+
+} // namespace
+
+Interior::Interior(const QString &style, const QString &faction)
+    : m_style(style)
+    , m_faction(faction.isEmpty() ? style : faction)
+{
+    // Asgard ships have very few people aboard
+    if (m_faction == "Asgard")
+        m_crewCount = 12;
     buildShip();
     buildCrew();
 }
 
 void Interior::buildShip()
 {
-    struct Def {
-        const char *id;
-        const char *name;
-        QRectF rect;            // x1, z1, width, depth
-        const char *system;
-        const char *capability;
-        bool locked;
-        QList<std::pair<QString, int>> cost;
-        float work;
-        int bays;
-    };
-    // Spire forward (x > 1.2), fan behind; see the status schematic
-    const QList<Def> defs{
-        {"maintower", QT_TRANSLATE_NOOP("Interior", "Main Tower"), {6.0, -0.6, 2.0, 1.2}, "weapons", "", false, {}, 0, 0},
-        {"bridge", QT_TRANSLATE_NOOP("Interior", "Bridge"), {4.2, -0.7, 1.8, 1.4}, "", "command", false, {}, 0, 0},
-        {"sensors", QT_TRANSLATE_NOOP("Interior", "Sensor Room"), {2.8, -0.8, 1.4, 0.8}, "sensors", "", false, {}, 0, 0},
-        {"observation", QT_TRANSLATE_NOOP("Interior", "Observation Deck"), {2.8, 0.0, 1.4, 0.8}, "", "observation", false, {}, 0, 0},
-        {"control", QT_TRANSLATE_NOOP("Interior", "Control Interface Room"), {1.2, -0.9, 1.6, 1.8}, "", "ancient", false, {}, 0, 0},
-        {"gateroom", QT_TRANSLATE_NOOP("Interior", "Gate Room"), {-0.6, -1.2, 1.8, 2.4}, "", "gate", false, {}, 0, 0},
-        {"shields", QT_TRANSLATE_NOOP("Interior", "Shield Emitters"), {-0.6, 1.2, 1.8, 1.8}, "shields", "", false, {}, 0, 0},
-        {"infirmary", QT_TRANSLATE_NOOP("Interior", "Infirmary"), {-0.6, -3.0, 1.8, 1.8}, "", "infirmary", false, {}, 0, 0},
-        {"lifesupport", QT_TRANSLATE_NOOP("Interior", "Life Support"), {-2.0, 2.0, 1.4, 2.0}, "lifesupport", "", false, {}, 0, 0},
-        {"mess", QT_TRANSLATE_NOOP("Interior", "Mess Hall"), {-2.0, -2.0, 1.4, 2.0}, "", "morale", false, {}, 0, 0},
-        {"quarters", QT_TRANSLATE_NOOP("Interior", "Crew Quarters"), {-2.0, 0.0, 1.4, 2.0}, "", "rest", false, {}, 0, 0},
-        {"shuttlebay", QT_TRANSLATE_NOOP("Interior", "Shuttle Bay"), {-2.0, -4.0, 1.4, 2.0}, "", "hangar", false, {}, 0, 0},
-        {"engines", QT_TRANSLATE_NOOP("Interior", "Engine Room"), {-4.6, -1.5, 1.6, 3.0}, "engines", "", false, {}, 0, 0},
-        {"core", QT_TRANSLATE_NOOP("Interior", "Power Core"), {-3.0, -1.5, 1.0, 3.0}, "", "power", false, {}, 0, 0},
-        {"hydroponics", QT_TRANSLATE_NOOP("Interior", "Hydroponics"), {-3.0, 1.5, 1.0, 2.5}, "", "food", true,
-         {{"minerals", 6}, {"water", 30}}, 70, 0},
-        {"reclamation", QT_TRANSLATE_NOOP("Interior", "Water Reclamation"), {-3.0, -4.0, 1.0, 2.5}, "", "water", true,
-         {{"minerals", 6}, {"crystal", 1}}, 70, 0},
-        {"archives", QT_TRANSLATE_NOOP("Interior", "Ancient Archives"), {-4.6, 1.5, 1.6, 2.5}, "", "archives", true,
-         {{"crystal", 2}, {"ancient_alloy", 1}}, 90, 0},
-        {"armory", QT_TRANSLATE_NOOP("Interior", "Armory"), {-4.6, -4.0, 1.6, 2.5}, "", "armory", true,
-         {{"trinium", 3}, {"minerals", 4}}, 60, 0},
-        {"upperdeck", QT_TRANSLATE_NOOP("Interior", "Upper Module Bay"), {-0.6, 3.0, 1.8, 2.0}, "", "modules", true,
-         {{"trinium", 2}, {"minerals", 6}}, 60, 2},
-        {"lowerdeck", QT_TRANSLATE_NOOP("Interior", "Lower Module Bay"), {-0.6, -5.0, 1.8, 2.0}, "", "modules", true,
-         {{"trinium", 2}, {"minerals", 6}}, 60, 2},
-    };
+    const QList<RoomDef> defs = roomsFor(m_faction);
     m_compartments.clear();
-    for (const Def &d : defs) {
+    for (const RoomDef &d : defs) {
         Compartment c;
         c.id = d.id;
         c.name = d.name;
@@ -141,30 +332,8 @@ void Interior::buildShip()
 
 void Interior::buildCrew()
 {
-    using InteriorDef::Role;
-    struct Def {
-        const char *id;
-        const char *name;
-        Role role;
-        const char *bonus;
-        float skill;
-        const char *location;
-    };
-    const QList<Def> defs{
-        {"young", "Everett Young", Role::Military, "combat", 1.0f, "bridge"},
-        {"rush", "Nicholas Rush", Role::Scientist, "energy", 2.0f, "control"},
-        {"eli", "Eli Wallace", Role::Scientist, "ancient", 1.8f, "control"},
-        {"greer", "Ronald Greer", Role::Military, "boarding", 1.0f, "gateroom"},
-        {"tj", "Tamara Johansen", Role::Medic, "medicine", 1.0f, "infirmary"},
-        {"scott", "Matthew Scott", Role::Pilot, "pilot", 1.0f, "shuttlebay"},
-        {"chloe", "Chloe Armstrong", Role::Civilian, "morale", 1.0f, "mess"},
-        {"wray", "Camile Wray", Role::Civilian, "supplies", 1.0f, "quarters"},
-        {"brody", "Adam Brody", Role::Engineer, "", 2.0f, "engines"},
-        {"volker", "Dale Volker", Role::Scientist, "", 1.6f, "sensors"},
-        {"park", "Lisa Park", Role::Scientist, "", 1.6f, "lifesupport"},
-    };
     m_people.clear();
-    for (const Def &d : defs) {
+    for (const CrewDef &d : crewFor(m_style == "enemy" ? m_style : m_faction)) {
         Person p;
         p.id = d.id;
         p.name = QString::fromUtf8(d.name);
@@ -174,6 +343,24 @@ void Interior::buildCrew()
         p.location = d.location;
         m_people << p;
     }
+    // Soldier squads guard the ships of the conquest (Jaffa: more of them)
+    if (!m_style.isEmpty()) {
+        const int squads = m_faction == "Asgard" ? 0 : m_faction == "Goa'uld" || m_faction == "Lucian Alliance" ? 3 : 2;
+        QString post;
+        for (const Compartment &c : m_compartments)
+            if (c.capability == "command")
+                post = c.id;
+        for (int i = 0; i < squads; ++i) {
+            Person p;
+            p.generic = true;
+            p.id = QStringLiteral("squad%1").arg(i + 1);
+            p.name = QCoreApplication::translate("Interior", "Soldier squad %1").arg(i + 1);
+            p.role = InteriorDef::Role::Military;
+            p.skill = 1.0f;
+            p.location = post;
+            m_people << p;
+        }
+    }
     setCrewCount(m_crewCount);
 }
 
@@ -182,7 +369,8 @@ void Interior::setCrewCount(int crew)
     m_crewCount = std::max(0, crew);
     const int named = int(std::count_if(m_people.begin(), m_people.end(), [](const Person &p) { return !p.generic; }));
     const int teams = std::max(1, (m_crewCount - named) / kTeamSize);
-    int current = int(std::count_if(m_people.begin(), m_people.end(), [](const Person &p) { return p.generic; }));
+    auto isTeam = [](const Person &p) { return p.generic && p.role == InteriorDef::Role::Engineer; };
+    int current = int(std::count_if(m_people.begin(), m_people.end(), isTeam));
     while (current < teams) {
         Person p;
         p.generic = true;
@@ -196,7 +384,7 @@ void Interior::setCrewCount(int crew)
     // Fewer people: the last teams are disbanded (their job is freed)
     while (current > teams) {
         for (int i = int(m_people.size()) - 1; i >= 0; --i)
-            if (m_people[i].generic) {
+            if (isTeam(m_people[i])) {
                 for (Job &j : m_jobs)
                     j.workers.removeAll(i);
                 m_people.removeAt(i);
@@ -309,7 +497,9 @@ int Interior::powerLoss() const
 
 float Interior::workSpeed() const
 {
-    return 0.6f + 0.6f * m_morale / 100.0f;           // 0.6 .. 1.2
+    // The Asgard computer core guides every repair
+    const float computer = hasCapability("computer") ? 1.4f : 1.0f;
+    return (0.6f + 0.6f * m_morale / 100.0f) * computer;      // 0.6 .. 1.2 (x1.4 Asgard)
 }
 
 int Interior::freeWorkers() const
@@ -345,6 +535,24 @@ int Interior::injureRandom(int count, float seconds)
         ++done;
     }
     return done;
+}
+
+void Interior::dockRepair(float seconds)
+{
+    for (Compartment &c : m_compartments) {
+        c.fire = std::max(0.0f, c.fire - 0.1f * seconds);
+        c.integrity = std::min(100.0f, c.integrity + 2.0f * seconds);
+        if (c.integrity > 80.0f) {
+            c.breach = false;
+            c.leak = false;
+        }
+        if (c.vented && c.fire <= 0.0f) {
+            c.vented = false;
+            c.sealed = false;
+        }
+        c.boarders = 0;
+    }
+    heal(seconds * 2.0f);
 }
 
 void Interior::heal(float seconds)
@@ -455,7 +663,7 @@ int Interior::orderRepair(const QString &what, QString *error)
     };
     Job job;
     // A ship system: its compartment's job
-    static const QStringList systems{"engines", "shields", "weapons", "lifesupport", "sensors"};
+    static const QStringList systems{"engines", "shields", "weapons", "lifesupport", "sensors", "hangar"};
     QString system = key;
     if (system == "engine") system = "engines";
     if (system == "shield") system = "shields";
@@ -882,7 +1090,9 @@ Interior::Effects Interior::tick(float seconds, float lifeSupport, bool inBattle
                 if (c.fire <= 0.0f)
                     say(QCoreApplication::translate("Interior", "The fire in %1 died out for lack of air").arg(shown(c.name)), 1);
             } else {
-                c.fire = std::min(1.0f, c.fire + kFireGrowth * c.air / 100.0f * seconds);
+                // A Wraith hive is organic: fires spread badly in it
+                const float growth = kFireGrowth * (m_faction == "Wraith" ? 0.6f : 1.0f);
+                c.fire = std::min(1.0f, c.fire + growth * c.air / 100.0f * seconds);
             }
             c.air = std::max(0.0f, c.air - kFireAirUse * c.fire * seconds);
             c.integrity = std::max(0.0f, c.integrity - 0.3f * c.fire * seconds);
@@ -912,6 +1122,17 @@ Interior::Effects Interior::tick(float seconds, float lifeSupport, bool inBattle
         if (c.air < 25.0f)
             injureIn(i, 0.004f * seconds);
     }
+
+    // --- Organic hull (Wraith): the hive heals its structure and closes
+    // its own breaches little by little
+    if (m_faction == "Wraith")
+        for (Compartment &c : m_compartments) {
+            c.integrity = std::min(100.0f, c.integrity + 0.4f * seconds);
+            if (c.breach && c.integrity > 70.0f) {
+                c.breach = false;
+                say(QCoreApplication::translate("Interior", "The hive closed the breach in %1").arg(shown(c.name)), 0);
+            }
+        }
 
     // --- Boarders: they sabotage, fight the soldiers, move on
     for (int i = 0; i < m_compartments.size(); ++i) {
@@ -984,7 +1205,9 @@ Interior::Effects Interior::tick(float seconds, float lifeSupport, bool inBattle
 
     // --- People: fatigue, rest, injuries
     const bool infirmary = hasCapability("infirmary");
-    const float healing = (infirmary ? 2.0f : 1.0f) * (bonusActive("medicine") ? 1.5f : 1.0f);
+    // A Goa'uld sarcophagus brings anyone back quickly
+    const float sarcophagus = m_faction == "Goa'uld" && infirmary ? 1.5f : 1.0f;
+    const float healing = (infirmary ? 2.0f : 1.0f) * (bonusActive("medicine") ? 1.5f : 1.0f) * sarcophagus;
     for (int i = 0; i < m_people.size(); ++i) {
         Person &p = m_people[i];
         if (p.injury > 0.0f) {
@@ -1057,7 +1280,7 @@ QJsonObject Interior::toJson() const
     for (const Job &j : m_jobs)
         jobs.append(QJsonObject{{"kind", j.kind}, {"target", j.target}, {"compartment", j.compartment},
                                 {"work", double(j.work)}, {"total", double(j.total)}, {"wanted", j.wanted}});
-    return QJsonObject{{"compartments", compartments}, {"people", people}, {"jobs", jobs},
+    return QJsonObject{{"faction", m_faction}, {"compartments", compartments}, {"people", people}, {"jobs", jobs},
                        {"blueprints", QJsonArray::fromStringList(m_blueprints)},
                        {"morale", double(m_morale)}, {"crew", m_crewCount}};
 }
@@ -1066,6 +1289,8 @@ void Interior::fromJson(const QJsonObject &json)
 {
     if (json.isEmpty())
         return;
+    if (json.contains("faction"))
+        m_faction = json.value("faction").toString();
     buildShip();
     buildCrew();
     m_jobs.clear();

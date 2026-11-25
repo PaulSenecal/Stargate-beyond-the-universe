@@ -77,6 +77,7 @@ struct Fleet
     int target = -1;                // planet it goes to
     bool ordered = false;           // sent by the player: no AI decision until it arrives
     double think = 0;               // seconds before the next AI decision
+    double damage = 0;              // 0..0.9: hurt in a 3D battle, repaired on its worlds
 
     int power() const { return 4 * motherships + fighters; }
     bool moving() const { return !route.isEmpty(); }
@@ -182,7 +183,16 @@ public:
     int battlePlanet() const { return m_battlePlanet; }
     QString battleFaction() const;
     void battleWon();
-    void battleLost();              // the flagship retreats to where it came from
+    // The flagship retreats to where it came from; enemyDamage (0..1) is
+    // what the enemy motherships suffered: they keep it
+    void battleLost(double enemyDamage = 0);
+    // Damage the enemy fleets bring into the current flagship battle
+    double battleDamage() const;
+    // A mothership captured in a flagship battle joins your fleet there
+    void addCapturedShip();
+    // Pays from the player's stores; false (and nothing paid) if short
+    bool spend(double naquadah, double trinium, QString *missing = nullptr);
+    void gain(double naquadah, double trinium);
 
     // --- Orders paid with resources, fleet orders
     bool fortify(int planetId, QString *error = nullptr);

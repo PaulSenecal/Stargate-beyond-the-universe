@@ -120,7 +120,17 @@ public:
         float food = 0, water = 0;  // produced (units)
     };
 
-    Interior();
+    // style: "" = the Destiny (campaign), "flagship" = the player's ship in
+    // the conquest, "enemy" = an AI ship (no named crew). faction gives the
+    // plan and the crew: Tau'ri (BC-304), Goa'uld / Lucian Alliance (Ha'tak),
+    // Wraith (hive), Asgard (O'Neill), Ancients (Aurora), Ori.
+    explicit Interior(const QString &style = QString(), const QString &faction = QString());
+    QString style() const { return m_style; }
+    QString faction() const { return m_faction; }
+    // How a team can go aboard another ship from this one
+    bool hasRings() const { return hasCapability("rings"); }
+    bool hasBeam() const { return hasCapability("beam"); }
+    bool hasGate() const { return hasCapability("gate"); }
 
     // --- Layout and crew
     const QList<Compartment> &compartments() const { return m_compartments; }
@@ -173,6 +183,9 @@ public:
     int injureRandom(int count, float seconds);
     // Medical help: every injury heals by `seconds`
     void heal(float seconds);
+    // In orbit of a friendly world: dock crews fix the rooms little by
+    // little (fires, breaches, leaks, structure) and the injured heal
+    void dockRepair(float seconds);
     bool hasCapability(const QString &capability) const;   // unlocked and usable
     bool hasModule(const QString &moduleId) const;
     bool bonusActive(const QString &bonus) const;          // key character fit for duty
@@ -201,6 +214,8 @@ private:
     void injureIn(int compartment, float chance);
     float rand01() { return float(m_rng.generateDouble()); }
 
+    QString m_style;
+    QString m_faction;
     QList<Compartment> m_compartments;
     QList<Person> m_people;
     QList<Job> m_jobs;

@@ -3,6 +3,9 @@
 
 #include <QHash>
 #include <QWidget>
+#include <memory>
+
+#include "src/core/interior.h"
 
 #include "conquestgame.h"
 
@@ -31,6 +34,8 @@ class SoundSystem;
 //  leaving, and can be continued from the title screen.
 // ================================================================
 
+class ShipCrew;
+
 class ConquestScreen : public QWidget
 {
     Q_OBJECT
@@ -56,6 +61,8 @@ protected:
 
 private:
     void onCommand(const QString &command);
+    void showHelpTopic(const QString &topic);
+    QStringList completeLine(const QString &text) const;
     void onMessage(const QString &text, Conquest::Tone tone);
     void onBattleStarted(int planetId, const QString &faction, int motherships, int fighters);
     void tick();
@@ -97,6 +104,9 @@ private:
     QHash<int, Joined> m_joined;        // fleet id -> ships sent into the 3D battle
     double m_playSeconds = 0;
     double m_supplyClock = 0;       // restocking of the flagship on its worlds
+    std::unique_ptr<Interior> m_interior;   // compartments and crew of the flagship
+    std::unique_ptr<ShipCrew> m_crew;
+    double m_interiorClock = 0;
     int m_missileClock = 0;
     int m_droneClock = 0;
     int m_battlesWon = 0;

@@ -2,6 +2,7 @@
 #define GAMEMENU_H
 
 #include <QJsonObject>
+#include <memory>
 #include <QWidget>
 
 #include "src/core/destinystate.h"
@@ -23,6 +24,7 @@ class QTimer;
 class QPushButton;
 class PauseMenu;
 class ShipPlanDialog;
+class ShipCrew;
 class ConquestEndScreen;
 class CoopHost;
 
@@ -70,7 +72,6 @@ private:
     void showHelp();
     void logReport(const QString &report);
     void loadSave();
-    void repair(const QString &system);
     void showResources();
     void showLibrary(const QString &ship);
     void soundCommand(const QString &arg);
@@ -82,11 +83,8 @@ private:
     void performJump();             // after the FTL drive spooled
     void diveIntoStar();
     bool localCommand(const QString &first, const QStringList &words);
-    bool interiorCommand(const QString &first, const QStringList &words);
     void updateInterior(float seconds);
     void applyBonuses();
-    void showCrew();
-    void showPlan();
     void flushInteriorMessages();
     bool payFor(const QList<std::pair<QString, int>> &cost);
     bool lifeCommand(const QString &first, const QStringList &words);
@@ -143,7 +141,7 @@ private:
     int m_starUsedAt = -1;
     QJsonObject m_extra;            // save data of the newer systems (see GameSave::extra)
     Interior m_interior;            // compartments and crew of the Destiny
-    ShipPlanDialog *m_planDialog = nullptr;
+    std::unique_ptr<ShipCrew> m_crew; // orders for the inside of the ship (shared with the conquest)
     CampaignLife m_life;            // choice events, communication stones, statistics
     int m_kinos = 4;                // remote scouts
     QList<int> m_scouted;           // planets of this system already seen by a Kino

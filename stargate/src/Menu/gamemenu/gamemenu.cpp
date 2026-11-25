@@ -154,6 +154,25 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     };
     m_crew->onSystemChanged = [this](const QString &key, float health) { m_destiny.setSystemHealth(key, health); };
     m_crew->crewCount = [this] { return m_route->state().crew; };
+    m_console->setTimeProvider([this] {
+        const double hours = m_route->state().hours;
+        const int h = int(hours);
+        return QStringLiteral("D%1 %2:%3").arg(h / 24 + 1).arg(h % 24, 2, 10, QChar('0'))
+            .arg(int((hours - h) * 60), 2, 10, QChar('0'));
+    });
+    m_console->setAlertProvider([this] {
+        QList<CommandConsole::Alert> list = m_crew->alerts();
+        if (const CampaignLife::Choice *c = m_life.pendingChoice())
+            list.prepend({tr("DECISION - %1").arg(c->title), CommandConsole::Tone::Warning, QStringLiteral("choose ")});
+        if (m_battle->jumpPending())
+            list.prepend({tr("FTL %1 s").arg(qRound(m_battle->weaponReadiness().ftlCountdown)), CommandConsole::Tone::Info,
+                          QStringLiteral("ftl abort")});
+        else if (m_route->canJump() && m_battle->hostileCount() > 0)
+            list.append({tr("FTL READY - jump away"), CommandConsole::Tone::Success, QStringLiteral("engine ftl")});
+        if (m_wrecks > 0 && m_battle->hostileCount() == 0)
+            list.append({tr("%1 WRECK(S)").arg(m_wrecks), CommandConsole::Tone::Success, QStringLiteral("salvage")});
+        return list;
+    });
     m_crew->onCapture = [this](const QString &faction) {
         m_life.addStat("captures");
         // Its stores and its technology
@@ -395,7 +414,7 @@ void GameMenu::onBattleLog(const QString &text, BattleView::LogLevel level)
     case BattleView::LogLevel::Warning:  tone = CommandConsole::Tone::Warning; break;
     case BattleView::LogLevel::Critical: tone = CommandConsole::Tone::Critical; break;
     }
-    m_console->appendLine(text, tone);
+    m_console->appendLine(text, tone, CommandConsole::Channel::Combat);
 }
 
 void GameMenu::onCommandEntered(const QString &command)
@@ -716,11 +735,15 @@ bool GameMenu::lifeCommand(const QString &first, const QStringList &words)
     }
     if (first == "stats") {
         const QMap<QString, double> &s = m_life.stats();
-        m_console->appendLine(tr("Journey: %1 jump(s), %2 planet(s) explored, %3 battle(s), %4 kill(s) (%5 motherships), "
-                                 "best accuracy %6%, %7 fire(s) put out, %8 capture(s)")
-                                  .arg(s.value("jumps")).arg(s.value("explored")).arg(s.value("battles"))
-                                  .arg(s.value("kills")).arg(s.value("motherships")).arg(s.value("bestAccuracy"))
-                                  .arg(s.value("fires")).arg(s.value("captures")));
+        m_console->appendTable({tr("Journey"), tr("Total")},
+                               {{tr("FTL jumps"), QString::number(s.value("jumps"))},
+                                {tr("Planets explored"), QString::number(s.value("explored"))},
+                                {tr("Battles"), QString::number(s.value("battles"))},
+                                {tr("Ships destroyed"), QString::number(s.value("kills"))},
+                                {tr("Motherships destroyed"), QString::number(s.value("motherships"))},
+                                {tr("Best accuracy"), QStringLiteral("%1%").arg(s.value("bestAccuracy"))},
+                                {tr("Fires put out"), QString::number(s.value("fires"))},
+                                {tr("Ships captured"), QString::number(s.value("captures"))}});
         m_console->appendLine(tr("Universe seed %1 - day %2").arg(PlanetGenerator::universeSeed())
                                   .arg(int(m_route->state().hours) / 24 + 1));
         return true;
@@ -1494,7 +1517,7 @@ void GameMenu::onRouteNotice(const QString &text, DestinyRoute::Severity severit
     case DestinyRoute::Severity::Warning:  tone = CommandConsole::Tone::Warning; break;
     case DestinyRoute::Severity::Critical: tone = CommandConsole::Tone::Critical; break;
     }
-    m_console->appendLine(text, tone);
+    m_console->appendLine(text, tone, CommandConsole::Channel::Journey);
 }
 
 void GameMenu::simulate()

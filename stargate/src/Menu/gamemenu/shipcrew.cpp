@@ -51,8 +51,44 @@ void ShipCrew::say(const QString &text, int tone)
 
 void ShipCrew::flushMessages()
 {
-    for (const Interior::Message &m : m_interior->takeMessages())
-        say(m.text, m.tone);
+    for (const Interior::Message &m : m_interior->takeMessages()) {
+        const CommandConsole::Tone t = m.tone == 1 ? CommandConsole::Tone::Success
+                                     : m.tone == 2 ? CommandConsole::Tone::Warning
+                                     : m.tone == 3 ? CommandConsole::Tone::Critical
+                                                   : CommandConsole::Tone::Info;
+        m_console->appendLine(m.text, t, CommandConsole::Channel::Ship);
+    }
+}
+
+QList<CommandConsole::Alert> ShipCrew::alerts() const
+{
+    using Tone = CommandConsole::Tone;
+    QList<CommandConsole::Alert> list;
+    for (const Interior::Compartment &c : m_interior->compartments()) {
+        if (c.boarders > 0)
+            list.append({tr("%1 BOARDERS - %2").arg(c.boarders).arg(roomName(c)), Tone::Critical, QStringLiteral("defend ") + c.id});
+        else if (c.fire > 0.0f)
+            list.append({tr("FIRE - %1").arg(roomName(c)), Tone::Critical, QStringLiteral("repair ") + c.id});
+        else if (c.breach)
+            list.append({tr("BREACH - %1").arg(roomName(c)), Tone::Critical, QStringLiteral("repair ") + c.id});
+        else if (c.leak)
+            list.append({tr("LEAK - %1").arg(roomName(c)), Tone::Warning, QStringLiteral("repair ") + c.id});
+    }
+    if (m_battle->hull() < 30.0f)
+        list.prepend({tr("HULL %1%").arg(qRound(m_battle->hull())), Tone::Critical, QStringLiteral("repair hull")});
+    if (m_battle->hasShield() && m_battle->shieldActive() && m_battle->shieldStrength() <= 0.0f && m_battle->hostileCount() > 0)
+        list.append({tr("SHIELDS DOWN"), Tone::Warning, QStringLiteral("power shields")});
+    const WeaponReadiness w = m_battle->weaponReadiness();
+    if (w.railgunOverheated)
+        list.append({tr("RAILGUNS OVERHEATED"), Tone::Warning, QString()});
+    int waiting = 0;
+    for (const Interior::Job &j : m_interior->jobs())
+        waiting += j.workers.isEmpty() ? 1 : 0;
+    if (waiting > 0)
+        list.append({tr("%1 JOB(S) WAITING").arg(waiting), Tone::Warning, QStringLiteral("crew rotate")});
+    if (list.size() > 7)
+        list = list.mid(0, 7);
+    return list;
 }
 
 // ================================================================
@@ -103,19 +139,20 @@ bool ShipCrew::handle(const QString &first, const QStringList &words)
         return true;
     }
     if (first == "jobs") {
-        if (m_interior->jobs().isEmpty())
+        if (m_interior->jobs().isEmpty()) {
             say(tr("No repair job under way"), 0);
+            return true;
+        }
+        QList<QStringList> rows;
         for (const Interior::Job &j : m_interior->jobs()) {
             QStringList names;
             for (int w : j.workers)
                 names << m_interior->people()[w].name;
-            say(tr("#%1 %2 %3 - %4% - %5")
-                    .arg(j.id)
-                    .arg(j.kind, j.target)
-                    .arg(qRound(100.0f * (1.0f - j.work / std::max(0.01f, j.total))))
-                    .arg(names.isEmpty() ? tr("waiting for free hands") : names.join(", ")),
-                0);
+            rows << QStringList{QStringLiteral("#%1").arg(j.id), j.kind, j.target,
+                                QStringLiteral("%1%").arg(qRound(100.0f * (1.0f - j.work / std::max(0.01f, j.total)))),
+                                names.isEmpty() ? tr("waiting for free hands") : names.join(", ")};
         }
+        m_console->appendTable({tr("Job"), tr("Kind"), tr("Target"), tr("Done"), tr("Workers")}, rows);
         return true;
     }
     if (first == "cancel") {
@@ -319,21 +356,18 @@ void ShipCrew::showCrew()
             .arg(qRound(m_interior->morale()))
             .arg(m_interior->freeWorkers()),
         0);
+    QList<QStringList> rows;
     for (const Interior::Person &p : m_interior->people()) {
         const QString state = p.injury > 0.0f ? tr("INJURED (%1 s)").arg(qRound(p.injury))
                             : p.resting        ? tr("resting")
                             : p.job >= 0       ? tr("repair job #%1").arg(p.job)
                                                : tr("available");
         const int room = m_interior->find(p.location);
-        const QString where = room >= 0 ? roomName(m_interior->compartments()[room]) : p.location;
-        m_console->appendLine(tr("%1%2 - fatigue %3% - %4 - %5")
-                                  .arg(p.name)
-                                  .arg(p.bonus.isEmpty() ? QString() : QStringLiteral(" [%1]").arg(p.bonus))
-                                  .arg(qRound(p.fatigue))
-                                  .arg(state, where),
-                              p.injury > 0.0f ? CommandConsole::Tone::Warning : CommandConsole::Tone::Info);
+        rows << QStringList{p.name, p.bonus, QStringLiteral("%1%").arg(qRound(p.fatigue)), state,
+                            room >= 0 ? roomName(m_interior->compartments()[room]) : p.location};
     }
-    say(tr("Orders: crew rest <name>, crew rotate (tired ones rest), jobs, cancel <job>"), 0);
+    m_console->appendTable({tr("Name"), tr("Bonus"), tr("Fatigue"), tr("State"), tr("Where")}, rows);
+    say(tr("Orders: 'crew rest <name>', 'crew rotate' (tired ones rest), 'jobs', 'cancel <job>'"), 0);
     if (onQuest)
         onQuest("CREW");
 }

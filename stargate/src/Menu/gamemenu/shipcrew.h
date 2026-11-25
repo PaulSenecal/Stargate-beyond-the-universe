@@ -9,9 +9,9 @@
 #include <utility>
 
 #include "src/core/interior.h"
+#include "commandconsole.h"
 
 class BattleView;
-class CommandConsole;
 class ShipPlanDialog;
 class QWidget;
 
@@ -57,6 +57,8 @@ public:
     // Bonuses of the crew and the modules, on top of the host's ones
     void applyBonuses(float damage = 1.0f, float shieldRegen = 1.0f, float accuracy = 1.0f, int power = 0);
     void flushMessages();
+    // What needs an action inside the ship and in the battle (alert strip)
+    QList<CommandConsole::Alert> alerts() const;
     // Completion of our orders' arguments
     QStringList argumentChoices(const QStringList &before) const;
     static QStringList commands();

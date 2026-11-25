@@ -142,9 +142,11 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     connect(m_battle, &BattleView::logMessage, this, [this](const QString &text, BattleView::LogLevel level) {
         if (level == BattleView::LogLevel::Info)
             return;
-        m_console->appendLine(text, level == BattleView::LogLevel::Critical  ? CommandConsole::Tone::Critical
-                                    : level == BattleView::LogLevel::Warning ? CommandConsole::Tone::Warning
-                                                                             : CommandConsole::Tone::Success);
+        m_console->appendLine(text,
+                              level == BattleView::LogLevel::Critical  ? CommandConsole::Tone::Critical
+                              : level == BattleView::LogLevel::Warning ? CommandConsole::Tone::Warning
+                                                                       : CommandConsole::Tone::Success,
+                              CommandConsole::Channel::Combat);
     });
     connect(m_battle, &BattleView::sectorCleared, this, [this] {
         if (!m_game->inBattle())
@@ -318,6 +320,11 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
         m_crew->flushMessages();
     });
     m_console->setCompletionProvider([this](const QString &text) { return completeLine(text); });
+    m_console->setTimeProvider([this] {
+        const int s = int(m_playSeconds);
+        return QStringLiteral("%1:%2").arg(s / 60, 2, 10, QChar('0')).arg(s % 60, 2, 10, QChar('0'));
+    });
+    m_console->setAlertProvider([this] { return m_crew->alerts(); });
 
     m_wasTravelling = m_game->travelling();
     m_end = new ConquestEndScreen(this);
@@ -465,7 +472,7 @@ void ConquestScreen::onBattleStarted(int planetId, const QString &faction, int m
 
 void ConquestScreen::onMessage(const QString &text, Tone tone)
 {
-    m_console->appendLine(text, consoleTone(tone));
+    m_console->appendLine(text, consoleTone(tone), CommandConsole::Channel::Journey);
 }
 
 void ConquestScreen::updatePlanetLook()
@@ -990,33 +997,30 @@ void ConquestScreen::listFleets()
         m_console->appendLine(tr("No fleet in the galaxy"));
         return;
     }
+    QList<QStringList> rows;
     for (const Conquest::Fleet &f : m_game->fleets()) {
         const bool mine = f.owner == m_game->playerIndex();
-        const QString where = m_game->planets()[f.at].name;
-        const QString going = f.target >= 0 ? tr(" -> %1").arg(m_game->planets()[f.target].name) : QString();
-        m_console->appendLine(tr("%1 %2: %3 mothership(s), %4 fighter(s) at %5%6")
-                                  .arg(mine ? tr("Fleet %1").arg(f.id) : m_game->factions()[f.owner].id)
-                                  .arg(mine ? tr("(yours)") : QString())
-                                  .arg(f.motherships)
-                                  .arg(f.fighters)
-                                  .arg(where, going),
-                              mine ? CommandConsole::Tone::Success : CommandConsole::Tone::Info);
+        rows << QStringList{mine ? tr("Fleet %1").arg(f.id) : m_game->factions()[f.owner].id,
+                            QString::number(f.motherships), QString::number(f.fighters),
+                            m_game->planets()[f.at].name,
+                            f.target >= 0 ? m_game->planets()[f.target].name : QString(),
+                            f.damage > 0.05 ? QStringLiteral("%1%").arg(qRound(f.damage * 100)) : QString()};
     }
+    m_console->appendTable({tr("Fleet"), tr("Motherships"), tr("Fighters"), tr("At"), tr("Going to"), tr("Damage")}, rows);
 }
 
 void ConquestScreen::listPlanets()
 {
+    QList<QStringList> rows;
     for (const Conquest::Planet &p : m_game->planets()) {
         const QString owner = p.owner < 0 ? tr("neutral")
                             : p.owner == m_game->playerIndex() ? tr("yours")
                                                                : m_game->factions()[p.owner].id;
-        m_console->appendLine(QStringLiteral("%1  %2  %3  def %4  pop %5")
-                                  .arg(p.id + 1, 2)
-                                  .arg(p.name.leftJustified(16, ' '))
-                                  .arg(owner.leftJustified(16, ' '))
-                                  .arg(p.defense)
-                                  .arg(p.population, 0, 'f', 1));
+        rows << QStringList{QString::number(p.id + 1), p.name, owner, QString::number(p.defense),
+                            QString::number(p.population, 'f', 1),
+                            p.bonus != Conquest::Bonus::None ? ConquestGame::bonusName(p.bonus) : QString()};
     }
+    m_console->appendTable({tr("#"), tr("Planet"), tr("Owner"), tr("Defense"), tr("Pop. (M)"), tr("Bonus")}, rows);
 }
 
 // ================================================================

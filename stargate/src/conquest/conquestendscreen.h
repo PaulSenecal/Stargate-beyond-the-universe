@@ -21,6 +21,8 @@ public:
     explicit ConquestEndScreen(QWidget *parent = nullptr);
 
     void showResult(bool victory, const QString &faction, const QStringList &summary);
+    // Any end (campaign ending, ship lost in Ironman)
+    void showCustom(bool victory, const QString &heading, const QString &subtitle, const QStringList &summary);
 
 signals:
     void titleRequested();

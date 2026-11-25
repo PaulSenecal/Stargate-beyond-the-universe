@@ -116,6 +116,7 @@ public:
         QList<std::pair<QString, float>> systemRepair;  // system key, percent gained
         float hullRepair = 0;
         int crewLost = 0;           // generic crew members killed
+        int firesOut = 0;           // fires put out by the crew
         float food = 0, water = 0;  // produced (units)
     };
 
@@ -168,6 +169,10 @@ public:
     // --- Effects on the ship
     float morale() const { return m_morale; }
     void changeMorale(float delta);
+    // Random crew members hurt (events); returns how many
+    int injureRandom(int count, float seconds);
+    // Medical help: every injury heals by `seconds`
+    void heal(float seconds);
     bool hasCapability(const QString &capability) const;   // unlocked and usable
     bool hasModule(const QString &moduleId) const;
     bool bonusActive(const QString &bonus) const;          // key character fit for duty

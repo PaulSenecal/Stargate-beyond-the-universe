@@ -21,6 +21,7 @@ SOURCES += \
     $$GAME/src/core/commandmanager.cpp \
     $$GAME/src/core/destinystate.cpp \
     $$GAME/src/core/gameconfig.cpp \
+    $$GAME/src/core/campaignlife.cpp \
     $$GAME/src/core/interior.cpp \
     $$GAME/src/core/questsystem.cpp \
     $$GAME/src/db/databasemanager.cpp \

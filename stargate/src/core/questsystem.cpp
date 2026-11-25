@@ -149,6 +149,18 @@ QString QuestSystem::hint() const
             return tr("scansector, then stargate <address> (Tab completes)");
         if (o.type == "SURVIVE")
             return tr("stargate destiny before the gate window closes");
+        if (o.type == "PLAN")
+            return QStringLiteral("plan");
+        if (o.type == "JOB")
+            return tr("repair <room or system>, e.g. repair engines");
+        if (o.type == "SEAL")
+            return tr("seal <room>, e.g. seal mess (then unseal mess)");
+        if (o.type == "CREW")
+            return QStringLiteral("crew");
+        if (o.type == "TARGET")
+            return tr("target <n> weapons (or shields, engines, hangar)");
+        if (o.type == "BATTLE")
+            return tr("destroy every hostile ship of a wave");
     }
     return QString();
 }

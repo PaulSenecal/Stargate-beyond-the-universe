@@ -18,6 +18,7 @@
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
 #include "src/core/gameconfig.h"
+#include "src/core/campaignlife.h"
 #include "src/core/interior.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
@@ -420,8 +421,19 @@ private slots:
         // Quest 3: through the gate and back
         quests.notify("EXPLORE");
         quests.notify("SURVIVE");
-        QVERIFY(campaignDone);
         QCOMPARE(quests.completedCount(), 3);
+        QCOMPARE(quests.activeQuest()->title, QStringLiteral("Damage Control"));
+        QCOMPARE(quests.hint(), QStringLiteral("plan"));
+
+        // Training quests (added by migration, only once)
+        QVERIFY(QuestRepository::migrate());
+        for (const char *type : {"PLAN", "JOB", "SEAL", "CREW"})
+            quests.notify(type);
+        QCOMPARE(quests.activeQuest()->title, QStringLiteral("Battle Drill"));
+        quests.notify("TARGET");
+        quests.notify("BATTLE");
+        QVERIFY(campaignDone);
+        QCOMPARE(quests.completedCount(), 5);
         QVERIFY(quests.objectiveLines().isEmpty());
         QVERIFY(!quests.hint().isEmpty());
     }
@@ -438,7 +450,7 @@ private slots:
         QVERIFY(ShipLibraryRepository::migrate());          // idempotent
 
         const QList<ShipClass> ships = ShipLibraryRepository::all();
-        QCOMPARE(ships.size(), 25);
+        QCOMPARE(ships.size(), 29);
         QStringList hostileFactions;
         for (const ShipClass &c : ships) {
             QVERIFY2(!c.attacks.isEmpty(), qPrintable(c.name));
@@ -452,7 +464,7 @@ private slots:
         }
         hostileFactions.removeDuplicates();
         hostileFactions.sort();
-        QCOMPARE(hostileFactions, (QStringList{"Drones", "Goa'uld", "Lucian Alliance", "Wraith"}));
+        QCOMPARE(hostileFactions, (QStringList{"Drones", "Goa'uld", "Lucian Alliance", "Nakai", "Ursini", "Wraith"}));
 
         const auto dart = std::find_if(ships.begin(), ships.end(), [](const ShipClass &c) { return c.name == "Wraith Dart"; });
         QVERIFY(dart != ships.end());
@@ -1257,6 +1269,114 @@ private slots:
 };
 
 // ================================================================
+//  Campaign life: choices, stones, achievements, universe seed
+// ================================================================
+
+class CampaignLifeTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void choicesHaveConsequences()
+    {
+        CampaignLife life;
+        life.setGlobalStore(false);
+        life.seed(1);
+        QVERIFY(!life.pendingChoice());
+        for (const QString &id : CampaignLife::choiceIds()) {
+            QVERIFY(life.startChoice(id));
+            QVERIFY(life.pendingChoice()->options.size() >= 2);
+            Outcome o;
+            QVERIFY(!life.choose(99, &o));                      // invalid option: still waiting
+            QVERIFY(life.choose(0, &o));
+            QVERIFY2(!o.text.isEmpty(), qPrintable(id));
+            QVERIFY(!life.pendingChoice());
+        }
+        QCOMPARE(life.stat("choices"), double(CampaignLife::choiceIds().size()));
+        QVERIFY(life.startChoice("sickness"));
+        const Outcome o = life.expire();                        // no answer: the cautious last option
+        QVERIFY(o.injuries > 0);
+        QVERIFY(!life.pendingChoice());
+    }
+
+    void stonesOncePerDay()
+    {
+        CampaignLife life;
+        life.setGlobalStore(false);
+        QVERIFY(life.stonesReady(10));
+        QVERIFY(!life.useStones(10).text.isEmpty());
+        QVERIFY(!life.stonesReady(20));
+        QCOMPARE(life.stonesCooldown(20), 14.0);
+        QVERIFY(life.stonesReady(34));
+    }
+
+    void achievementsUnlockOnce()
+    {
+        CampaignLife life;
+        life.setGlobalStore(false);
+        life.fromJson({});
+        life.takeUnlocked();
+        const bool already = life.unlocked("traveller");
+        for (int i = 0; i < 10; ++i)
+            life.addStat("jumps");
+        if (!already)
+            QVERIFY(life.takeUnlocked().contains("traveller"));
+        QVERIFY(life.unlocked("traveller"));
+        life.addStat("jumps");
+        QVERIFY(!life.takeUnlocked().contains("traveller"));
+        CampaignLife copy;
+        copy.setGlobalStore(false);
+        copy.fromJson(life.toJson());
+        QCOMPARE(copy.stat("jumps"), 11.0);
+    }
+
+    void universeSeedChangesThePlanets()
+    {
+        const Planet classic = PlanetGenerator::generate(2, 5, 1);
+        PlanetGenerator::setUniverseSeed(1234);
+        const Planet seeded = PlanetGenerator::generate(2, 5, 1);
+        QCOMPARE(PlanetGenerator::generate(2, 5, 1).nickname, seeded.nickname);     // reproducible
+        PlanetGenerator::setUniverseSeed(0);
+        QCOMPARE(PlanetGenerator::generate(2, 5, 1).nickname, classic.nickname);
+        QVERIFY(seeded.code == classic.code);
+        QVERIFY(seeded.conditions.water != classic.conditions.water || seeded.nickname != classic.nickname);
+        // The first planet of a system always has a gate
+        for (int s = 0; s < 30; ++s)
+            QVERIFY(PlanetGenerator::generate(0, s, 0).hasGate);
+    }
+
+    void jumperReachesPlanetsWithoutGate()
+    {
+        DestinyRoute route;
+        // Find a planet without gate on the route
+        int variant = -1;
+        GameEvent event;
+        for (int jumps = 0; jumps < 60 && variant < 0; ++jumps) {
+            for (const Planet &p : route.currentPlanets())
+                if (!p.hasGate)
+                    variant = p.variant;
+            if (variant < 0) {
+                RouteState s = route.state();
+                s.ftlCharge = 1.0;
+                route.restore(route.currentIndex() + 1, s, {});
+            }
+        }
+        QVERIFY(variant > 0);
+        QString error;
+        QVERIFY(!route.dial(variant, &error));
+        QVERIFY(error.contains("jumper"));
+        QVERIFY(route.flyTo(variant, &error));
+        QVERIFY(route.teamByShuttle());
+        // The gate window closes: the jumper team is not stranded
+        const int crew = route.state().crew;
+        route.tick(30.0);
+        QCOMPARE(route.state().crew, crew);
+        QCOMPARE(route.state().teamPlanet, variant);
+        QVERIFY(route.recallTeam(&error));
+    }
+};
+
+// ================================================================
 
 int main(int argc, char *argv[])
 {
@@ -1284,6 +1404,10 @@ int main(int argc, char *argv[])
     }
     {
         InteriorTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        CampaignLifeTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

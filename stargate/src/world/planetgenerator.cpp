@@ -30,9 +30,24 @@ QString Planet::classificationName() const
 //  Generation
 // ================================================================
 
+namespace {
+quint32 g_universeSeed = 0;
+}
+
+void PlanetGenerator::setUniverseSeed(quint32 seed)
+{
+    g_universeSeed = seed;
+}
+
+quint32 PlanetGenerator::universeSeed()
+{
+    return g_universeSeed;
+}
+
 quint64 PlanetGenerator::makeSeed(int galaxy, int sequence, int variant)
 {
-    return (quint64(galaxy) << 40) | (quint64(sequence) << 8) | quint64(variant);
+    const quint64 base = (quint64(galaxy) << 40) | (quint64(sequence) << 8) | quint64(variant);
+    return g_universeSeed == 0 ? base : base ^ (quint64(g_universeSeed) * 0x9E3779B97F4A7C15ull);
 }
 
 Planet PlanetGenerator::generate(int galaxy, int sequence, int variant)
@@ -56,6 +71,8 @@ Planet PlanetGenerator::generate(int galaxy, int sequence, int variant)
         p.ancientName = generateAncientName(seed);
         p.classification = Classification::Ancient;
     }
+    // The first planet of a system always has a gate; a quarter of the others not
+    p.hasGate = variant == 0 || QRandomGenerator(seed ^ 0x6A7E5EEDu).bounded(4) != 0;
     return p;
 }
 

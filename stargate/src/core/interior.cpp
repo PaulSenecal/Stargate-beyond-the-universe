@@ -334,6 +334,26 @@ void Interior::changeMorale(float delta)
     m_morale = std::clamp(m_morale + delta, 0.0f, 100.0f);
 }
 
+int Interior::injureRandom(int count, float seconds)
+{
+    int done = 0;
+    for (int tries = 0; done < count && tries < 40; ++tries) {
+        const int i = int(m_rng.bounded(int(m_people.size())));
+        if (m_people[i].injury > 0.0f)
+            continue;
+        injure(i, seconds);
+        ++done;
+    }
+    return done;
+}
+
+void Interior::heal(float seconds)
+{
+    for (Person &p : m_people)
+        if (p.injury > 0.0f)
+            p.injury = std::max(1.0f, p.injury - seconds);
+}
+
 void Interior::say(const QString &text, int tone)
 {
     m_messages.append({text, tone});
@@ -811,6 +831,7 @@ void Interior::finishJob(const Job &job, Effects &effects)
         say(QCoreApplication::translate("Interior", "Hull patched (+20%)"), 1);
     } else if (c && job.kind == "fire") {
         c->fire = 0.0f;
+        ++effects.firesOut;
         say(QCoreApplication::translate("Interior", "Fire in %1 put out").arg(shown(c->name)), 1);
     } else if (c && job.kind == "breach") {
         c->breach = false;

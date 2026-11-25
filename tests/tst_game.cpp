@@ -17,6 +17,7 @@
 #include "src/conquest/conquestgame.h"
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
+#include "src/core/balance.h"
 #include "src/core/gameconfig.h"
 #include "src/core/campaignlife.h"
 #include "src/core/interior.h"
@@ -632,9 +633,14 @@ private slots:
         ConquestGame game;
         QVERIFY(game.fromJson(smallGalaxy()));
         game.setSeed(3);
+        game.setRandomEvents(false);
         QCOMPARE(game.fleetCount(0), 0);
+        int launched = 0;
+        connect(&game, &ConquestGame::message, this, [&launched](const QString &t) {
+            launched += t.startsWith("New fleet") ? 1 : 0;
+        });
         run(game, 200);                         // Earth (capital) fills its shipyard
-        QVERIFY(game.fleetCount(0) + game.planetCount(0) > 1);
+        QVERIFY(launched > 0);
         QVERIFY(game.fleetCount(1) > 0 || game.planets()[2].dockFighters > 0);
         QString error;
         QVERIFY(!game.build(1, false, &error));   // Abydos: no shipyard
@@ -899,6 +905,109 @@ private slots:
         QVERIFY(game.hostile(0, 1));
     }
 
+    void spyAndSabotage()
+    {
+        ConquestGame game;
+        game.setSeed(5);
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QVERIFY(game.inGateRange(2));                       // Chulak is two lanes from Earth
+        QStringList report;
+        QString error;
+        QVERIFY(game.spy(2, &report, &error));
+        QVERIFY(report.join(' ').contains("Chulak"));
+        QCOMPARE(game.player().naquadah, 100.0 - Balance::kSpyCost);
+        QVERIFY(!game.spy(2, &report, &error));             // the team is away
+        QVERIFY(error.contains("back"));
+        run(game, Balance::kGateTeamCooldown + 1);
+        bool success = false;
+        QVERIFY(!game.sabotage(1, "yard", &success, &error));   // neutral world
+        QVERIFY(!game.sabotage(2, "nothing", &success, &error));
+        // Many attempts: some succeed (the capital's defense 5 makes it hard)
+        int succeeded = 0;
+        for (int i = 0; i < 12; ++i) {
+            QJsonObject json = game.toJson();
+            QJsonArray factions = json["factions"].toArray();
+            QJsonObject me = factions[0].toObject();
+            me["naquadah"] = 500.0;
+            me["gateTeams"] = 0.0;
+            factions[0] = me;
+            json["factions"] = factions;
+            ConquestGame copy;
+            copy.setSeed(quint32(100 + i));
+            QVERIFY(copy.fromJson(json));
+            QVERIFY(copy.sabotage(2, "mine", &success, &error));
+            if (success) {
+                ++succeeded;
+                QCOMPARE(copy.naquadahRate(copy.planets()[2]), 0.0);     // no income
+            }
+        }
+        QVERIFY(succeeded > 0 && succeeded < 12);
+    }
+
+    void sabotagedYardStopsProduction()
+    {
+        ConquestGame game;
+        QJsonObject json = smallGalaxy();
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject chulak = planets[2].toObject();
+        chulak["yardDown"] = 50.0;
+        planets[2] = chulak;
+        json["planets"] = planets;
+        json["version"] = 5;
+        QVERIFY(game.fromJson(json));
+        run(game, 30);
+        QCOMPARE(game.planets()[2].dockFighters, 0);        // nothing built while sabotaged
+        QVERIFY(game.planets()[0].dockFighters > 0);         // Earth builds
+        QCOMPARE(game.toJson()["version"].toInt(), 5);
+    }
+
+    void galacticEvents()
+    {
+        ConquestGame game;
+        game.setSeed(3);
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QVERIFY(!game.triggerGalacticEvent("wraith"));       // no Wraith in this galaxy
+        QVERIFY(game.triggerGalacticEvent("storm"));
+        QVERIFY(game.stormLeft() > 0);
+        const double population = game.planets()[0].population + game.planets()[2].population;
+        QVERIFY(game.triggerGalacticEvent("plague"));
+        QVERIFY(game.planets()[0].population + game.planets()[2].population < population);
+        const int techs = game.factions()[0].techs.size() + game.factions()[1].techs.size();
+        QVERIFY(game.triggerGalacticEvent("ascended"));
+        QCOMPARE(game.factions()[0].techs.size() + game.factions()[1].techs.size(), techs + 1);
+        QVERIFY(!game.triggerGalacticEvent("nonsense"));
+    }
+
+    void outmatchedFleetFallsBack()
+    {
+        // A small Goa'uld fleet on Abydos (theirs) facing a huge Tau'ri fleet
+        QJsonObject json = withFleets({{0, 6, 10, 1}, {1, 0, 2, 1}});
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["owner"] = 1;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        // The Tau'ri fleet is on its way to Abydos, the Goa'uld one thinks now
+        QJsonArray fleets = json["fleets"].toArray();
+        QJsonObject tauri = fleets[0].toObject();
+        tauri["at"] = 0;
+        tauri["route"] = QJsonArray{1};
+        tauri["target"] = 1;
+        tauri["ordered"] = true;
+        fleets[0] = tauri;
+        QJsonObject goauld = fleets[1].toObject();
+        goauld["think"] = 0.1;
+        fleets[1] = goauld;
+        json["fleets"] = fleets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+        run(game, 0.5);
+        const auto it = std::find_if(game.fleets().begin(), game.fleets().end(),
+                                     [](const Conquest::Fleet &f) { return f.owner == 1; });
+        QVERIFY(it != game.fleets().end());
+        QCOMPARE(it->target, 2);                            // falls back to Chulak
+    }
+
     void fleetLossesAfterBattle()
     {
         ConquestGame game;
@@ -942,6 +1051,7 @@ private slots:
         QVERIFY(game.fromJson(fourFactions()));
         QVERIFY(game.hostile(1, 2));
         game.setSeed(9);
+        game.setRandomEvents(false);
         QSignalSpy messages(&game, &ConquestGame::message);
         run(game, 1500);                        // 50 diplomacy periods
         QVERIFY(said(messages, "ally against the Lucian Alliance"));

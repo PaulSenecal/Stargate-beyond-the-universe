@@ -182,7 +182,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
                                "send", "build", "fighter", "mothership", "engage", "research", "ally", "break",
                                "diplomacy", "launch", "drones", "turrets", "railguns", "power", "attack", "target",
-                               "missiles", "evade",
+                               "missiles", "evade", "spy", "sabotage",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -643,6 +643,24 @@ void ConquestScreen::onCommand(const QString &command)
         m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
     } else if (name == "launch") {
         m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
+    } else if (name == "spy") {
+        const int id = planetArg();
+        QStringList report;
+        QString error;
+        if (id >= 0 && !m_game->spy(id, &report, &error))
+            warn(tr("No spy mission: %1").arg(error));
+        for (const QString &line : report)
+            m_console->appendLine(line, CommandConsole::Tone::Info);
+    } else if (name == "sabotage") {
+        // sabotage <yard|defense|mine> <planet>
+        const QString what = words.value(1).toLower();
+        const int id = words.size() > 2 ? m_game->findPlanet(words.mid(2).join(' ')) : m_map->selected();
+        bool success = false;
+        QString error;
+        if (id < 0)
+            warn(tr("Usage: sabotage yard|defense|mine <planet> (%1 naquadah)").arg(Balance::kSabotageCost));
+        else if (!m_game->sabotage(id, what, &success, &error))
+            warn(tr("No sabotage: %1").arg(error));
     } else if (name == "target" || name == "aim") {
         bool ok = false;
         const int target = words.value(1).toInt(&ok);
@@ -726,6 +744,9 @@ void ConquestScreen::showHelp()
         tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"),
         tr("Research: research (tree), research <n> - weapons, defense and industry, 3 tiers each"),
         tr("Diplomacy: diplomacy (relations), ally <faction> (against a common enemy), break <faction>"),
+        tr("Gate teams (%1 lanes from your worlds): spy <planet> (%2 naquadah), sabotage yard|defense|mine <planet> (%3)")
+            .arg(Balance::kGateRange).arg(Balance::kSpyCost).arg(Balance::kSabotageCost),
+        tr("Galactic events may strike anyone: starving Wraith, plague, Ascended gifts, hyperspace storms"),
         tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
         tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
         tr("Win by taking every planet of the enemy factions. Menu: Esc or 'menu'."),

@@ -1579,509 +1579,620 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>Les chantiers navals construisent des flottes qui agissent seules - les vôtres aussi. Les flottes ennemies vont attaquer.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="656"/>
+        <location filename="src/conquest/conquestgame.cpp" line="660"/>
         <source>Culling: captured worlds lose half their population (it feeds the hives: naquadah) and never grow back; shipyards x1.6; fleets regrow fighters at home.</source>
         <translation>Prélèvement : les mondes conquis perdent la moitié de leur population (elle nourrit les ruches : naquadah) et ne repeuplent plus ; chantiers x1,6 ; les flottes régénèrent leurs chasseurs chez elles.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="659"/>
+        <location filename="src/conquest/conquestgame.cpp" line="663"/>
         <source>Slavery: naquadah x1.6 and shipyards x1.25, but worlds without a fleet in orbit may rise in Jaffa revolts.</source>
         <translation>Esclavage : naquadah x1,6 et chantiers x1,25, mais les mondes sans flotte en orbite peuvent connaître des révoltes jaffa.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="681"/>
+        <location filename="src/conquest/conquestgame.cpp" line="685"/>
         <source>Shipyard (fast repairs)</source>
         <translation>Chantier naval (réparations rapides)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="682"/>
+        <location filename="src/conquest/conquestgame.cpp" line="686"/>
         <source>Naquadah mine (x2)</source>
         <translation>Mine de naquadah (x2)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="683"/>
+        <location filename="src/conquest/conquestgame.cpp" line="687"/>
         <source>Trinium mine (x2)</source>
         <translation>Mine de trinium (x2)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="684"/>
+        <location filename="src/conquest/conquestgame.cpp" line="688"/>
         <source>Ancient site</source>
         <translation>Site des Anciens</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="687"/>
+        <location filename="src/conquest/conquestgame.cpp" line="691"/>
         <source>None</source>
         <translation>Aucun</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="692"/>
+        <location filename="src/conquest/conquestgame.cpp" line="696"/>
         <source>independent world</source>
         <translation>monde indépendant</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="775"/>
+        <location filename="src/conquest/conquestgame.cpp" line="779"/>
         <source>the game is over</source>
         <translation>la partie est terminée</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="777"/>
+        <location filename="src/conquest/conquestgame.cpp" line="781"/>
         <source>the flagship is in battle - win it first</source>
         <translation>le vaisseau amiral est en combat - gagnez-le d&apos;abord</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="779"/>
-        <location filename="src/conquest/conquestgame.cpp" line="805"/>
-        <location filename="src/conquest/conquestgame.cpp" line="853"/>
-        <location filename="src/conquest/conquestgame.cpp" line="883"/>
+        <location filename="src/conquest/conquestgame.cpp" line="783"/>
+        <location filename="src/conquest/conquestgame.cpp" line="809"/>
+        <location filename="src/conquest/conquestgame.cpp" line="857"/>
+        <location filename="src/conquest/conquestgame.cpp" line="887"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1834"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1879"/>
         <source>unknown planet</source>
         <translation>planète inconnue</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="781"/>
+        <location filename="src/conquest/conquestgame.cpp" line="785"/>
         <source>the flagship is already there</source>
         <translation>le vaisseau amiral y est déjà</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="789"/>
+        <location filename="src/conquest/conquestgame.cpp" line="793"/>
         <source>no route to that planet</source>
         <translation>aucune route vers cette planète</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="792"/>
+        <location filename="src/conquest/conquestgame.cpp" line="796"/>
         <source>Course set for %1 (%2 jump(s))</source>
         <translation>Cap sur %1 (%2 saut(s))</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="808"/>
-        <location filename="src/conquest/conquestgame.cpp" line="856"/>
+        <location filename="src/conquest/conquestgame.cpp" line="812"/>
+        <location filename="src/conquest/conquestgame.cpp" line="860"/>
         <source>%1 is not yours</source>
         <translation>%1 ne vous appartient pas</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="810"/>
+        <location filename="src/conquest/conquestgame.cpp" line="814"/>
         <source>%1 already has the strongest defenses</source>
         <translation>%1 a déjà les défenses les plus fortes</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="395"/>
-        <location filename="src/conquest/conquestgame.cpp" line="813"/>
-        <location filename="src/conquest/conquestgame.cpp" line="864"/>
+        <location filename="src/conquest/conquestgame.cpp" line="399"/>
+        <location filename="src/conquest/conquestgame.cpp" line="817"/>
+        <location filename="src/conquest/conquestgame.cpp" line="868"/>
         <source>%1 naquadah needed (%2 available)</source>
         <translation>%1 naquadah nécessaires (%2 disponibles)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="385"/>
+        <location filename="src/conquest/conquestgame.cpp" line="389"/>
         <source>unknown technology</source>
         <translation>technologie inconnue</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="388"/>
+        <location filename="src/conquest/conquestgame.cpp" line="392"/>
         <source>already researched</source>
         <translation>déjà recherchée</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="390"/>
+        <location filename="src/conquest/conquestgame.cpp" line="394"/>
         <source>%1 is being researched</source>
         <translation>%1 est en cours de recherche</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="393"/>
+        <location filename="src/conquest/conquestgame.cpp" line="397"/>
         <source>needs %1 first</source>
         <translation>nécessite d&apos;abord %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="409"/>
+        <location filename="src/conquest/conquestgame.cpp" line="413"/>
         <source>Research started: %1 (%2 s)</source>
         <translation>Recherche lancée : %1 (%2 s)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="429"/>
+        <location filename="src/conquest/conquestgame.cpp" line="433"/>
         <source>Naquadah-enhanced weapons</source>
         <translation>Armes au naquadah</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="430"/>
+        <location filename="src/conquest/conquestgame.cpp" line="434"/>
         <source>Improved plasma</source>
         <translation>Plasma amélioré</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="431"/>
+        <location filename="src/conquest/conquestgame.cpp" line="435"/>
         <source>Asgard beams</source>
         <translation>Rayons asgard</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="432"/>
+        <location filename="src/conquest/conquestgame.cpp" line="436"/>
         <source>Reinforced garrisons</source>
         <translation>Garnisons renforcées</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="433"/>
+        <location filename="src/conquest/conquestgame.cpp" line="437"/>
         <source>Shield generators</source>
         <translation>Générateurs de bouclier</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="434"/>
+        <location filename="src/conquest/conquestgame.cpp" line="438"/>
         <source>Planetary shields</source>
         <translation>Boucliers planétaires</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="435"/>
+        <location filename="src/conquest/conquestgame.cpp" line="439"/>
         <source>Improved shipyards</source>
         <translation>Chantiers améliorés</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="436"/>
+        <location filename="src/conquest/conquestgame.cpp" line="440"/>
         <source>Hyperdrive</source>
         <translation>Hyperpropulsion</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="437"/>
+        <location filename="src/conquest/conquestgame.cpp" line="441"/>
         <source>Naquadah refining</source>
         <translation>Raffinage du naquadah</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="443"/>
-        <location filename="src/conquest/conquestgame.cpp" line="444"/>
+        <location filename="src/conquest/conquestgame.cpp" line="447"/>
+        <location filename="src/conquest/conquestgame.cpp" line="448"/>
         <source>fleets +10%, flagship damage +15%</source>
         <translation>flottes +10 %, dégâts du vaisseau amiral +15 %</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="445"/>
+        <location filename="src/conquest/conquestgame.cpp" line="449"/>
         <source>fleets +15%, flagship damage +25%</source>
         <translation>flottes +15 %, dégâts du vaisseau amiral +25 %</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="446"/>
+        <location filename="src/conquest/conquestgame.cpp" line="450"/>
         <source>garrisons 4 instead of 3 per defense level</source>
         <translation>garnisons : 4 au lieu de 3 par niveau de défense</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="447"/>
+        <location filename="src/conquest/conquestgame.cpp" line="451"/>
         <source>flagship shield regenerates 50% faster</source>
         <translation>le bouclier du vaisseau amiral se recharge 50 % plus vite</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="448"/>
+        <location filename="src/conquest/conquestgame.cpp" line="452"/>
         <source>defenses rebuilt twice as fast, up to 4</source>
         <translation>défenses reconstruites deux fois plus vite, jusqu&apos;à 4</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="449"/>
+        <location filename="src/conquest/conquestgame.cpp" line="453"/>
         <source>shipyards +25%</source>
         <translation>chantiers navals +25 %</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="450"/>
+        <location filename="src/conquest/conquestgame.cpp" line="454"/>
         <source>fleets and flagship 30% faster</source>
         <translation>flottes et vaisseau amiral 30 % plus rapides</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="451"/>
+        <location filename="src/conquest/conquestgame.cpp" line="455"/>
         <source>naquadah +25%</source>
         <translation>naquadah +25 %</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="532"/>
+        <location filename="src/conquest/conquestgame.cpp" line="536"/>
         <source>The %1 and the %2 ally against the %3</source>
         <translation>Les %1 et les %2 s&apos;allient contre les %3</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="542"/>
+        <location filename="src/conquest/conquestgame.cpp" line="546"/>
         <source>The %1 betray the %2!</source>
         <translation>Les %1 trahissent les %2 !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="546"/>
+        <location filename="src/conquest/conquestgame.cpp" line="550"/>
         <source>The %1 and the %2 end their alliance</source>
         <translation>Les %1 et les %2 mettent fin à leur alliance</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="572"/>
+        <location filename="src/conquest/conquestgame.cpp" line="576"/>
         <source>unknown faction</source>
         <translation>faction inconnue</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="575"/>
+        <location filename="src/conquest/conquestgame.cpp" line="579"/>
         <source>the %1 are already your allies</source>
         <translation>les %1 sont déjà vos alliés</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="577"/>
+        <location filename="src/conquest/conquestgame.cpp" line="581"/>
         <source>the %1 will not listen again before %2 s</source>
         <translation>les %1 ne vous écouteront pas avant %2 s</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="580"/>
+        <location filename="src/conquest/conquestgame.cpp" line="584"/>
         <source>the %1 are no more</source>
         <translation>les %1 n&apos;existent plus</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="591"/>
+        <location filename="src/conquest/conquestgame.cpp" line="595"/>
         <source>the %1 refuse: your power frightens them</source>
         <translation>les %1 refusent : votre puissance les effraie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="595"/>
+        <location filename="src/conquest/conquestgame.cpp" line="599"/>
         <source>the %1 refuse: they see no common enemy</source>
         <translation>les %1 refusent : ils ne voient pas d&apos;ennemi commun</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="605"/>
+        <location filename="src/conquest/conquestgame.cpp" line="609"/>
         <source>Alliance sealed with the %1: they will not attack you</source>
         <translation>Alliance scellée avec les %1 : ils ne vous attaqueront pas</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="614"/>
+        <location filename="src/conquest/conquestgame.cpp" line="618"/>
         <source>no alliance with that faction</source>
         <translation>aucune alliance avec cette faction</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="619"/>
+        <location filename="src/conquest/conquestgame.cpp" line="623"/>
         <source>Alliance with the %1 broken</source>
         <translation>Alliance avec les %1 rompue</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="662"/>
+        <location filename="src/conquest/conquestgame.cpp" line="666"/>
         <source>Ancient technology: +8% fleet power per Ancient site (max +40%). Diplomacy: neutral neighbours may join, the flagship rallies worlds twice as fast. Shipyards x1.1.</source>
         <translation>Technologie des Anciens : +8 % de puissance des flottes par site des Anciens (max +40 %). Diplomatie : les voisins neutres peuvent vous rejoindre, le vaisseau amiral rallie les mondes deux fois plus vite. Chantiers x1,1.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="665"/>
+        <location filename="src/conquest/conquestgame.cpp" line="669"/>
         <source>Smuggling: fighters built x1.25 faster. Raids: every world taken steals naquadah from its owner.</source>
         <translation>Contrebande : chasseurs construits x1,25 plus vite. Raids : chaque monde pris vole du naquadah à son propriétaire.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="667"/>
+        <location filename="src/conquest/conquestgame.cpp" line="671"/>
         <source>Advanced technology: research twice as fast and 25% cheaper, fleets +15%; but shipyards x0.7 - the Asgard are few.</source>
         <translation>Technologie avancée : recherche deux fois plus rapide et 25 % moins chère, flottes +15 % ; mais chantiers x0,7 - les Asgard sont peu nombreux.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="670"/>
+        <location filename="src/conquest/conquestgame.cpp" line="674"/>
         <source>Knowledge of the Ancients: Ancient sites give 200 naquadah, drone defenses (stronger garrisons); but shipyards x0.8.</source>
         <translation>Savoir des Anciens : les sites des Anciens rapportent 200 naquadah, défenses à drones (garnisons renforcées) ; mais chantiers x0,8.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="673"/>
+        <location filename="src/conquest/conquestgame.cpp" line="677"/>
         <source>Crusade: conquered worlds keep most of their people, who grow faster; the Priors convert neutral neighbours; fleets +10%; but the crusade builds slowly (shipyards x0.85).</source>
         <translation>Croisade : les mondes conquis gardent l&apos;essentiel de leur population, qui croît plus vite ; les Prieurs convertissent les voisins neutres ; flottes +10 % ; mais la croisade construit lentement (chantiers x0,85).</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="816"/>
+        <location filename="src/conquest/conquestgame.cpp" line="820"/>
         <source>%1 fortified: defense %2/5</source>
         <translation>%1 fortifiée : défense %2/5</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="827"/>
+        <location filename="src/conquest/conquestgame.cpp" line="831"/>
         <source>the hull is intact</source>
         <translation>la coque est intacte</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="833"/>
+        <location filename="src/conquest/conquestgame.cpp" line="837"/>
         <source>not enough trinium (%1 per hull point)</source>
         <translation>pas assez de trinium (%1 par point de coque)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="838"/>
+        <location filename="src/conquest/conquestgame.cpp" line="842"/>
         <source>Flagship repaired: hull %1% (-%2 trinium)</source>
         <translation>Vaisseau amiral réparé : coque %1% (-%2 trinium)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="858"/>
+        <location filename="src/conquest/conquestgame.cpp" line="862"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1887"/>
         <source>%1 has no shipyard</source>
         <translation>%1 n&apos;a pas de chantier naval</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="860"/>
+        <location filename="src/conquest/conquestgame.cpp" line="864"/>
         <source>the shipyard of %1 is full</source>
         <translation>le chantier naval de %1 est plein</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="867"/>
+        <location filename="src/conquest/conquestgame.cpp" line="871"/>
         <source>Mothership built at %1</source>
         <translation>Vaisseau-mère construit à %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="867"/>
+        <location filename="src/conquest/conquestgame.cpp" line="871"/>
         <source>Fighter built at %1</source>
         <translation>Chasseur construit à %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="881"/>
+        <location filename="src/conquest/conquestgame.cpp" line="885"/>
         <source>no fleet of yours with that number</source>
         <translation>aucune de vos flottes ne porte ce numéro</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="885"/>
+        <location filename="src/conquest/conquestgame.cpp" line="889"/>
         <source>that fleet is in battle</source>
         <translation>cette flotte est en combat</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="891"/>
+        <location filename="src/conquest/conquestgame.cpp" line="895"/>
         <source>the fleet is already there</source>
         <translation>la flotte y est déjà</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="895"/>
+        <location filename="src/conquest/conquestgame.cpp" line="899"/>
         <source>Fleet %1 heads for %2</source>
         <translation>La flotte %1 part vers %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="949"/>
+        <location filename="src/conquest/conquestgame.cpp" line="967"/>
         <source>Research complete: %1 - %2</source>
         <translation>Recherche terminée : %1 - %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1005"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1024"/>
         <source>%1 joins your faction</source>
         <translation>%1 rejoint votre faction</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1021"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1040"/>
         <source>Battle in progress at %1: the %2 attack the %3. &apos;engage &lt;faction&gt;&apos; to join in, or wait for the winner</source>
         <translation>Bataille en cours à %1 : les %2 attaquent (%3). &apos;engage &lt;faction&gt;&apos; pour intervenir, ou attendez le vainqueur</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1121"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1140"/>
         <source>%1 is defended by the %2 fleet: battle!</source>
         <translation>%1 est défendue par la flotte %2 : combat !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1192"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1211"/>
         <source>The Wraith cull the population of %1</source>
         <translation>Les Wraith prélèvent la population de %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1199"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1218"/>
         <source>Ancient site on %1: +%2 naquadah from its archives</source>
         <translation>Site des Anciens sur %1 : +%2 naquadah tirés de ses archives</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1217"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1236"/>
         <source>Allied victory: only you and your allies remain</source>
         <translation>Victoire de l&apos;alliance : il ne reste que vous et vos alliés</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1245"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1264"/>
         <source>Jaffa revolt on %1: the world breaks free from the Goa&apos;uld</source>
         <translation>Révolte jaffa sur %1 : le monde se libère des Goa&apos;uld</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1256"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1275"/>
         <source>The Priors convert %1 to Origin</source>
         <translation>Les Prieurs convertissent %1 à l&apos;Origine</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1270"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1289"/>
         <source>%1 joins the Tau&apos;ri through diplomacy</source>
         <translation>%1 rejoint les Tau&apos;ri par la diplomatie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1298"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1318"/>
         <source>The %1 fear your power and break the alliance!</source>
         <translation>Les %1 craignent votre puissance et rompent l&apos;alliance !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1367"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1388"/>
         <source>New fleet %1 launched from %2 (%3 mothership(s), %4 fighter(s))</source>
         <translation>Nouvelle flotte %1 lancée depuis %2 (%3 vaisseau(x)-mère(s), %4 chasseur(s))</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1499"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1569"/>
         <source>A %1 fleet (%2 mothership(s), %3 fighter(s)) heads for %4!</source>
         <translation>Une flotte %1 (%2 vaisseau(x)-mère(s), %3 chasseur(s)) se dirige vers %4 !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1544"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1614"/>
         <source>the flagship must be in orbit, out of battle</source>
         <translation>le vaisseau amiral doit être en orbite, hors combat</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1547"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1617"/>
         <source>no battle here</source>
         <translation>aucune bataille ici</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1554"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1624"/>
         <source>the factions fighting here: %1 and %2</source>
         <translation>les factions qui combattent ici : %1 et %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1557"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1627"/>
         <source>nothing left to fight</source>
         <translation>plus rien à combattre</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1587"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1657"/>
         <source>Your fleet attacks %1</source>
         <translation>Votre flotte attaque %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1589"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1659"/>
         <source>%1 is under attack by the %2!</source>
         <translation>%1 est attaquée par les %2 !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1681"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1751"/>
         <source>Your fleet takes %1 from the %2</source>
         <translation>Votre flotte prend %1 (avant : %2)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1683"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1753"/>
         <source>%1 falls to the %2!</source>
         <translation>%1 tombe aux mains des %2 !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1685"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1755"/>
         <source>The %1 take %2 from the %3</source>
         <translation>%2 tombe aux mains des %1 (avant : %3)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1691"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1761"/>
         <source>Lucian raid on %1: %2 naquadah stolen</source>
         <translation>Raid lucien sur %1 : %2 naquadah volés</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1697"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1767"/>
         <source>%1 holds against a %2 attack</source>
         <translation>%1 résiste à une attaque %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1699"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1769"/>
         <source>Your fleet is destroyed attacking %1</source>
         <translation>Votre flotte est détruite en attaquant %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1028"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1836"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1889"/>
+        <source>out of reach of your gates (%1 lanes from your worlds)</source>
+        <translation>hors de portée de tes portes (%1 couloirs de tes mondes)</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1839"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1892"/>
+        <source>the gate team is back in %1 s</source>
+        <translation>l&apos;équipe de porte revient dans %1 s</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1841"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1894"/>
+        <source>needs %1 naquadah</source>
+        <translation>il faut %1 naquadah</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1847"/>
+        <source>%1 (%2): defense %3, population %4 M%5</source>
+        <translation>%1 (%2) : défense %3, population %4 M%5</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1851"/>
+        <source>Shipyard: %1 mothership(s), %2 fighter(s) in the docks%3</source>
+        <translation>Chantier : %1 vaisseau(x)-mère(s), %2 chasseur(s) en cale%3</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1853"/>
+        <source> - SABOTAGED %1 s</source>
+        <translation> - SABOTÉ %1 s</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1860"/>
+        <source>Fleets of %1 within reach: %2 mothership(s), %3 fighter(s)</source>
+        <translation>Flottes de %1 à portée : %2 vaisseau(x)-mère(s), %3 chasseur(s)</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1864"/>
+        <source>%1: %2 naquadah, research %3</source>
+        <translation>%1 : %2 naquadah, recherche %3</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1865"/>
+        <source>none</source>
+        <translation type="unfinished">aucune</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1883"/>
+        <source>sabotage yard, defense or mine</source>
+        <translation>sabotage yard, defense ou mine</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1885"/>
+        <source>only the worlds of your enemies</source>
+        <translation>seulement les mondes de tes ennemis</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1904"/>
+        <source>The sabotage team was caught on %1</source>
+        <translation>L&apos;équipe de sabotage a été prise sur %1</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1913"/>
+        <source>Shipyard of %1 sabotaged: the docks burn, no ship for %2 s</source>
+        <translation>Chantier de %1 saboté : les cales brûlent, aucun vaisseau pendant %2 s</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1918"/>
+        <source>Defenses of %1 sabotaged (level %2)</source>
+        <translation>Défenses de %1 sabotées (niveau %2)</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1921"/>
+        <source>Mines of %1 sabotaged: no income for %2 s</source>
+        <translation>Mines de %1 sabotées : aucun revenu pendant %2 s</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1980"/>
+        <source>%1 saboteurs struck the shipyard of %2!</source>
+        <translation>Des saboteurs (%1) ont frappé le chantier de %2 !</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1983"/>
+        <source>%1 agents weakened the defenses of %2</source>
+        <translation>Des agents (%1) ont affaibli les défenses de %2</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="2033"/>
+        <source>GALACTIC EVENT - The Wraith wake up starving: a culling fleet appears near %1</source>
+        <translation>ÉVÉNEMENT GALACTIQUE - Les Wraith se réveillent affamés : une flotte de moisson apparaît près de %1</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="2048"/>
+        <source>GALACTIC EVENT - A plague strikes %1 (%2): population -40%, no income for a while</source>
+        <translation>ÉVÉNEMENT GALACTIQUE - Une peste frappe %1 (%2) : population -40%, plus de revenus un moment</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="2070"/>
+        <source>GALACTIC EVENT - An Ascended Ancient leaves the %1 a technology: %2</source>
+        <translation>ÉVÉNEMENT GALACTIQUE - Un Ancien élevé laisse une technologie aux %1 : %2</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="2079"/>
+        <source>GALACTIC EVENT - A hyperspace storm: every ship travels at half speed for a minute</source>
+        <translation>ÉVÉNEMENT GALACTIQUE - Une tempête hyperspatiale : tous les vaisseaux voyagent à mi-vitesse pendant une minute</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestgame.cpp" line="1047"/>
         <source>In orbit of %1: the planet joins you in %2 s if you stay</source>
         <translation>En orbite de %1 : la planète vous rejoint dans %2 s si vous restez</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1033"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1052"/>
         <source>Arrived at %1</source>
         <translation>Arrivée à %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1124"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1143"/>
         <source>A %1 fleet attacks the flagship at %2: battle!</source>
         <translation>Une flotte %1 attaque le vaisseau amiral à %2 : combat !</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1149"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1168"/>
         <source>%1 taken from the %2</source>
         <translation>%1 prise aux %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1152"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1171"/>
         <source>The %1 fleet at %2 is destroyed</source>
         <translation>La flotte %1 à %2 est détruite</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1177"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1196"/>
         <source>Hull breached: the flagship retreats from %1 to %2</source>
         <translation>Coque percée : le vaisseau amiral se replie de %1 vers %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestgame.cpp" line="1202"/>
+        <location filename="src/conquest/conquestgame.cpp" line="1221"/>
         <source>The %1 have lost their last world</source>
         <translation>Les %1 ont perdu leur dernier monde</translation>
     </message>
@@ -2366,92 +2477,107 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation>en guerre</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="650"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="651"/>
+        <source>No spy mission: %1</source>
+        <translation>Pas de mission d&apos;espionnage : %1</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestscreen.cpp" line="661"/>
+        <source>Usage: sabotage yard|defense|mine &lt;planet&gt; (%1 naquadah)</source>
+        <translation>Usage : sabotage yard|defense|mine &lt;planète&gt; (%1 naquadah)</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestscreen.cpp" line="663"/>
+        <source>No sabotage: %1</source>
+        <translation>Pas de sabotage : %1</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestscreen.cpp" line="668"/>
         <source>Usage: target &lt;n&gt; [weapons|shields|engines|hangar|hull]</source>
         <translation>Usage : target &lt;n&gt; [weapons|shields|engines|hangar|hull]</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="660"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="678"/>
         <source>Cannot engage: %1</source>
         <translation>Intervention impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="670"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="688"/>
         <source>Usage: send &lt;fleet number&gt; &lt;planet&gt; - see &apos;fleets&apos;</source>
         <translation>Usage : send &lt;numéro de flotte&gt; &lt;planète&gt; - voir &apos;fleets&apos;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="672"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="690"/>
         <source>Cannot send the fleet: %1</source>
         <translation>Impossible d&apos;envoyer la flotte : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="683"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="701"/>
         <source>Usage: build fighter|mothership [planet] (%1 / %2 naquadah)</source>
         <translation>Usage : build fighter|mothership [planète] (%1 / %2 naquadah)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="687"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="705"/>
         <source>Cannot build: %1</source>
         <translation>Construction impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="703"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="721"/>
         <source>Unknown command &apos;%1&apos; - type &apos;help&apos;</source>
         <translation>Commande inconnue &apos;%1&apos; - tapez &apos;help&apos;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="711"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="729"/>
         <source>Travel: goto &lt;planet&gt; (number or name), or double click it on the map</source>
         <translation>Voyage : goto &lt;planète&gt; (numéro ou nom), ou double-clic sur la carte</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="712"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="730"/>
         <source>Planets: planets (list), info &lt;planet&gt;, status</source>
         <translation>Planètes : planets (liste), info &lt;planète&gt;, status</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="713"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="731"/>
         <source>Economy: fortify &lt;planet&gt; (+1 defense, %1 naquadah), repair (flagship hull, trinium)</source>
         <translation>Économie : fortify &lt;planète&gt; (+1 défense, %1 naquadah), repair (coque du vaisseau amiral, trinium)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="715"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="733"/>
         <source>Fleets: shipyards build ships on their own, fleets attack and defend by themselves</source>
         <translation>Flottes : les chantiers construisent seuls, les flottes attaquent et défendent d&apos;elles-mêmes</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="716"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="734"/>
         <source>   fleets (list), send &lt;fleet&gt; &lt;planet&gt;, build fighter|mothership [planet] (%1 / %2 naquadah)</source>
         <translation>   fleets (liste), send &lt;flotte&gt; &lt;planète&gt;, build fighter|mothership [planète] (%1 / %2 naquadah)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="719"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="737"/>
         <source>Battle: attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</source>
         <translation>Combat : attack &lt;n&gt;, maintower, pulseweapon, secondarytower, shield on|off, scan &lt;n&gt;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="720"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="738"/>
         <source>Battles between other factions last a while: watch them, or &apos;engage &lt;faction&gt;&apos; to fight one side</source>
         <translation>Les batailles entre autres factions durent un moment : observez-les, ou &apos;engage &lt;faction&gt;&apos; pour combattre un camp</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="721"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="739"/>
         <source>Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle</source>
         <translation>Hangar : launch [n] - vos chasseurs combattent à vos côtés ; vos flottes et vos alliés en orbite rejoignent la bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="722"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="740"/>
         <source>Drones (Ancients): drones &lt;n&gt; - a salvo through the shields; needs %1 free power, restocked on your worlds with an Ancient site</source>
         <translation>Drones (Anciens) : drones &lt;n&gt; - une salve qui traverse les boucliers ; demande %1 d&apos;énergie libre, rechargés sur tes mondes avec un site ancien</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="724"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="742"/>
         <source>Tactics: target &lt;n&gt; weapons|shields|engines|hangar, missiles [n] (BC-304, Lucian), evade on|off</source>
         <translation>Tactique : target &lt;n&gt; weapons|shields|engines|hangar, missiles [n] (BC-304, Alliance luxienne), evade on|off</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="725"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="743"/>
         <source>Supplies: railgun slugs and missiles are restocked on your worlds (missiles at shipyards)</source>
         <translation>Ravitaillement : obus de railgun et missiles sur tes mondes (missiles aux chantiers navals)</translation>
     </message>
@@ -2460,142 +2586,152 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation type="vanished">Drones (Anciens) : drones &lt;n&gt; - une salve qui traverse les boucliers, stock limité</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="726"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="744"/>
         <source>Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)</source>
         <translation>Énergie : turrets on|off, railguns on|off, power shields|weapons|balanced (power : bilan)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="727"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="745"/>
         <source>Research: research (tree), research &lt;n&gt; - weapons, defense and industry, 3 tiers each</source>
         <translation>Recherche : research (arbre), research &lt;n&gt; - armes, défense et industrie, 3 niveaux chacune</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="728"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="746"/>
         <source>Diplomacy: diplomacy (relations), ally &lt;faction&gt; (against a common enemy), break &lt;faction&gt;</source>
         <translation>Diplomatie : diplomacy (relations), ally &lt;faction&gt; (contre un ennemi commun), break &lt;faction&gt;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="729"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="747"/>
+        <source>Gate teams (%1 lanes from your worlds): spy &lt;planet&gt; (%2 naquadah), sabotage yard|defense|mine &lt;planet&gt; (%3)</source>
+        <translation>Équipes de porte (%1 couloirs de tes mondes) : spy &lt;planète&gt; (%2 naquadah), sabotage yard|defense|mine &lt;planète&gt; (%3)</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestscreen.cpp" line="749"/>
+        <source>Galactic events may strike anyone: starving Wraith, plague, Ascended gifts, hyperspace storms</source>
+        <translation>Des événements galactiques peuvent frapper tout le monde : Wraith affamés, peste, dons des Élevés, tempêtes hyperspatiales</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestscreen.cpp" line="750"/>
         <source>Display: hud on|off (radar, ship and weapon panels), or the HUD button</source>
         <translation>Affichage : hud on|off (radar, panneaux du vaisseau et des armes), ou le bouton HUD</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="730"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="751"/>
         <source>Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet.</source>
         <translation>Les mondes neutres vous rejoignent après un séjour en orbite ; les mondes ennemis se prennent en détruisant leur flotte.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="731"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="752"/>
         <source>Win by taking every planet of the enemy factions. Menu: Esc or &apos;menu&apos;.</source>
         <translation>Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="739"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="760"/>
         <source>Weapons</source>
         <translation>Armes</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="739"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="760"/>
         <source>Defense</source>
         <translation>Défense</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="739"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="760"/>
         <source>Industry</source>
         <translation>Industrie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="746"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="767"/>
         <source>done</source>
         <translation>terminée</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="749"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="770"/>
         <source>in progress %1%</source>
         <translation>en cours %1%</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="752"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="773"/>
         <source>%1 naquadah, %2 s</source>
         <translation>%1 naquadah, %2 s</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="768"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="789"/>
         <source>No fleet in the galaxy</source>
         <translation>Aucune flotte dans la galaxie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="774"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="795"/>
         <source> -&gt; %1</source>
         <translation> -&gt; %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="775"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="796"/>
         <source>%1 %2: %3 mothership(s), %4 fighter(s) at %5%6</source>
         <translation>%1 %2 : %3 vaisseau(x)-mère(s), %4 chasseur(s) à %5%6</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="776"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="797"/>
         <source>Fleet %1</source>
         <translation>Flotte %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="777"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="798"/>
         <source>(yours)</source>
         <translation>(à vous)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="788"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="809"/>
         <source>neutral</source>
         <translation>neutre</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="789"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="810"/>
         <source>yours</source>
         <translation>à vous</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="921"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="942"/>
         <source>Your fleet %1 joins the battle</source>
         <translation>Votre flotte %1 rejoint la bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="922"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="943"/>
         <source>Allied %1 ships join the battle</source>
         <translation>Des vaisseaux %1 alliés rejoignent la bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="925"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="946"/>
         <source>Your fleet %1 is in orbit</source>
         <translation>Ta flotte %1 est en orbite</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="926"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="947"/>
         <source>Allied %1 ships in orbit</source>
         <translation>Vaisseaux alliés (%1) en orbite</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="959"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="980"/>
         <source>Worlds held: %1 of %2</source>
         <translation>Mondes contrôlés : %1 sur %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="960"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="981"/>
         <source>Fleets: %1</source>
         <translation>Flottes : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="961"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="982"/>
         <source>Flagship battles: %1 won, %2 lost</source>
         <translation>Batailles du vaisseau amiral : %1 gagnées, %2 perdues</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="962"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="983"/>
         <source>Technologies: %1 of %2</source>
         <translation>Technologies : %1 sur %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="963"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="984"/>
         <source>Time of this session: %1 min %2 s</source>
         <translation>Durée de cette session : %1 min %2 s</translation>
     </message>

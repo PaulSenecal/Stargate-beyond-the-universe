@@ -86,7 +86,9 @@ uniform vec3 uLightColor;   // color of the ship lights (faction)
 uniform vec3 uColor;
 uniform float uEmissive;
 uniform float uAlpha;
-uniform int uMode;          // 0 hull, 1 planet, 2 shield, 3 glow
+uniform int uMode;          // 0 hull, 1 planet, 2 shield, 3 glow, 4 sprite
+uniform vec2 uUvScale;      // sprite: texture repeats (beams along their length)
+uniform float uTint;        // sprite: 0 = its own colors, 1 = recolored with uColor
 uniform vec3 uLightDir;     // direction the light travels
 uniform vec3 uCamPos;
 uniform float uTime;
@@ -126,6 +128,13 @@ void main() {
     vec3 L = normalize(-uLightDir);
     vec3 V = normalize(uCamPos - vWorldPos);
 
+    if (uMode == 4) {                       // textured shot of the mod (additive)
+        vec3 t = texture(uTexture, vUv * uUvScale).rgb;
+        float lum = max(t.r, max(t.g, t.b));
+        vec3 col = mix(t, uColor * lum * 1.4, uTint);
+        fragColor = vec4(col * uEmissive, uAlpha);
+        return;
+    }
     if (uMode == 3) {                       // additive glow
         fragColor = vec4(uColor * uEmissive, uAlpha);
         return;
@@ -359,6 +368,11 @@ BattleView::~BattleView()
                 if (texture)
                     glDeleteTextures(1, &texture);
         }
+    for (GLuint &texture : m_sprites)
+        if (texture)
+            glDeleteTextures(1, &texture);
+    m_quadVao.destroy();
+    m_quadVbo.destroy();
     m_starVao.destroy();
     m_starVbo.destroy();
     doneCurrent();
@@ -1381,11 +1395,12 @@ void BattleView::allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &tar
 {
     const ShipClass &sc = classOf(a);
     const bool big = a.cls == EnemyClass::Mothership;
-    auto fired = [this, &attack](Projectile::Kind kind) {
+    auto fired = [this, &attack, &sc](Projectile::Kind kind) {
         Projectile &p = m_projectiles.back();
         p.kind = kind;
         p.fromAlly = true;
         p.weapon = Weapon::Ally;
+        p.sprite = kind == Projectile::Kind::Slug || kind == Projectile::Kind::Missile ? -1 : spriteFor(sc.faction);
         p.damage = attack.damage;           // no Destiny technology bonus
     };
     if (attack.kind == "bolt" || attack.kind == "slug") {
@@ -2070,6 +2085,21 @@ void BattleView::drawRays()
         // Bright at the start, fading out at the end
         const float t = r.age / kBeamDuration;
         const float strength = t < 0.1f ? t / 0.1f : 1.0f - std::max(0.0f, t - 0.7f) / 0.3f;
+        // The real Asgard beam of the mod: a core and a glow, the texture
+        // repeated along the beam (recolored for the Ori)
+        if (spriteTexture(SpriteBeamCore) && spriteTexture(SpriteBeamGlow)) {
+            const QVector3D middle = from + span * 0.5f;
+            const float tint = r.color == kBeamColor ? 0.0f : 0.9f;
+            const float flicker = 1.0f + 0.15f * std::sin(m_time * 40.0f + r.age * 13.0f);
+            drawSprite(SpriteBeamGlow, middle, span, length, r.width * 5.0f * flicker, r.color, tint, 0.8f * strength,
+                       length / (r.width * 10.0f));
+            drawSprite(SpriteBeamCore, middle, span, length, r.width * 2.2f, r.color, tint, strength,
+                       length / (r.width * 6.0f));
+            drawGlow(from, r.width * 2.5f, r.color, 0.6f * strength);
+            if (r.missOffset.isNull())
+                drawGlow(to, r.width * 3.5f * flicker, r.color, 0.7f * strength);
+            continue;
+        }
         QMatrix4x4 m;
         m.translate(from + span * 0.5f);
         m.rotate(QQuaternion::rotationTo({0, 0, 1}, span / length));
@@ -2398,6 +2428,7 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
             shoot(false, from, -1, randomHullPoint(), attack.damage, slug ? 45.0f : big ? 22.0f : 28.0f,
                   slug ? kSlug : boltColor(sc.faction), big ? 1.6f : 1.1f, slug ? 0.05f : big ? 0.14f : 0.1f,
                   i * 0.15f);
+            m_projectiles.back().sprite = slug ? -1 : spriteFor(sc.faction);
             aimAtVictim();
             if (i < 3)
                 emit sound(slug ? SoundCue::DestinyRailgun : big ? SoundCue::EnemyHeavyFire : SoundCue::EnemyLightFire,
@@ -2488,6 +2519,10 @@ void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, co
     p.length = length;
     p.width = width;
     p.delay = delay;
+    // The player's energy shots: blue ion bolts (railgun slugs stay plain)
+    if (fromDestiny)
+        p.sprite = m_loadout.mainName && QString::fromLatin1(m_loadout.mainName).contains(QLatin1String("Staff"))
+                       ? int(SpritePlasma) : int(SpriteIon);
 
     QVector3D target = targetId < 0 ? destinyWorld(aimLocal) : from + QVector3D(1, 0, 0);
     if (const Enemy *e = findEnemy(targetId))
@@ -3287,6 +3322,29 @@ void BattleView::initializeGL()
     }
     upload(m_ring, prism(octagon, 0.45f));
 
+    // Quad for the shot sprites: x across, y along the shot (head at +0.5),
+    // normal +z, uv (head at v = 0, the top of the texture)
+    {
+        const float quad[] = {
+            -0.5f, -0.5f, 0, 0, 0, 1, 0, 1,   0.5f, -0.5f, 0, 0, 0, 1, 1, 1,   0.5f, 0.5f, 0, 0, 0, 1, 1, 0,
+            -0.5f, -0.5f, 0, 0, 0, 1, 0, 1,   0.5f, 0.5f, 0, 0, 0, 1, 1, 0,   -0.5f, 0.5f, 0, 0, 0, 1, 0, 0,
+        };
+        m_quadVao.create();
+        m_quadVao.bind();
+        m_quadVbo.create();
+        m_quadVbo.bind();
+        m_quadVbo.allocate(quad, int(sizeof(quad)));
+        const int stride = 8 * sizeof(float);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(6 * sizeof(float)));
+        m_quadVao.release();
+        m_quadVbo.release();
+    }
+
     // Starfield: points on a large sphere, drawn without camera translation
     std::vector<float> stars;
     m_starCount = 2500;
@@ -3406,6 +3464,8 @@ void BattleView::paintGL()
     m_lit.setUniformValue("uLightDir", kLightDir);
     m_lit.setUniformValue("uCamPos", m_eye);
     m_lit.setUniformValue("uTime", m_time);
+    m_lit.setUniformValue("uUvScale", QVector2D(1.0f, 1.0f));
+    m_lit.setUniformValue("uTint", 0.0f);
 
     QMatrix4x4 planet;
     planet.translate(30.0f, -48.0f, -175.0f);
@@ -3496,6 +3556,91 @@ void BattleView::drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &
     mesh.vao.bind();
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
     mesh.vao.release();
+}
+
+// ================================================================
+//  Shot sprites (textures of the mod)
+// ================================================================
+
+int BattleView::spriteFor(const QString &faction)
+{
+    if (faction == "Goa'uld" || faction == "Lucian Alliance")
+        return SpritePlasma;
+    if (faction == "Wraith")
+        return SpriteWraith;
+    if (faction == "Asgard")
+        return SpriteAsgardLaser;
+    if (faction == "Ancients")
+        return SpriteAncientLaser;
+    if (faction == "Tau'ri")
+        return SpriteNone;                  // kinetic: the plain shapes
+    return SpritePlasma;                    // others: the plasma, recolored
+}
+
+GLuint BattleView::spriteTexture(int sprite)
+{
+    if (sprite < 0 || sprite >= SpriteCount)
+        return 0;
+    if (!m_spritesTried[sprite]) {
+        m_spritesTried[sprite] = true;
+        static const char *names[SpriteCount] = {"goauld_plasmabolt", "wraith_plasma", "asgard_ionbolt",
+                                                 "asgard_laser_medium_glow", "anicents_laser_medium_glow",
+                                                 "asgard_beam_core", "asgard_beam_glow"};
+        const QString path = Assets::modFile(QStringLiteral("textures/%1.dds").arg(QLatin1String(names[sprite])));
+        const QImage image = path.isEmpty() ? QImage() : DdsTexture::load(path, 256).convertToFormat(QImage::Format_RGBA8888);
+        if (!image.isNull()) {
+            glGenTextures(1, &m_sprites[sprite]);
+            glBindTexture(GL_TEXTURE_2D, m_sprites[sprite]);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         image.constBits());
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            const bool beam = sprite == SpriteBeamCore || sprite == SpriteBeamGlow;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, beam ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+    return m_sprites[sprite];
+}
+
+// A textured strip along `direction`, turned to face the camera
+void BattleView::drawSprite(int sprite, const QVector3D &center, const QVector3D &direction, float length, float width,
+                            const QVector3D &tint, float tintAmount, float alpha, float uvRepeat)
+{
+    const GLuint texture = spriteTexture(sprite);
+    if (!texture || direction.lengthSquared() < 1e-8f)
+        return;
+    const QVector3D along = direction.normalized();
+    QVector3D across = QVector3D::crossProduct(along, (m_eye - center).normalized());
+    if (across.lengthSquared() < 1e-6f)
+        across = QVector3D::crossProduct(along, {0, 1, 0});
+    across.normalize();
+    const QVector3D normal = QVector3D::crossProduct(across, along).normalized();
+    QMatrix4x4 m;
+    m.setColumn(0, QVector4D(across * width, 0));
+    m.setColumn(1, QVector4D(along * length, 0));
+    m.setColumn(2, QVector4D(normal, 0));
+    m.setColumn(3, QVector4D(center, 1));
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    m_lit.setUniformValue("uTexture", 0);
+    m_lit.setUniformValue("uTextured", 0);
+    m_lit.setUniformValue("uModel", m);
+    m_lit.setUniformValue("uNormalMat", m.normalMatrix());
+    m_lit.setUniformValue("uColor", tint);
+    m_lit.setUniformValue("uTint", tintAmount);
+    m_lit.setUniformValue("uEmissive", 1.6f);
+    m_lit.setUniformValue("uAlpha", alpha);
+    m_lit.setUniformValue("uUvScale", QVector2D(1.0f, uvRepeat));
+    m_lit.setUniformValue("uMode", int(ModeSprite));
+    m_quadVao.bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    m_quadVao.release();
+    m_lit.setUniformValue("uUvScale", QVector2D(1.0f, 1.0f));
+    m_lit.setUniformValue("uTint", 0.0f);
 }
 
 void BattleView::drawGlow(const QVector3D &pos, float radius, const QVector3D &color, float alpha)
@@ -3915,6 +4060,16 @@ void BattleView::drawEffects()
             const float flicker = 0.4f + 0.12f * std::sin(m_time * 30.0f + p.id);
             drawGlow(p.pos - p.vel.normalized() * p.length * 0.7f, flicker, p.color, 0.9f);
             drawGlow(p.pos - p.vel.normalized() * p.length * 1.4f, flicker * 1.8f, p.color, 0.2f);
+            continue;
+        }
+        // Texture of the mod when there is one, the plain bolt otherwise
+        if (p.sprite >= 0 && p.kind != Projectile::Kind::Slug && spriteTexture(p.sprite)) {
+            const QVector3D dir = p.vel.normalized();
+            const float length = std::max(1.2f, p.length * 1.7f);
+            const float width = std::max(p.width * 7.0f, length * 0.32f);
+            // The plasma of the other factions (drones, Nakai, Ursini...) takes their color
+            const bool recolor = p.sprite == SpritePlasma && !p.fromDestiny && p.color != kEnemyBolt;
+            drawSprite(p.sprite, p.pos - dir * length * 0.35f, dir, length, width, p.color, recolor ? 0.85f : 0.0f, 1.0f);
             continue;
         }
         QMatrix4x4 halo = core;

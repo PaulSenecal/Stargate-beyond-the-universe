@@ -91,6 +91,7 @@ void CommandConsole::appendLine(const QString &text, Tone tone)
     m_log->append(QStringLiteral("<span style=\"color:%1\">%2%3</span>")
                       .arg(color, prefix, text.toHtmlEscaped()));
     bar->setValue(atBottom ? bar->maximum() : position);
+    emit lineAppended(text, tone);
 }
 
 void CommandConsole::clearLog()

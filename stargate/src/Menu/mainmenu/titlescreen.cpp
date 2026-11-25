@@ -1,11 +1,15 @@
 #include "titlescreen.h"
+#include "src/network/coopprotocol.h"
 
 #include <QComboBox>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPainter>
+#include <QIntValidator>
+#include <QLineEdit>
 #include <QPushButton>
+#include <QSettings>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -42,13 +46,14 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     play->setToolTip(tr("Survival aboard the Destiny - continues your journey"));
     auto *conquest = new QPushButton(tr("Conquest"), mainPage);
     conquest->setToolTip(tr("Pick a faction and conquer a galaxy"));
+    auto *coop = new QPushButton(tr("Co-op: join as co-pilot"), mainPage);
     auto *settings = new QPushButton(tr("Settings"), mainPage);
     auto *quit = new QPushButton(tr("Quit game"), mainPage);
     quit->setObjectName("danger");
     auto *mainLayout = new QVBoxLayout(mainPage);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(10);
-    for (QPushButton *b : {play, conquest, settings, quit})
+    for (QPushButton *b : {play, conquest, coop, settings, quit})
         mainLayout->addWidget(b);
     m_firstButton = play;
 
@@ -125,6 +130,40 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     m_pages->addWidget(mainPage);
     m_pages->addWidget(m_settings);
     m_pages->addWidget(conquestPage);
+
+    // --- Co-op page: address of the captain's game
+    auto *coopPage = new QWidget(m_pages);
+    auto *coopHeading = new QLabel(tr("CO-OP"), coopPage);
+    coopHeading->setObjectName("heading");
+    coopHeading->setAlignment(Qt::AlignCenter);
+    auto *coopText = new QLabel(tr("The captain opens the co-op in the campaign with 'coop host tactical' or "
+                                   "'coop host engineering', and gives you the address shown in the console."),
+                                coopPage);
+    coopText->setObjectName("note");
+    coopText->setWordWrap(true);
+    auto *hostField = new QLineEdit(QSettings("Stargate", "stargate").value("coop/host", "127.0.0.1").toString(), coopPage);
+    auto *portField = new QLineEdit(QString::number(CoopProtocol::kDefaultPort), coopPage);
+    portField->setValidator(new QIntValidator(1, 65535, portField));
+    auto *join = new QPushButton(tr("Join the ship"), coopPage);
+    auto *backFromCoop = new QPushButton(tr("Back"), coopPage);
+    auto *coopLayout = new QVBoxLayout(coopPage);
+    coopLayout->setContentsMargins(0, 0, 0, 0);
+    coopLayout->setSpacing(10);
+    coopLayout->addWidget(coopHeading);
+    coopLayout->addWidget(coopText);
+    coopLayout->addWidget(new QLabel(tr("Address of the captain"), coopPage));
+    coopLayout->addWidget(hostField);
+    coopLayout->addWidget(new QLabel(tr("Port"), coopPage));
+    coopLayout->addWidget(portField);
+    coopLayout->addWidget(join);
+    coopLayout->addWidget(backFromCoop);
+    m_pages->addWidget(coopPage);
+    connect(coop, &QPushButton::clicked, this, [this, coopPage] { m_pages->setCurrentWidget(coopPage); });
+    connect(backFromCoop, &QPushButton::clicked, this, [this] { m_pages->setCurrentIndex(0); });
+    connect(join, &QPushButton::clicked, this, [this, hostField, portField] {
+        QSettings("Stargate", "stargate").setValue("coop/host", hostField->text().trimmed());
+        emit coopJoinRequested(hostField->text().trimmed(), quint16(portField->text().toUInt()));
+    });
 
     auto *panelLayout = new QVBoxLayout(panel);
     panelLayout->setContentsMargins(36, 28, 36, 28);

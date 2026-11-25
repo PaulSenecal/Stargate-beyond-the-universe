@@ -90,6 +90,17 @@ const ClassSeed kClasses[] = {
      "Ori crusade mothership, powered by the Ori themselves. Its main beam crosses any shield."},
     {"Ori Fighter", "Fighter", "Ori", 65, false, "#c9883e",
      "Small Ori attack craft escorting the warships of the crusade."},
+    // Pegasus / Destiny-era aliens met along the route (campaign waves)
+    {"Nakai Carrier", "MotherShip", "Nakai", 450, true, "#4f6d3a",
+     "Insectoid Nakai mothership. It harries its prey with swarms of fighters and sends teams to "
+     "abduct crew members."},
+    {"Nakai Fighter", "Fighter", "Nakai", 50, true, "#6a8a4c",
+     "Fast Nakai attack craft, firing light energy bolts."},
+    {"Ursini Warship", "MotherShip", "Ursini", 580, true, "#6b5a8c",
+     "Heavily armored Ursini battleship. Slow, but its batteries and missile racks hit hard; the "
+     "Ursini fight anyone who enters their space."},
+    {"Ursini Interceptor", "Fighter", "Ursini", 65, true, "#7f6fa0",
+     "Armored Ursini interceptor with a kinetic cannon."},
 };
 
 const AttackSeed kAttacks[] = {
@@ -194,6 +205,19 @@ const AttackSeed kAttacks[] = {
      "Pair of heavy plasma bolts."},
     {"Ori Fighter", "Plasma bolt", "bolt", 1.3, 1, 2.4, 1.0, "always", "", false,
      "Light plasma bolt."},
+
+    {"Nakai Carrier", "Energy barrage", "bolt", 1.8, 2, 3.0, 1.0, "always", "", false,
+     "Pair of energy bolts."},
+    {"Nakai Carrier", "Fighter swarm", "launch", 0, 3, 20, 0.6, "always", "Nakai Fighter", true,
+     "Releases three Nakai fighters."},
+    {"Nakai Fighter", "Energy bolt", "bolt", 1.0, 1, 1.9, 1.0, "always", "", false,
+     "Light, fast energy bolt."},
+    {"Ursini Warship", "Heavy batteries", "bolt", 3.0, 3, 4.2, 1.0, "always", "", false,
+     "Three heavy bolts from the armored batteries."},
+    {"Ursini Warship", "Missile racks", "missile", 12, 2, 12, 0.7, "always", "", true,
+     "Two homing missiles. Railguns can shoot them down."},
+    {"Ursini Interceptor", "Kinetic cannon", "slug", 1.5, 1, 2.6, 1.0, "always", "", false,
+     "Fast kinetic slug."},
 };
 
 // Pictures of the Stargate Reborn mod (optional local assets)

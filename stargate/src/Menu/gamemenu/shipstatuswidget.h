@@ -39,6 +39,7 @@ struct ShipStatusData
     float hull = 100;
     float shield = 100;
     bool shieldUp = true;
+    bool hasShield = true;       // false: no shield generator (Wraith hive)
     QList<Component> components;
     QList<QPointF> fires;           // (x, z)
     QList<Hit> hits;

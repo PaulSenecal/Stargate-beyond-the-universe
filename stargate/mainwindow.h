@@ -34,6 +34,7 @@ public:
     // saved and reloaded), back on the settings page
     void changeLanguage(const QString &code);
     void createTitle();
+    void joinCoop(const QString &host, quint16 port);
 
 private slots:
     void on_pushButton_clicked();
@@ -46,6 +47,7 @@ private:
     TitleScreen *m_title = nullptr;
     GameMenu *m_game = nullptr;
     ConquestScreen *m_conquest = nullptr;
+    QWidget *m_coop = nullptr;
 
 };
 #endif // MAINWINDOW_H

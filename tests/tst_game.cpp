@@ -17,7 +17,12 @@
 #include "src/conquest/conquestgame.h"
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
+#include "src/core/balance.h"
 #include "src/core/gameconfig.h"
+#include "src/core/campaignlife.h"
+#include "src/core/modloader.h"
+#include "src/network/coopsession.h"
+#include "src/core/interior.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
@@ -419,8 +424,19 @@ private slots:
         // Quest 3: through the gate and back
         quests.notify("EXPLORE");
         quests.notify("SURVIVE");
-        QVERIFY(campaignDone);
         QCOMPARE(quests.completedCount(), 3);
+        QCOMPARE(quests.activeQuest()->title, QStringLiteral("Damage Control"));
+        QCOMPARE(quests.hint(), QStringLiteral("plan"));
+
+        // Training quests (added by migration, only once)
+        QVERIFY(QuestRepository::migrate());
+        for (const char *type : {"PLAN", "JOB", "SEAL", "CREW"})
+            quests.notify(type);
+        QCOMPARE(quests.activeQuest()->title, QStringLiteral("Battle Drill"));
+        quests.notify("TARGET");
+        quests.notify("BATTLE");
+        QVERIFY(campaignDone);
+        QCOMPARE(quests.completedCount(), 5);
         QVERIFY(quests.objectiveLines().isEmpty());
         QVERIFY(!quests.hint().isEmpty());
     }
@@ -437,7 +453,7 @@ private slots:
         QVERIFY(ShipLibraryRepository::migrate());          // idempotent
 
         const QList<ShipClass> ships = ShipLibraryRepository::all();
-        QCOMPARE(ships.size(), 25);
+        QCOMPARE(ships.size(), 29);
         QStringList hostileFactions;
         for (const ShipClass &c : ships) {
             QVERIFY2(!c.attacks.isEmpty(), qPrintable(c.name));
@@ -451,7 +467,7 @@ private slots:
         }
         hostileFactions.removeDuplicates();
         hostileFactions.sort();
-        QCOMPARE(hostileFactions, (QStringList{"Drones", "Goa'uld", "Lucian Alliance", "Wraith"}));
+        QCOMPARE(hostileFactions, (QStringList{"Drones", "Goa'uld", "Lucian Alliance", "Nakai", "Ursini", "Wraith"}));
 
         const auto dart = std::find_if(ships.begin(), ships.end(), [](const ShipClass &c) { return c.name == "Wraith Dart"; });
         QVERIFY(dart != ships.end());
@@ -619,9 +635,14 @@ private slots:
         ConquestGame game;
         QVERIFY(game.fromJson(smallGalaxy()));
         game.setSeed(3);
+        game.setRandomEvents(false);
         QCOMPARE(game.fleetCount(0), 0);
+        int launched = 0;
+        connect(&game, &ConquestGame::message, this, [&launched](const QString &t) {
+            launched += t.startsWith("New fleet") ? 1 : 0;
+        });
         run(game, 200);                         // Earth (capital) fills its shipyard
-        QVERIFY(game.fleetCount(0) + game.planetCount(0) > 1);
+        QVERIFY(launched > 0);
         QVERIFY(game.fleetCount(1) > 0 || game.planets()[2].dockFighters > 0);
         QString error;
         QVERIFY(!game.build(1, false, &error));   // Abydos: no shipyard
@@ -886,6 +907,143 @@ private slots:
         QVERIFY(game.hostile(0, 1));
     }
 
+    void spyAndSabotage()
+    {
+        ConquestGame game;
+        game.setSeed(5);
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QVERIFY(game.inGateRange(2));                       // Chulak is two lanes from Earth
+        QStringList report;
+        QString error;
+        QVERIFY(game.spy(2, &report, &error));
+        QVERIFY(report.join(' ').contains("Chulak"));
+        QCOMPARE(game.player().naquadah, 100.0 - Balance::kSpyCost);
+        QVERIFY(!game.spy(2, &report, &error));             // the team is away
+        QVERIFY(error.contains("back"));
+        run(game, Balance::kGateTeamCooldown + 1);
+        bool success = false;
+        QVERIFY(!game.sabotage(1, "yard", &success, &error));   // neutral world
+        QVERIFY(!game.sabotage(2, "nothing", &success, &error));
+        // Many attempts: some succeed (the capital's defense 5 makes it hard)
+        int succeeded = 0;
+        for (int i = 0; i < 12; ++i) {
+            QJsonObject json = game.toJson();
+            QJsonArray factions = json["factions"].toArray();
+            QJsonObject me = factions[0].toObject();
+            me["naquadah"] = 500.0;
+            me["gateTeams"] = 0.0;
+            factions[0] = me;
+            json["factions"] = factions;
+            ConquestGame copy;
+            copy.setSeed(quint32(100 + i));
+            QVERIFY(copy.fromJson(json));
+            QVERIFY(copy.sabotage(2, "mine", &success, &error));
+            if (success) {
+                ++succeeded;
+                QCOMPARE(copy.naquadahRate(copy.planets()[2]), 0.0);     // no income
+            }
+        }
+        QVERIFY(succeeded > 0 && succeeded < 12);
+    }
+
+    void sabotagedYardStopsProduction()
+    {
+        ConquestGame game;
+        QJsonObject json = smallGalaxy();
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject chulak = planets[2].toObject();
+        chulak["yardDown"] = 50.0;
+        planets[2] = chulak;
+        json["planets"] = planets;
+        json["version"] = 5;
+        QVERIFY(game.fromJson(json));
+        run(game, 30);
+        QCOMPARE(game.planets()[2].dockFighters, 0);        // nothing built while sabotaged
+        QVERIFY(game.planets()[0].dockFighters > 0);         // Earth builds
+        QCOMPARE(game.toJson()["version"].toInt(), 5);
+    }
+
+    void damagedFleetsComeBack()
+    {
+        // A Goa'uld fleet waits at Abydos (theirs); the flagship attacks and flees
+        QJsonObject json = withFleets({{1, 2, 3, 1}});
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["owner"] = 1;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        ConquestGame game;
+        game.setRandomEvents(false);
+        QVERIFY(game.fromJson(json));
+        QSignalSpy battles(&game, &ConquestGame::battleStarted);
+        QVERIFY(game.orderTravel(1));
+        run(game, 8);
+        QVERIFY(game.inBattle());
+        QCOMPARE(game.battleDamage(), 0.0);
+        game.battleLost(0.6);
+        QCOMPARE(game.fleets().first().damage, 0.6);
+        QCOMPARE(game.toJson()["fleets"].toArray().first().toObject()["damage"].toDouble(), 0.6);
+        run(game, 10);                                      // repaired on their own world
+        QVERIFY(game.fleets().first().damage < 0.6);
+        // Spending
+        QString missing;
+        QVERIFY(!game.spend(1000, 0, &missing));
+        QVERIFY(missing.contains("naquadah"));
+        const double before = game.player().trinium;
+        QVERIFY(game.spend(0, 5));
+        QCOMPARE(game.player().trinium, before - 5);
+        game.addCapturedShip();
+        QVERIFY(std::any_of(game.fleets().begin(), game.fleets().end(),
+                            [](const Conquest::Fleet &f) { return f.owner == 0 && f.motherships == 1; }));
+    }
+
+    void galacticEvents()
+    {
+        ConquestGame game;
+        game.setSeed(3);
+        QVERIFY(game.fromJson(smallGalaxy()));
+        QVERIFY(!game.triggerGalacticEvent("wraith"));       // no Wraith in this galaxy
+        QVERIFY(game.triggerGalacticEvent("storm"));
+        QVERIFY(game.stormLeft() > 0);
+        const double population = game.planets()[0].population + game.planets()[2].population;
+        QVERIFY(game.triggerGalacticEvent("plague"));
+        QVERIFY(game.planets()[0].population + game.planets()[2].population < population);
+        const int techs = game.factions()[0].techs.size() + game.factions()[1].techs.size();
+        QVERIFY(game.triggerGalacticEvent("ascended"));
+        QCOMPARE(game.factions()[0].techs.size() + game.factions()[1].techs.size(), techs + 1);
+        QVERIFY(!game.triggerGalacticEvent("nonsense"));
+    }
+
+    void outmatchedFleetFallsBack()
+    {
+        // A small Goa'uld fleet on Abydos (theirs) facing a huge Tau'ri fleet
+        QJsonObject json = withFleets({{0, 6, 10, 1}, {1, 0, 2, 1}});
+        QJsonArray planets = json["planets"].toArray();
+        QJsonObject abydos = planets[1].toObject();
+        abydos["owner"] = 1;
+        planets[1] = abydos;
+        json["planets"] = planets;
+        // The Tau'ri fleet is on its way to Abydos, the Goa'uld one thinks now
+        QJsonArray fleets = json["fleets"].toArray();
+        QJsonObject tauri = fleets[0].toObject();
+        tauri["at"] = 0;
+        tauri["route"] = QJsonArray{1};
+        tauri["target"] = 1;
+        tauri["ordered"] = true;
+        fleets[0] = tauri;
+        QJsonObject goauld = fleets[1].toObject();
+        goauld["think"] = 0.1;
+        fleets[1] = goauld;
+        json["fleets"] = fleets;
+        ConquestGame game;
+        QVERIFY(game.fromJson(json));
+        run(game, 0.5);
+        const auto it = std::find_if(game.fleets().begin(), game.fleets().end(),
+                                     [](const Conquest::Fleet &f) { return f.owner == 1; });
+        QVERIFY(it != game.fleets().end());
+        QCOMPARE(it->target, 2);                            // falls back to Chulak
+    }
+
     void fleetLossesAfterBattle()
     {
         ConquestGame game;
@@ -929,6 +1087,7 @@ private slots:
         QVERIFY(game.fromJson(fourFactions()));
         QVERIFY(game.hostile(1, 2));
         game.setSeed(9);
+        game.setRandomEvents(false);
         QSignalSpy messages(&game, &ConquestGame::message);
         run(game, 1500);                        // 50 diplomacy periods
         QVERIFY(said(messages, "ally against the Lucian Alliance"));
@@ -1060,6 +1219,498 @@ private slots:
 };
 
 // ================================================================
+//  Interior: compartments, crew, repair jobs
+// ================================================================
+
+class InteriorTest : public QObject
+{
+    Q_OBJECT
+
+    static Interior::Effects run(Interior &ship, float seconds, float lifeSupport = 100.0f)
+    {
+        Interior::Effects total;
+        for (float t = 0; t < seconds; t += 1.0f) {
+            const Interior::Effects e = ship.tick(1.0f, lifeSupport, false);
+            total.systemDamage += e.systemDamage;
+            total.systemRepair += e.systemRepair;
+            total.hullRepair += e.hullRepair;
+            total.crewLost += e.crewLost;
+            total.food += e.food;
+        }
+        return total;
+    }
+
+private slots:
+    void layout()
+    {
+        Interior ship;
+        QVERIFY(ship.compartments().size() >= 15);
+        for (const Interior::Compartment &c : ship.compartments())
+            QVERIFY2(!c.neighbours.isEmpty(), qPrintable(c.id));        // every room has a door
+        QCOMPARE(ship.compartments()[ship.compartmentOfSystem("engines")].id, QString("engines"));
+        QCOMPARE(ship.find("Bridge"), ship.find("bridge"));
+        QVERIFY(ship.compartmentAt(QPointF(7.0, 0.0)) == ship.find("maintower"));
+        QVERIFY(ship.freeWorkers() > 0);
+    }
+
+    void fireSpreadsAndBurnsTheSystem()
+    {
+        Interior ship;
+        ship.seed(7);
+        const int engines = ship.find("engines");
+        ship.startFire(engines, 0.6f);
+        const Interior::Effects e = run(ship, 30);
+        QVERIFY(ship.compartments()[engines].fire > 0.6f);
+        float damage = 0;
+        for (const auto &[system, amount] : e.systemDamage)
+            if (system == "engines")
+                damage += amount;
+        QVERIFY(damage > 10.0f);
+        QVERIFY(ship.compartments()[engines].air < 100.0f);
+    }
+
+    void ventingKillsTheFire()
+    {
+        Interior ship;
+        const int core = ship.find("core");
+        ship.startFire(core, 0.5f);
+        QVERIFY(ship.vent("core", nullptr));
+        QCOMPARE(ship.compartments()[core].fire, 0.0f);
+        QCOMPARE(ship.compartments()[core].air, 0.0f);
+        run(ship, 10);
+        QVERIFY(ship.compartments()[core].air < 5.0f);              // stays open to space
+        QVERIFY(ship.setSealed("core", false, nullptr));            // closed again
+        run(ship, 40);
+        QVERIFY(ship.compartments()[core].air > 50.0f);             // life support refills it
+    }
+
+    void sealedDoorsKeepTheAir()
+    {
+        Interior ship;
+        const int bay = ship.find("shuttlebay");
+        QString error;
+        QVERIFY(ship.setSealed("mess", true, &error));
+        QVERIFY(ship.setSealed("infirmary", true, &error));
+        QVERIFY(ship.setSealed("reclamation", true, &error));
+        Interior::Compartment &c = const_cast<Interior::Compartment &>(ship.compartments()[bay]);
+        c.breach = true;
+        run(ship, 20, 0.0f);
+        QVERIFY(ship.compartments()[bay].air < 20.0f);
+        QCOMPARE(ship.compartments()[ship.find("mess")].air, 100.0f);
+    }
+
+    void repairJobsTakeTimeAndWorkers()
+    {
+        Interior ship;
+        QString error;
+        const int job = ship.orderRepair("engines", &error);
+        QVERIFY2(job > 0, qPrintable(error));
+        QCOMPARE(ship.orderRepair("engine", &error), -1);           // already under way
+        QVERIFY(ship.jobs().first().workers.size() > 0);
+        Interior::Effects e = run(ship, 2);
+        QVERIFY(e.systemRepair.isEmpty());                          // not instant
+        float tired = 0;
+        for (const Interior::Person &p : ship.people())
+            tired = std::max(tired, p.fatigue);
+        QVERIFY(tired > 0.0f);                                      // the work tires them
+        e = run(ship, 40);
+        QCOMPARE(e.systemRepair.size(), 1);
+        QCOMPARE(e.systemRepair.first().first, QString("engines"));
+        QVERIFY(ship.jobs().isEmpty());
+    }
+
+    void workersAreLimited()
+    {
+        Interior ship;
+        ship.setCrewCount(20);                                      // a single repair team
+        QString error;
+        for (const char *system : {"engines", "shields", "weapons", "lifesupport", "sensors"})
+            QVERIFY(ship.orderRepair(system, &error) > 0);
+        QVERIFY(ship.orderRepair("hull", &error) > 0);
+        int idleJobs = 0;
+        for (const Interior::Job &j : ship.jobs())
+            if (j.workers.isEmpty())
+                ++idleJobs;
+        QVERIFY(idleJobs > 0);                                      // they wait for free hands
+        QCOMPARE(ship.freeWorkers(), 0);
+    }
+
+    void unlockingASection()
+    {
+        Interior ship;
+        QString error;
+        QVERIFY(!ship.hasCapability("food"));
+        QCOMPARE(ship.orderRepair("hydroponics", &error), -1);      // closed
+        QVERIFY(ship.orderUnlock("hydroponics", &error) > 0);
+        run(ship, 120);
+        QVERIFY(ship.hasCapability("food"));
+        const Interior::Effects e = run(ship, 40);
+        QVERIFY(e.food > 0.0f);                                     // hydroponics produce food
+    }
+
+    void modulesNeedABlueprintAndABay()
+    {
+        Interior ship;
+        QString error;
+        QCOMPARE(ship.orderInstall("asgard_shield", QString(), &error), -1);   // no blueprint
+        QVERIFY(ship.learnBlueprint("asgard_shield"));
+        QVERIFY(!ship.learnBlueprint("asgard_shield"));
+        QCOMPARE(ship.orderInstall("asgard_shield", QString(), &error), -1);   // no bay open
+        QVERIFY(ship.orderUnlock("upperdeck", &error) > 0);
+        run(ship, 120);
+        QVERIFY(ship.orderInstall("asgard_shield", QString(), &error) > 0);
+        run(ship, 120);
+        QVERIFY(ship.hasModule("asgard_shield"));
+    }
+
+    void injuriesHealAndBonusComesBack()
+    {
+        Interior ship;
+        ship.seed(3);
+        QVERIFY(ship.bonusActive("energy"));
+        const int control = ship.find("control");                   // Rush and Eli work there
+        for (int i = 0; i < 20 && ship.bonusActive("energy"); ++i)
+            ship.damageAt(ship.compartments()[control].rect.center(), 90.0f);
+        QVERIFY(!ship.bonusActive("energy"));
+        for (const Interior::Compartment &c : ship.compartments())
+            QVERIFY(ship.vent(c.id, nullptr) || true);              // no fire left to hurt anyone
+        for (const Interior::Compartment &c : ship.compartments())
+            ship.setSealed(c.id, false, nullptr);
+        run(ship, 400);
+        QVERIFY(ship.bonusActive("energy"));
+    }
+
+    void boardersAreFought()
+    {
+        Interior ship;
+        ship.seed(11);
+        ship.board(3);
+        QCOMPARE(ship.boarders(), 3);
+        QString where;
+        for (const Interior::Compartment &c : ship.compartments())
+            if (c.boarders > 0)
+                where = c.id;
+        QVERIFY(ship.defend(where, nullptr));
+        run(ship, 120);
+        QCOMPARE(ship.boarders(), 0);
+    }
+
+    void factionPlans()
+    {
+        for (const char *faction : {"Tau'ri", "Goa'uld", "Lucian Alliance", "Wraith", "Asgard", "Ancients", "Ori"}) {
+            Interior ship(QStringLiteral("flagship"), QString::fromLatin1(faction));
+            QVERIFY2(ship.compartments().size() >= 10, faction);
+            for (const char *system : {"engines", "shields", "weapons", "lifesupport", "sensors"})
+                if (QString(system) != "shields" || QString(faction) != "Wraith")      // a hive has no shield
+                    QVERIFY2(ship.compartmentOfSystem(system) >= 0, qPrintable(QStringLiteral("%1 %2").arg(faction, system)));
+            for (const Interior::Compartment &c : ship.compartments())
+                QVERIFY2(!c.neighbours.isEmpty(), qPrintable(QStringLiteral("%1 %2").arg(faction, c.id)));
+            QVERIFY2(ship.hasRings() || ship.hasBeam() || ship.hasGate(), faction);     // a way to board
+            QVERIFY(ship.freeWorkers() > 0);
+            QString error;
+            QVERIFY2(ship.orderRepair("engines", &error) > 0, qPrintable(error));
+        }
+        QVERIFY(Interior("flagship", "Goa'uld").hasGate());           // Ha'tak gate room
+        QVERIFY(Interior("flagship", "Tau'ri").hasBeam());            // Asgard beam of the BC-304
+        QVERIFY(Interior().hasGate());                                // the Destiny
+        QCOMPARE(Interior("flagship", "Wraith").compartmentOfSystem("shields"), -1);
+        Interior enemy("enemy", "generic");
+        QVERIFY(enemy.compartmentOfSystem("hangar") >= 0);
+        QString error;
+        QVERIFY(enemy.orderRepair("hangar", &error) > 0);
+        // Named crew only on the player's ships
+        int named = 0;
+        for (const Interior::Person &p : enemy.people())
+            named += p.generic ? 0 : 1;
+        QCOMPARE(named, 0);
+    }
+
+    void wraithHiveHealsItself()
+    {
+        Interior hive("flagship", "Wraith");
+        Interior hatak("flagship", "Goa'uld");
+        for (Interior *ship : {&hive, &hatak})
+            ship->damageAt(ship->compartments()[ship->compartmentOfSystem("engines")].rect.center(), 60.0f);
+        for (int i = 0; i < 60; ++i) {
+            hive.tick(1.0f, 100.0f, false);
+            hatak.tick(1.0f, 100.0f, false);
+        }
+        const float hiveIntegrity = hive.compartments()[hive.compartmentOfSystem("engines")].integrity;
+        const float hatakIntegrity = hatak.compartments()[hatak.compartmentOfSystem("engines")].integrity;
+        QVERIFY(hiveIntegrity > hatakIntegrity);
+        // Dock crews of a friendly world fix everything
+        hatak.dockRepair(60.0f);
+        QCOMPARE(hatak.compartments()[hatak.compartmentOfSystem("engines")].integrity, 100.0f);
+    }
+
+    void saveRoundTrip()
+    {
+        Interior ship;
+        QString error;
+        ship.startFire(ship.find("bridge"), 0.4f);
+        ship.orderUnlock("armory", &error);
+        ship.learnBlueprint("water_recycler");
+        ship.setSealed("mess", true, &error);
+        ship.changeMorale(-20.0f);
+        Interior copy;
+        copy.fromJson(ship.toJson());
+        QCOMPARE(copy.compartments()[copy.find("bridge")].fire, 0.4f);
+        QVERIFY(copy.compartments()[copy.find("mess")].sealed);
+        QCOMPARE(copy.jobs().size(), 1);
+        QCOMPARE(copy.blueprints(), QStringList{"water_recycler"});
+        QCOMPARE(copy.morale(), ship.morale());
+    }
+};
+
+// ================================================================
+//  Campaign life: choices, stones, achievements, universe seed
+// ================================================================
+
+class CampaignLifeTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void choicesHaveConsequences()
+    {
+        CampaignLife life;
+        life.setGlobalStore(false);
+        life.seed(1);
+        QVERIFY(!life.pendingChoice());
+        for (const QString &id : CampaignLife::choiceIds()) {
+            QVERIFY(life.startChoice(id));
+            QVERIFY(life.pendingChoice()->options.size() >= 2);
+            Outcome o;
+            QVERIFY(!life.choose(99, &o));                      // invalid option: still waiting
+            QVERIFY(life.choose(0, &o));
+            QVERIFY2(!o.text.isEmpty(), qPrintable(id));
+            QVERIFY(!life.pendingChoice());
+        }
+        QCOMPARE(life.stat("choices"), double(CampaignLife::choiceIds().size()));
+        QVERIFY(life.startChoice("sickness"));
+        const Outcome o = life.expire();                        // no answer: the cautious last option
+        QVERIFY(o.injuries > 0);
+        QVERIFY(!life.pendingChoice());
+    }
+
+    void stonesOncePerDay()
+    {
+        CampaignLife life;
+        life.setGlobalStore(false);
+        QVERIFY(life.stonesReady(10));
+        QVERIFY(!life.useStones(10).text.isEmpty());
+        QVERIFY(!life.stonesReady(20));
+        QCOMPARE(life.stonesCooldown(20), 14.0);
+        QVERIFY(life.stonesReady(34));
+    }
+
+    void achievementsUnlockOnce()
+    {
+        CampaignLife life;
+        life.setGlobalStore(false);
+        life.fromJson({});
+        life.takeUnlocked();
+        const bool already = life.unlocked("traveller");
+        for (int i = 0; i < 10; ++i)
+            life.addStat("jumps");
+        if (!already)
+            QVERIFY(life.takeUnlocked().contains("traveller"));
+        QVERIFY(life.unlocked("traveller"));
+        life.addStat("jumps");
+        QVERIFY(!life.takeUnlocked().contains("traveller"));
+        CampaignLife copy;
+        copy.setGlobalStore(false);
+        copy.fromJson(life.toJson());
+        QCOMPARE(copy.stat("jumps"), 11.0);
+    }
+
+    void universeSeedChangesThePlanets()
+    {
+        const Planet classic = PlanetGenerator::generate(2, 5, 1);
+        PlanetGenerator::setUniverseSeed(1234);
+        const Planet seeded = PlanetGenerator::generate(2, 5, 1);
+        QCOMPARE(PlanetGenerator::generate(2, 5, 1).nickname, seeded.nickname);     // reproducible
+        PlanetGenerator::setUniverseSeed(0);
+        QCOMPARE(PlanetGenerator::generate(2, 5, 1).nickname, classic.nickname);
+        QVERIFY(seeded.code == classic.code);
+        QVERIFY(seeded.conditions.water != classic.conditions.water || seeded.nickname != classic.nickname);
+        // The first planet of a system always has a gate
+        for (int s = 0; s < 30; ++s)
+            QVERIFY(PlanetGenerator::generate(0, s, 0).hasGate);
+    }
+
+    void jumperReachesPlanetsWithoutGate()
+    {
+        DestinyRoute route;
+        // Find a planet without gate on the route
+        int variant = -1;
+        GameEvent event;
+        for (int jumps = 0; jumps < 60 && variant < 0; ++jumps) {
+            for (const Planet &p : route.currentPlanets())
+                if (!p.hasGate)
+                    variant = p.variant;
+            if (variant < 0) {
+                RouteState s = route.state();
+                s.ftlCharge = 1.0;
+                route.restore(route.currentIndex() + 1, s, {});
+            }
+        }
+        QVERIFY(variant > 0);
+        QString error;
+        QVERIFY(!route.dial(variant, &error));
+        QVERIFY(error.contains("jumper"));
+        QVERIFY(route.flyTo(variant, &error));
+        QVERIFY(route.teamByShuttle());
+        // The gate window closes: the jumper team is not stranded
+        const int crew = route.state().crew;
+        route.tick(30.0);
+        QCOMPARE(route.state().crew, crew);
+        QCOMPARE(route.state().teamPlanet, variant);
+        QVERIFY(route.recallTeam(&error));
+    }
+};
+
+// ================================================================
+//  Mods: JSON files with ships, events and settings
+// ================================================================
+
+class ModTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void exampleModLoads()
+    {
+        QTemporaryDir dir;
+        QVERIFY(QFile::copy(EXAMPLE_MOD, dir.filePath("example.json")));
+        QFile broken(dir.filePath("broken.json"));
+        QVERIFY(broken.open(QIODevice::WriteOnly));
+        broken.write("{ not json");
+        broken.close();
+        ModLoader &mods = ModLoader::instance();
+        mods.load(dir.path());
+        QCOMPARE(mods.loaded().size(), 1);
+        QCOMPARE(mods.errors().size(), 1);                  // the broken file, the game goes on
+        QCOMPARE(mods.ships().size(), 2);
+        QCOMPARE(mods.events().size(), 1);
+        QCOMPARE(mods.config().value("shipHullScale").toDouble(), 1.2);
+
+        // Ships join the library; a launch payload exists
+        const QList<ShipClass> library = mods.merged(ShipClass::fallbackRoster());
+        QCOMPARE(library.size(), 4);
+        const auto warship = std::find_if(library.begin(), library.end(),
+                                          [](const ShipClass &c) { return c.name == "Aschen Warship"; });
+        QVERIFY(warship != library.end() && warship->isMothership() && warship->hostile);
+        QCOMPARE(warship->attacks.last().payload, QStringLiteral("Aschen Interceptor"));
+
+        // The event plays like the built-in ones
+        CampaignLife life;
+        life.setGlobalStore(false);
+        const ModLoader::Event &e = mods.events().first();
+        life.addCustomChoice(e.id, e.title, e.text, e.options, e.outcomes);
+        QVERIFY(life.startChoice("travellers"));
+        Outcome o;
+        QVERIFY(life.choose(0, &o));
+        QCOMPARE(o.tone, 1);
+        QCOMPARE(o.resources.size(), 2);
+        mods.load(dir.filePath("missing"));                 // nothing there: no mod
+        QVERIFY(mods.loaded().isEmpty());
+    }
+
+    void badShipsAreRejected()
+    {
+        ShipClass ship;
+        QString error;
+        QVERIFY(!ModLoader::parseShip(QJsonObject{{"name", "X"}}, &ship, &error));      // no faction
+        QVERIFY(!ModLoader::parseShip(QJsonObject{{"name", "X"}, {"faction", "Y"},
+                                                  {"attacks", QJsonArray{QJsonObject{{"kind", "laser"}}}}},
+                                      &ship, &error));
+        QVERIFY(error.contains("laser"));
+    }
+
+    void configOverrides()
+    {
+        QTemporaryDir dir;
+        GameConfig::instance().setPath(dir.filePath("config.json"));
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Normal);
+        GameConfig::instance().applyOverrides(QJsonObject{{"shipHullScale", 3.0}, {"damageToPlayer", -5.0}});
+        QCOMPARE(gameConfig().shipHullScale, 3.0f);
+        QCOMPARE(gameConfig().damageToPlayer, 0.0f);         // clamped
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Normal);
+    }
+};
+
+// ================================================================
+//  Co-op: stations and a session on the local machine
+// ================================================================
+
+class CoopTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void stations()
+    {
+        using namespace CoopProtocol;
+        QVERIFY(allowed(Role::Tactical, "attack 2"));
+        QVERIFY(!allowed(Role::Tactical, "repair engines"));
+        QVERIFY(allowed(Role::Engineering, "  Repair engines"));
+        QVERIFY(!allowed(Role::Engineering, "engine ftl"));          // only the captain jumps
+        QVERIFY(allowed(Role::Engineering, "destinystatus"));         // reports for both
+        QVERIFY(!allowed(Role::Tactical, ""));
+        Role role;
+        QVERIFY(roleFromName("Tactical", &role) && role == Role::Tactical);
+        QVERIFY(roleFromName("eng", &role) && role == Role::Engineering);
+        QVERIFY(!roleFromName("cook", &role));
+    }
+
+    void framing()
+    {
+        QByteArray buffer = CoopProtocol::encode(QJsonObject{{"type", "log"}, {"text", "a"}})
+                          + CoopProtocol::encode(QJsonObject{{"type", "bye"}}) + "{\"type\": \"par";
+        const QList<QJsonObject> messages = CoopProtocol::decode(buffer);
+        QCOMPARE(messages.size(), 2);
+        QCOMPARE(messages[1].value("type").toString(), QStringLiteral("bye"));
+        QVERIFY(buffer.startsWith("{"));                             // the partial line waits
+        buffer += "tial\"}\n";
+        QCOMPARE(CoopProtocol::decode(buffer).size(), 1);
+        QVERIFY(buffer.isEmpty());
+    }
+
+    void sessionOnThisMachine()
+    {
+        CoopHost host;
+        QVERIFY(host.listen(0, CoopProtocol::Role::Engineering, nullptr, true));
+        CoopClient client;
+        QSignalSpy welcomed(&client, &CoopClient::welcomed);
+        QSignalSpy commands(&host, &CoopHost::guestCommand);
+        QSignalSpy denied(&client, &CoopClient::denied);
+        QSignalSpy status(&client, &CoopClient::status);
+        client.connectTo("127.0.0.1", host.port());
+        QVERIFY(welcomed.wait(3000));
+        QCOMPARE(welcomed.first().at(0).toString(), QStringLiteral("engineering"));
+        QVERIFY(host.hasGuest());
+        client.sendCommand("repair engines");
+        QVERIFY(commands.wait(3000));
+        QCOMPARE(commands.first().at(0).toString(), QStringLiteral("repair engines"));
+        client.sendCommand("attack 1");                             // not the engineer's job
+        QVERIFY(denied.wait(3000));
+        host.sendStatus({"HULL 80%"});
+        QVERIFY(status.wait(3000));
+        QCOMPARE(status.first().at(0).toStringList(), QStringList{"HULL 80%"});
+        // A second co-pilot is turned away
+        CoopClient other;
+        QSignalSpy gone(&other, &CoopClient::disconnected);
+        other.connectTo("127.0.0.1", host.port());
+        QVERIFY(gone.wait(3000));
+        QSignalSpy left(&host, &CoopHost::guestLeft);
+        client.disconnectFromHost();
+        QVERIFY(left.wait(3000));
+        QVERIFY(!host.hasGuest());
+    }
+};
+
+// ================================================================
 
 int main(int argc, char *argv[])
 {
@@ -1083,6 +1734,22 @@ int main(int argc, char *argv[])
     }
     {
         ConfigTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        InteriorTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        CampaignLifeTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        ModTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        CoopTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

@@ -2,7 +2,7 @@
 # Open this file in Qt Creator and run it, or from a terminal:
 #   qmake tests.pro && make && ./stargate_tests
 
-QT += core sql testlib
+QT += core sql testlib network
 QT -= gui
 CONFIG += c++17 console testcase
 CONFIG -= app_bundle
@@ -13,7 +13,8 @@ INCLUDEPATH += $$GAME
 
 # Absolute paths to the data files used by the tests
 DEFINES += COMMANDS_JSON=\\\"$$PWD/../rcs/commands.json\\\" \
-           TEMPLATE_DB=\\\"$$GAME/src/db/stagateDataBase.db\\\"
+           TEMPLATE_DB=\\\"$$GAME/src/db/stagateDataBase.db\\\" \
+           EXAMPLE_MOD=\\\"$$PWD/../rcs/mods/example_mod.json\\\"
 
 SOURCES += \
     tst_game.cpp \
@@ -21,6 +22,11 @@ SOURCES += \
     $$GAME/src/core/commandmanager.cpp \
     $$GAME/src/core/destinystate.cpp \
     $$GAME/src/core/gameconfig.cpp \
+    $$GAME/src/network/coopprotocol.cpp \
+    $$GAME/src/network/coopsession.cpp \
+    $$GAME/src/core/modloader.cpp \
+    $$GAME/src/core/campaignlife.cpp \
+    $$GAME/src/core/interior.cpp \
     $$GAME/src/core/questsystem.cpp \
     $$GAME/src/db/databasemanager.cpp \
     $$GAME/src/db/repositories/componentrepository.cpp \
@@ -35,6 +41,7 @@ SOURCES += \
     $$GAME/src/world/planetgenerator.cpp
 
 HEADERS += \
+    $$GAME/src/network/coopsession.h \
     $$GAME/src/conquest/conquestgame.h \
     $$GAME/src/core/commandmanager.h \
     $$GAME/src/core/questsystem.h \

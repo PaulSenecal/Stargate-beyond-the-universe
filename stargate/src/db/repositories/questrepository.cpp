@@ -6,6 +6,62 @@
 #include "../databasemanager.h"
 #include "src/db/dbtext.h"
 
+namespace {
+
+// Guided tutorial of the newer systems: crew and ship plan, then tactics
+bool addTrainingQuests()
+{
+    DatabaseManager &db = DatabaseManager::instance();
+    QSqlQuery has = db.query("SELECT COUNT(*) FROM Quest WHERE title = 'Damage Control'");
+    if (!has.exec() || !has.next())
+        return false;
+    if (has.value(0).toInt() > 0)
+        return true;
+    struct Objective { const char *description, *type; };
+    struct Training { const char *title, *description; QList<Objective> objectives; const char *reward; int quantity; };
+    const Training quests[] = {
+        {"Damage Control", "Learn how the crew keeps the Destiny alive: the ship plan, repair jobs and doors.",
+         {{"Open the ship plan", "PLAN"}, {"Give the crew a repair job", "JOB"}, {"Seal a compartment", "SEAL"},
+          {"Check on the crew", "CREW"}},
+         "minerals", 10},
+        {"Battle Drill", "Fight smarter: aim at the enemy's subsystems and win a battle.",
+         {{"Aim at an enemy subsystem", "TARGET"}, {"Win a battle", "BATTLE"}},
+         "naquadah", 8},
+    };
+    db.beginTransaction();
+    for (const Training &t : quests) {
+        QSqlQuery quest = db.query(
+            "INSERT INTO Quest (title, description, type, mode, order_index, prerequisite_quest_id) "
+            "SELECT :title, :description, 'MAIN', 'CAMPAIGN', COALESCE(MAX(order_index), 0) + 1, "
+            "(SELECT id FROM Quest WHERE mode = 'CAMPAIGN' ORDER BY order_index DESC, id DESC LIMIT 1) "
+            "FROM Quest WHERE mode = 'CAMPAIGN'");
+        quest.bindValue(":title", t.title);
+        quest.bindValue(":description", t.description);
+        if (!quest.exec()) {
+            db.rollback();
+            return false;
+        }
+        const int id = quest.lastInsertId().toInt();
+        for (const Objective &o : t.objectives) {
+            QSqlQuery obj = db.query("INSERT INTO Quest_Objective (quest_id, description, type, target_quantity) "
+                                     "VALUES (:quest, :description, :type, 1)");
+            obj.bindValue(":quest", id);
+            obj.bindValue(":description", o.description);
+            obj.bindValue(":type", o.type);
+            obj.exec();
+        }
+        QSqlQuery reward = db.query("INSERT INTO Quest_Reward (quest_id, resource_id, quantity) "
+                                    "SELECT :quest, id, :quantity FROM Resource WHERE name = :name");
+        reward.bindValue(":quest", id);
+        reward.bindValue(":quantity", t.quantity);
+        reward.bindValue(":name", t.reward);
+        reward.exec();
+    }
+    return db.commit();
+}
+
+} // namespace
+
 bool QuestRepository::migrate()
 {
     DatabaseManager &db = DatabaseManager::instance();
@@ -16,7 +72,8 @@ bool QuestRepository::migrate()
                    "WHERE id = 2 AND type = 'REPAIR' AND target_id IS NULL")
         && db.exec("UPDATE Quest_Objective SET type = 'STATUS', "
                    "description = 'Report to the bridge: check the ship status' "
-                   "WHERE id = 3 AND description = 'Assign crew to bridge'");
+                   "WHERE id = 3 AND description = 'Assign crew to bridge'")
+        && addTrainingQuests();
 }
 
 int QuestRepository::playerIdOfShip(int shipId)

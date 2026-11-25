@@ -6,6 +6,7 @@
 #include <functional>
 
 class QCompleter;
+class QLabel;
 class QLineEdit;
 class QTextEdit;
 
@@ -27,6 +28,9 @@ public:
     explicit CommandConsole(QWidget *parent = nullptr);
 
     void appendLine(const QString &text, Tone tone = Tone::Info);
+    // Help layout: a section title, then "syntax   description" rows
+    void appendHeading(const QString &title);
+    void appendEntry(const QString &syntax, const QString &description);
     void clearLog();
     void setCompletions(const QStringList &words);
     void focusInput();
@@ -37,6 +41,7 @@ public:
 
 signals:
     void commandEntered(const QString &command);
+    void lineAppended(const QString &text, CommandConsole::Tone tone);     // co-op mirror
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -53,6 +58,8 @@ private:
     int m_historyPos = -1;
     CompletionProvider m_completionProvider;
     QString m_lastTabText;      // second Tab on the same text lists the choices
+    QLabel *m_hint = nullptr;   // what can be typed next, live
+    void updateHint();
 };
 
 #endif // COMMANDCONSOLE_H

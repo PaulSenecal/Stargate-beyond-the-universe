@@ -116,7 +116,8 @@ void ShipStatusWidget::paintEvent(QPaintEvent *)
     p.setPen(kText);
     p.drawText(QRectF(left, y, right - left, line), Qt::AlignLeft | Qt::AlignVCenter, tr("DESTINY STATUS"));
     const QString shield = m_data.shieldUp ? QStringLiteral("%1%").arg(qRound(m_data.shield)) : tr("OFF");
-    const QString status = tr("HULL %1%   SHIELD %2").arg(qRound(m_data.hull)).arg(shield);
+    const QString status = m_data.hasShield ? tr("HULL %1%   SHIELD %2").arg(qRound(m_data.hull)).arg(shield)
+                                            : tr("ORGANIC HULL %1%").arg(qRound(m_data.hull));
     p.setPen(healthColor(m_data.hull));
     p.drawText(QRectF(left, y, right - left, line), Qt::AlignRight | Qt::AlignVCenter, status);
     y += line + 2;

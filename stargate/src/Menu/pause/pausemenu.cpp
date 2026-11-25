@@ -5,6 +5,8 @@
 #include <QLabel>
 #include <QPainter>
 #include <QPushButton>
+
+#include "src/Menu/gamemenu/shiplibrarydialog.h"
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -28,6 +30,7 @@ PauseMenu::PauseMenu(SoundSystem *sound, QWidget *parent)
     heading->setAlignment(Qt::AlignCenter);
     auto *resume = new QPushButton(tr("Resume"), mainPage);
     auto *save = new QPushButton(tr("Save game"), mainPage);
+    auto *library = new QPushButton(tr("Ship library"), mainPage);
     auto *settings = new QPushButton(tr("Settings"), mainPage);
     auto *quitToTitle = new QPushButton(tr("Quit to title screen"), mainPage);
     auto *quitGame = new QPushButton(tr("Quit game"), mainPage);
@@ -44,7 +47,7 @@ PauseMenu::PauseMenu(SoundSystem *sound, QWidget *parent)
     mainLayout->setSpacing(10);
     mainLayout->addWidget(heading);
     mainLayout->addSpacing(8);
-    for (QPushButton *b : {resume, save, settings, quitToTitle, quitGame})
+    for (QPushButton *b : {resume, save, library, settings, quitToTitle, quitGame})
         mainLayout->addWidget(b);
     mainLayout->addWidget(m_saveStatus);
     mainLayout->addWidget(hint);
@@ -67,6 +70,8 @@ PauseMenu::PauseMenu(SoundSystem *sound, QWidget *parent)
 
     connect(resume, &QPushButton::clicked, this, &PauseMenu::resumeRequested);
     connect(save, &QPushButton::clicked, this, &PauseMenu::saveRequested);
+    // The game stays paused while the library is open
+    connect(library, &QPushButton::clicked, this, [this] { ShipLibraryDialog::open(window()); });
     connect(settings, &QPushButton::clicked, this, [this] {
         m_settings->refresh();
         MenuStyle::showPage(m_pages, 1);

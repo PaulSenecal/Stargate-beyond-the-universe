@@ -2,9 +2,12 @@
 #define GAMEMENU_H
 
 #include <QJsonObject>
+#include <memory>
 #include <QWidget>
 
 #include "src/core/destinystate.h"
+#include "src/core/campaignlife.h"
+#include "src/core/interior.h"
 #include "src/render/battleview.h"
 #include "src/world/destinyroute.h"
 
@@ -20,6 +23,10 @@ class SoundSystem;
 class QTimer;
 class QPushButton;
 class PauseMenu;
+class ShipPlanDialog;
+class ShipCrew;
+class ConquestEndScreen;
+class CoopHost;
 
 // ================================================================
 //  GameMenu
@@ -65,7 +72,6 @@ private:
     void showHelp();
     void logReport(const QString &report);
     void loadSave();
-    void repair(const QString &system);
     void showResources();
     void showLibrary(const QString &ship);
     void soundCommand(const QString &arg);
@@ -77,6 +83,24 @@ private:
     void performJump();             // after the FTL drive spooled
     void diveIntoStar();
     bool localCommand(const QString &first, const QStringList &words);
+    void updateInterior(float seconds);
+    void applyBonuses();
+    void flushInteriorMessages();
+    bool payFor(const QList<std::pair<QString, int>> &cost);
+    bool lifeCommand(const QString &first, const QStringList &words);
+    void applyOutcome(const Outcome &outcome);
+    void announceAchievements();
+    void showChoice();
+    void showHelpTopic(const QString &topic);
+    QString suggestLocal(const QString &word) const;
+    void endCampaign(bool victory, const QString &heading, const QString &subtitle);
+    void onBattleEnded(const BattleStats &stats);
+    bool coopCommand(const QString &first, const QStringList &words);
+    QStringList coopStatus() const;
+    // Tab completion of the arguments of the console-only commands
+    // ("repair inf" -> "repair infirmary")
+    QStringList argumentCompletions(const QString &text) const;
+    QStringList argumentChoices(const QStringList &before) const;
     void dialGate(const QString &address);
     void explore();
     void recordCurrentSystem();
@@ -115,7 +139,20 @@ private:
     bool m_lowFoodWarned = false;
     int m_calmSeconds = 0;          // without enemy, before the calm music
     int m_starUsedAt = -1;
-    QJsonObject m_extra;            // save data of the newer systems (see GameSave::extra)          // route stop where the Destiny last dived into a star
+    QJsonObject m_extra;            // save data of the newer systems (see GameSave::extra)
+    Interior m_interior;            // compartments and crew of the Destiny
+    std::unique_ptr<ShipCrew> m_crew; // orders for the inside of the ship (shared with the conquest)
+    CampaignLife m_life;            // choice events, communication stones, statistics
+    int m_kinos = 4;                // remote scouts
+    QList<int> m_scouted;           // planets of this system already seen by a Kino
+    int m_wrecks = 0, m_wreckMotherships = 0;   // wrecks to salvage after a battle
+    double m_wreckTimer = 0;
+    double m_choiceTimer = 0;       // seconds left to answer a choice event
+    double m_wearClock = 0;
+    bool m_ended = false;
+    int m_lastFires = 0, m_lastBoarders = 0;    // alarms when they rise
+    CoopHost *m_coop = nullptr;     // co-pilot over the network
+    ConquestEndScreen *m_endScreen = nullptr;          // route stop where the Destiny last dived into a star
 };
 
 #endif // GAMEMENU_H

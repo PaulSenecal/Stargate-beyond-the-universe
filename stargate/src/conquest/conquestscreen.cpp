@@ -1,8 +1,10 @@
 #include "conquestscreen.h"
 #include "src/core/balance.h"
 #include "src/core/gameconfig.h"
+#include "src/core/modloader.h"
 
 #include <QDir>
+#include <QRegularExpression>
 #include <QEvent>
 #include <QFile>
 #include <QHBoxLayout>
@@ -22,6 +24,9 @@
 #include "galaxymapwidget.h"
 #include "src/Menu/gamemenu/commandconsole.h"
 #include "src/Menu/gamemenu/radarwidget.h"
+#include "src/Menu/gamemenu/replaydialog.h"
+#include "src/Menu/gamemenu/shiplibrarydialog.h"
+#include "src/Menu/gamemenu/shipcrew.h"
 #include "src/Menu/gamemenu/shipstatuswidget.h"
 #include "src/Menu/gamemenu/weaponstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
@@ -127,7 +132,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     // --- Battle view: no survival waves, fleets come from the planets
     m_battle->setAutoWaves(false);
     if (ShipLibraryRepository::migrate()) {
-        const QList<ShipClass> library = ShipLibraryRepository::all();
+        const QList<ShipClass> library = ModLoader::instance().merged(ShipLibraryRepository::all());
         if (!library.isEmpty())
             m_battle->setShipClasses(library);
     }
@@ -153,9 +158,10 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
             return;
         reportAllySurvivors();
         ++m_battlesLost;
+        const double enemyDamage = m_battle->enemyDamage();     // they keep it
         m_battle->clearBattlefield(0.0f);
         m_joined.clear();
-        m_game->battleLost();
+        m_game->battleLost(enemyDamage);
         m_game->setFlagshipHull(m_battle->hull());
     });
 
@@ -182,7 +188,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
                                "send", "build", "fighter", "mothership", "engage", "research", "ally", "break",
                                "diplomacy", "launch", "drones", "turrets", "railguns", "power", "attack", "target",
-                               "missiles", "evade",
+                               "missiles", "evade", "spy", "sabotage", "replay",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -257,6 +263,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     // Weapons, hangar and drones of the flagship of the faction (balance.h)
     const Balance::FlagshipLoadout loadout = Balance::flagshipLoadout(m_game->player().id);
     m_battle->setLoadout(loadout);
+    m_battle->setShipEquipment(Balance::flagshipShield(m_game->player().id), Balance::flagshipArmor(m_game->player().id));
     m_battle->setHangar(ConquestGame::hangarFighter(m_game->player().id), loadout.hangar);
     m_battle->setFlagshipStyle(m_game->player().id);
     m_battle->setDroneBay(loadout.drones);
@@ -273,6 +280,45 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
             }
         }
     }
+    // The inside of the flagship: plan, crew, repairs (as in the campaign)
+    m_interior = std::make_unique<Interior>(QStringLiteral("flagship"), m_game->player().id);
+    if (m_game->player().id != QLatin1String("Asgard"))
+        m_interior->setCrewCount(60);
+    if (loaded) {
+        QFile file(savePath());
+        if (file.open(QIODevice::ReadOnly))
+            m_interior->fromJson(QJsonDocument::fromJson(file.readAll()).object().value("flagshipInterior").toObject());
+        m_interior->takeMessages();
+    }
+    m_crew = std::make_unique<ShipCrew>(m_interior.get(), m_battle, m_console, this);
+    // Costs in conquest: naquadah stays naquadah, every material is trinium
+    m_crew->pay = [this](const ShipCrew::Cost &cost) {
+        double naquadah = 0, trinium = 0;
+        for (const auto &[resource, quantity] : cost) {
+            if (resource == QLatin1String("naquadah"))
+                naquadah += quantity;
+            else if (resource != QLatin1String("water") && resource != QLatin1String("food"))
+                trinium += quantity;
+        }
+        QString missing;
+        if (!m_game->spend(naquadah, trinium, &missing)) {
+            m_console->appendLine(tr("Missing: %1").arg(missing), CommandConsole::Tone::Warning);
+            return false;
+        }
+        return true;
+    };
+    m_crew->systemCost = [](const QString &) { return ShipCrew::Cost{{QStringLiteral("trinium"), 3}}; };
+    m_crew->onCapture = [this](const QString &) {
+        m_game->gain(40, 10);
+        m_console->appendLine(tr("Salvage from the captured ship: +40 naquadah, +10 trinium"), CommandConsole::Tone::Success);
+        m_game->addCapturedShip();
+    };
+    connect(m_battle, &BattleView::boardingParty, this, [this](int strength, const QString &, const QString &) {
+        m_interior->board(strength);
+        m_crew->flushMessages();
+    });
+    m_console->setCompletionProvider([this](const QString &text) { return completeLine(text); });
+
     m_wasTravelling = m_game->travelling();
     m_end = new ConquestEndScreen(this);
     connect(m_end, &ConquestEndScreen::titleRequested, this, &ConquestScreen::quitToTitleRequested);
@@ -315,6 +361,8 @@ bool ConquestScreen::save()
     supplies.insert("missiles", m_battle->missiles());
     supplies.insert("drones", m_battle->drones());
     json.insert("flagshipSupplies", supplies);
+    if (m_interior)
+        json.insert("flagshipInterior", m_interior->toJson());
     file.write(QJsonDocument(json).toJson(QJsonDocument::Compact));
     return file.commit();
 }
@@ -360,8 +408,17 @@ void ConquestScreen::tick()
         m_wasTravelling = m_game->travelling();
         m_battle->hyperspaceFlash();     // jump into / out of hyperspace
     }
-    m_battle->setDamageBonus(float(m_game->flagshipDamageBonus()));
-    m_battle->setShieldRegenBonus(float(m_game->flagshipShieldBonus()));
+    // The inside of the flagship, once per second; dock crews on our worlds
+    m_interiorClock += dt;
+    if (m_interiorClock >= 1.0) {
+        const float seconds = float(m_interiorClock);
+        m_interiorClock = 0;
+        const Conquest::Planet &here = m_game->planets()[m_game->flagshipPlanet()];
+        if (here.owner == m_game->playerIndex() && !m_game->travelling() && !m_game->inBattle())
+            m_interior->dockRepair(seconds * (here.hasShipyard() ? 2.0f : 1.0f));
+        m_crew->tick(seconds);
+    }
+    m_crew->applyBonuses(float(m_game->flagshipDamageBonus()), float(m_game->flagshipShieldBonus()));
 
     if (m_game->flagshipPlanet() != m_lookPlanet && !m_game->travelling())
         updatePlanetLook();
@@ -381,7 +438,15 @@ void ConquestScreen::onBattleStarted(int planetId, const QString &faction, int m
     updatePlanetLook();
     m_battle->clearBattlefield(0.0f, true);         // the fleets in orbit fight along
     m_battle->restoreDefenses(float(m_game->flagshipHull()), m_battle->shieldStrength(), true);
-    if (!m_battle->spawnFleet(faction, motherships, fighters)) {
+    // Fleets that fled an earlier battle come back hurt
+    m_battle->setIncomingDamage(float(m_game->battleDamage()));
+    const bool spawned = m_battle->spawnFleet(faction, motherships, fighters);
+    m_battle->setIncomingDamage(0.0f);
+    if (m_game->battleDamage() > 0.05)
+        m_console->appendLine(tr("Their ships still bear the scars of an earlier battle (%1% damage)")
+                                  .arg(qRound(m_game->battleDamage() * 100)),
+                              CommandConsole::Tone::Info);
+    if (!spawned) {
         // No ship of that faction in the library: the planet surrenders
         m_console->appendLine(tr("No %1 fleet available - the planet surrenders").arg(faction),
                               CommandConsole::Tone::Warning);
@@ -540,7 +605,14 @@ void ConquestScreen::onCommand(const QString &command)
         return id;
     };
 
-    if (name == "help" || name == "?") {
+    if (ShipCrew::commands().contains(name) && !(name == "repair" && arg.isEmpty())
+        && m_crew->handle(name, words)) {
+        refresh();
+        return;
+    }
+    if ((name == "help" || name == "?") && !arg.isEmpty()) {
+        showHelpTopic(arg.toLower());
+    } else if (name == "help" || name == "?") {
         showHelp();
     } else if (name == "clear") {
         m_console->clearLog();
@@ -643,6 +715,37 @@ void ConquestScreen::onCommand(const QString &command)
         m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
     } else if (name == "launch") {
         m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
+    } else if (name == "library" || name == "ships") {
+        ShipLibraryDialog::open(this, arg);
+    } else if (name == "replay") {
+        if (m_battle->lastReplay().isEmpty()) {
+            warn(tr("No battle to replay yet"));
+        } else {
+            auto *dialog = findChild<ReplayDialog *>();
+            if (!dialog)
+                dialog = new ReplayDialog(this);
+            dialog->setReplay(m_battle->lastReplay(), m_battle->lastReplayFaction());
+            dialog->show();
+            dialog->raise();
+        }
+    } else if (name == "spy") {
+        const int id = planetArg();
+        QStringList report;
+        QString error;
+        if (id >= 0 && !m_game->spy(id, &report, &error))
+            warn(tr("No spy mission: %1").arg(error));
+        for (const QString &line : report)
+            m_console->appendLine(line, CommandConsole::Tone::Info);
+    } else if (name == "sabotage") {
+        // sabotage <yard|defense|mine> <planet>
+        const QString what = words.value(1).toLower();
+        const int id = words.size() > 2 ? m_game->findPlanet(words.mid(2).join(' ')) : m_map->selected();
+        bool success = false;
+        QString error;
+        if (id < 0)
+            warn(tr("Usage: sabotage yard|defense|mine <planet> (%1 naquadah)").arg(Balance::kSabotageCost));
+        else if (!m_game->sabotage(id, what, &success, &error))
+            warn(tr("No sabotage: %1").arg(error));
     } else if (name == "target" || name == "aim") {
         bool ok = false;
         const int target = words.value(1).toInt(&ok);
@@ -652,6 +755,11 @@ void ConquestScreen::onCommand(const QString &command)
             m_battle->aimAt(target - 1, words.value(2));
     } else if (name == "missiles" || name == "missile") {
         m_battle->fireMissiles(arg.isEmpty() ? -1 : arg.toInt() - 1);
+    } else if (name == "auto") {
+        if (words.size() < 2)
+            m_console->appendLine(m_battle->autoFireReport());
+        else
+            m_battle->setAutoFire(words.value(1), words.value(2).toLower() != "off");
     } else if (name == "evade" || name == "evasive") {
         m_battle->setEvasion(arg.toLower() != "off");
     } else if (name == "engage") {
@@ -705,33 +813,147 @@ void ConquestScreen::onCommand(const QString &command)
     refresh();
 }
 
+namespace {
+
+struct HelpEntry { const char *syntax; const char *description; };
+struct HelpCategory { const char *key; const char *title; QList<HelpEntry> entries; };
+
+const QList<HelpCategory> &conquestHelp()
+{
+    static const QList<HelpCategory> catalog{
+        {"travel", QT_TRANSLATE_NOOP("ConquestScreen", "Travel"), {
+            {"goto <planet>", QT_TRANSLATE_NOOP("ConquestScreen", "fly there (or double click it on the map)")},
+            {"planets / info <planet>", QT_TRANSLATE_NOOP("ConquestScreen", "list of the worlds / one world")},
+            {"status", QT_TRANSLATE_NOOP("ConquestScreen", "your faction, resources, flagship")}}},
+        {"economy", QT_TRANSLATE_NOOP("ConquestScreen", "Economy"), {
+            {"fortify <planet>", QT_TRANSLATE_NOOP("ConquestScreen", "+1 defense (naquadah)")},
+            {"build fighter|mothership [planet]", QT_TRANSLATE_NOOP("ConquestScreen", "order ships at a shipyard")},
+            {"research [n]", QT_TRANSLATE_NOOP("ConquestScreen", "technology tree (also the TECH button)")}}},
+        {"fleets", QT_TRANSLATE_NOOP("ConquestScreen", "Fleets"), {
+            {"fleets", QT_TRANSLATE_NOOP("ConquestScreen", "your fleets (they also act on their own)")},
+            {"send <fleet> <planet>", QT_TRANSLATE_NOOP("ConquestScreen", "order a fleet somewhere")},
+            {"engage <faction>", QT_TRANSLATE_NOOP("ConquestScreen", "join a battle between two other factions")}}},
+        {"battle", QT_TRANSLATE_NOOP("ConquestScreen", "Battle"), {
+            {"attack <n> / scan <n>", QT_TRANSLATE_NOOP("ConquestScreen", "main weapon / lock a target")},
+            {"target <n> <system>", QT_TRANSLATE_NOOP("ConquestScreen", "aim at weapons, shields, engines, hangar")},
+            {"pulseweapon / secondarytower", QT_TRANSLATE_NOOP("ConquestScreen", "volleys of the towers")},
+            {"missiles [n] / drones [n]", QT_TRANSLATE_NOOP("ConquestScreen", "limited salvos")},
+            {"shield on|off / evade on|off", QT_TRANSLATE_NOOP("ConquestScreen", "shields / evasive maneuvers")},
+            {"auto <weapon|all> on|off", QT_TRANSLATE_NOOP("ConquestScreen", "automatic fire of a weapon, or of all")},
+            {"launch [n]", QT_TRANSLATE_NOOP("ConquestScreen", "fighters of your hangar")},
+            {"turrets / railguns / power", QT_TRANSLATE_NOOP("ConquestScreen", "energy of the flagship")},
+            {"replay", QT_TRANSLATE_NOOP("ConquestScreen", "the last battle again")},
+            {"library [ship]", QT_TRANSLATE_NOOP("ConquestScreen", "every ship, its attacks and chances")}}},
+        {"ship", QT_TRANSLATE_NOOP("ConquestScreen", "Flagship and crew"), {
+            {"plan [room] / plan T<n>", QT_TRANSLATE_NOOP("ConquestScreen", "your plan / an enemy mothership's plan")},
+            {"repair <system|hull|room>", QT_TRANSLATE_NOOP("ConquestScreen", "a crew job (trinium); 'repair' alone: the hull")},
+            {"jobs / crew / crew rotate", QT_TRANSLATE_NOOP("ConquestScreen", "repairs / your crew / rest the tired ones")},
+            {"seal / unseal / vent <room>", QT_TRANSLATE_NOOP("ConquestScreen", "doors and fires")},
+            {"defend <room>", QT_TRANSLATE_NOOP("ConquestScreen", "soldiers against boarders")}}},
+        {"boarding", QT_TRANSLATE_NOOP("ConquestScreen", "Boarding"), {
+            {"dock <n>", QT_TRANSLATE_NOOP("ConquestScreen", "a hangar ship latches onto mothership n")},
+            {"board <n> [gate]", QT_TRANSLATE_NOOP("ConquestScreen", "take a crippled mothership (it joins you)")},
+            {"sabotage <n> <room> [gate]", QT_TRANSLATE_NOOP("ConquestScreen", "set a room of mothership n on fire")},
+            {"(the way in)", QT_TRANSLATE_NOOP("ConquestScreen", "a docked ship, a transport beam (shield down) or the gate (both ships)")}}},
+        {"intrigue", QT_TRANSLATE_NOOP("ConquestScreen", "Diplomacy and intrigue"), {
+            {"diplomacy / ally / break", QT_TRANSLATE_NOOP("ConquestScreen", "relations, alliances")},
+            {"spy <planet>", QT_TRANSLATE_NOOP("ConquestScreen", "intelligence by a gate team")},
+            {"sabotage yard|defense|mine <planet>", QT_TRANSLATE_NOOP("ConquestScreen", "strike a world of an enemy")}}},
+        {"game", QT_TRANSLATE_NOOP("ConquestScreen", "Game"), {
+            {"hud on|off", QT_TRANSLATE_NOOP("ConquestScreen", "radar, ship and weapon panels")},
+            {"menu", QT_TRANSLATE_NOOP("ConquestScreen", "pause, save, settings (Esc)")},
+            {"clear", QT_TRANSLATE_NOOP("ConquestScreen", "clear the console")}}},
+    };
+    return catalog;
+}
+
+} // namespace
+
 void ConquestScreen::showHelp()
 {
-    const QStringList lines{
-        tr("Travel: goto <planet> (number or name), or double click it on the map"),
-        tr("Planets: planets (list), info <planet>, status"),
-        tr("Economy: fortify <planet> (+1 defense, %1 naquadah), repair (flagship hull, trinium)")
-            .arg(ConquestGame::kFortifyCost),
-        tr("Fleets: shipyards build ships on their own, fleets attack and defend by themselves"),
-        tr("   fleets (list), send <fleet> <planet>, build fighter|mothership [planet] (%1 / %2 naquadah)")
-            .arg(ConquestGame::kFighterCost)
-            .arg(ConquestGame::kMothershipCost),
-        tr("Battle: attack <n>, maintower, pulseweapon, secondarytower, shield on|off, scan <n>"),
-        tr("Battles between other factions last a while: watch them, or 'engage <faction>' to fight one side"),
-        tr("Hangar: launch [n] - your fighters fight at your side; your fleets and allies in orbit join the battle"),
-        tr("Drones (Ancients): drones <n> - a salvo through the shields; needs %1 free power, restocked on your "
-           "worlds with an Ancient site").arg(Balance::kDronePower),
-        tr("Tactics: target <n> weapons|shields|engines|hangar, missiles [n] (BC-304, Lucian), evade on|off"),
-        tr("Supplies: railgun slugs and missiles are restocked on your worlds (missiles at shipyards)"),
-        tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"),
-        tr("Research: research (tree), research <n> - weapons, defense and industry, 3 tiers each"),
-        tr("Diplomacy: diplomacy (relations), ally <faction> (against a common enemy), break <faction>"),
-        tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
-        tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
-        tr("Win by taking every planet of the enemy factions. Menu: Esc or 'menu'."),
-    };
-    for (const QString &line : lines)
-        m_console->appendLine(line);
+    m_console->appendHeading(tr("Help - type 'help <category>'"));
+    for (const HelpCategory &category : conquestHelp()) {
+        QStringList first;
+        for (int i = 0; i < category.entries.size() && first.size() < 4; ++i) {
+            const QString word = QString::fromLatin1(category.entries[i].syntax).section(' ', 0, 0);
+            if (!first.contains(word) && !word.startsWith('('))
+                first << word;
+        }
+        m_console->appendEntry(QStringLiteral("help %1").arg(category.key),
+                               tr("%1: %2...").arg(tr(category.title), first.join(", ")));
+    }
+    m_console->appendEntry(QStringLiteral("Tab"), tr("completes commands and arguments (plan T2, repair eng...)"));
+    m_console->appendLine(tr("Win by taking every planet of the enemy factions."));
+}
+
+void ConquestScreen::showHelpTopic(const QString &topic)
+{
+    for (const HelpCategory &category : conquestHelp())
+        if (topic == category.key || tr(category.title).compare(topic, Qt::CaseInsensitive) == 0) {
+            m_console->appendHeading(tr(category.title));
+            for (const HelpEntry &e : category.entries)
+                m_console->appendEntry(QString::fromLatin1(e.syntax), tr(e.description));
+            return;
+        }
+    // A command: its lines
+    bool found = false;
+    for (const HelpCategory &category : conquestHelp())
+        for (const HelpEntry &e : category.entries)
+            if (QString::fromLatin1(e.syntax).split(QRegularExpression("[ /]+")).contains(topic)) {
+                if (!found)
+                    m_console->appendHeading(topic);
+                found = true;
+                m_console->appendEntry(QString::fromLatin1(e.syntax), tr(e.description));
+            }
+    if (!found)
+        m_console->appendLine(tr("No help for '%1' - 'help' lists the categories").arg(topic), CommandConsole::Tone::Warning);
+}
+
+// Tab completion: command names, then their arguments
+QStringList ConquestScreen::completeLine(const QString &text) const
+{
+    static const QStringList names{"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
+                                   "send", "build", "engage", "research", "ally", "break", "diplomacy", "launch",
+                                   "drones", "turrets", "railguns", "power", "attack", "maintower", "pulseweapon",
+                                   "secondarytower", "shield", "scan", "menu", "clear", "target", "missiles", "evade",
+                                   "spy", "sabotage", "replay", "plan", "crew", "jobs", "cancel", "seal", "unseal",
+                                   "vent", "defend", "dock", "board", "library", "auto"};
+    QStringList lines;
+    if (!text.contains(' ')) {
+        for (const QString &n : names)
+            if (!text.isEmpty() && n.startsWith(text.trimmed(), Qt::CaseInsensitive))
+                lines << n;
+        return lines;
+    }
+    QStringList words = text.split(' ', Qt::SkipEmptyParts);
+    const QString partial = text.endsWith(' ') ? QString() : words.takeLast();
+    if (words.isEmpty())
+        return lines;
+    const QString command = words.first().toLower();
+    QStringList choices;
+    if (ShipCrew::commands().contains(command))
+        choices = m_crew->argumentChoices(words);
+    if (words.size() == 1 && (command == "goto" || command == "info" || command == "fortify" || command == "spy"))
+        for (const Conquest::Planet &p : m_game->planets())
+            choices << p.name;
+    if (words.size() == 1 && command == "help")
+        for (const HelpCategory &category : conquestHelp())
+            choices << QString::fromLatin1(category.key);
+    if (words.size() == 1 && command == "auto")
+        choices << QStringList{"main", "pulse", "missiles", "drones", "towers", "railguns", "all"};
+    if (words.size() == 2 && command == "auto")
+        choices << QStringList{"on", "off"};
+    if (words.size() == 1 && command == "sabotage")
+        choices << QStringList{"yard", "defense", "mine"};
+    if (words.size() == 1 && (command == "turrets" || command == "railguns" || command == "evade" || command == "hud"
+                              || command == "shield"))
+        choices << QStringList{"on", "off"};
+    const QString base = words.join(' ') + ' ';
+    for (const QString &c : choices)
+        if (c.startsWith(partial, Qt::CaseInsensitive))
+            lines << base + c;
+    lines.removeDuplicates();
+    return lines;
 }
 
 void ConquestScreen::listTechs()
@@ -813,18 +1035,33 @@ void ConquestScreen::setHudVisible(bool visible)
 
 void ConquestScreen::setupHud()
 {
-    // The flagship has no component table: its parts follow the battle systems
+    // The flagship has no component table: its parts follow the battle
+    // systems, and only those it carries (no shield on a hive, no railguns
+    // on a Ha'tak...)
     struct Part
     {
-        const char *name;
+        QString name;
         const char *system;
         bool weapon;
     };
-    static const Part kParts[] = {
-        {"Life Support", "lifesupport", false}, {"Shield Generator", "shields", false},
-        {"Power Core", "", false},              {"FTL Drive", "engines", false},
-        {"Sublight Engine", "engines", false},  {"Energy Cannon", "weapons", true},
-        {"Railgun", "weapons", true},           {"Missile Bay", "weapons", true},
+    auto parts = [this] {
+        const WeaponReadiness w = m_battle->weaponReadiness();
+        QList<Part> list{{QStringLiteral("Life Support"), "lifesupport", false}};
+        if (m_battle->hasShield())
+            list.append({QStringLiteral("Shield Generator"), "shields", false});
+        list.append({QStringLiteral("Power Core"), "", false});
+        list.append({QStringLiteral("FTL Drive"), "engines", false});
+        list.append({QStringLiteral("Sublight Engine"), "engines", false});
+        list.append({QCoreApplication::translate("Balance", w.mainName.toLatin1().constData()), "weapons", true});
+        if (w.hasTowers)
+            list.append({QStringLiteral("Energy Cannon"), "weapons", true});
+        if (w.hasRailguns)
+            list.append({QStringLiteral("Railgun"), "weapons", true});
+        if (w.missilesMax > 0)
+            list.append({QStringLiteral("Missile Bay"), "weapons", true});
+        if (w.dronesMax > 0)
+            list.append({QStringLiteral("Drone Bay"), "weapons", true});
+        return list;
     };
     auto health = [this](const char *system) {
         return *system ? qRound(m_battle->subsystemHealth(QString::fromLatin1(system))) : 100;
@@ -833,18 +1070,19 @@ void ConquestScreen::setupHud()
         return *system && m_battle->secondsSinceHit(QString::fromLatin1(system)) < 1.5f;
     };
 
-    m_shipStatus->setProvider([this, health, hit] {
+    m_shipStatus->setProvider([this, parts, health, hit] {
         ShipStatusData data;
         data.hull = m_battle->hull();
         data.shield = m_battle->shieldStrength();
         data.shieldUp = m_battle->shieldActive();
+        data.hasShield = m_battle->hasShield();
         const BattleView::Schematic schematic = m_battle->schematic();
         data.silhouette = schematic.silhouette;
         data.silhouetteRect = schematic.rect;
         data.shieldCenter = schematic.shieldCenter;
         data.shieldRadii = schematic.shieldRadii;
-        for (const Part &part : kParts)
-            data.components.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
+        for (const Part &part : parts())
+            data.components.append({part.name, health(part.system), 100, hit(part.system)});
         for (const QVector3D &f : m_battle->fireSpots())
             data.fires << QPointF(f.x(), f.z());
         for (const HitMark &h : m_battle->recentHits())
@@ -860,12 +1098,12 @@ void ConquestScreen::setupHud()
             picture.bolts.append({QPointF(s.local.x(), s.local.z()), s.fromDestiny, s.missile});
         return picture;
     });
-    m_weapons->setProvider([this, health, hit] {
+    m_weapons->setProvider([this, parts, health, hit] {
         WeaponStatusData data;
         data.readiness = m_battle->weaponReadiness();
-        for (const Part &part : kParts)
+        for (const Part &part : parts())
             if (part.weapon)
-                data.weapons.append({QString::fromLatin1(part.name), health(part.system), 100, hit(part.system)});
+                data.weapons.append({part.name, health(part.system), 100, hit(part.system)});
         return data;
     });
 }

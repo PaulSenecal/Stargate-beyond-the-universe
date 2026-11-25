@@ -79,6 +79,24 @@ inline float shipShieldShare(const QString &faction, bool mothership)
         return 0.25f;                           // Ha'tak récupérés, mal entretenus
     return 0.0f;                                // Wraith (coque organique), Drones
 }
+// Vaisseaux wraith : pas de bouclier, mais une coque organique très épaisse.
+// 1.35 = 35 % de points de coque en plus pour les ruches, croiseurs et Darts.
+constexpr float kWraithHullScale = 1.35f;
+
+// Ton vaisseau amiral : a-t-il un bouclier ? (la ruche wraith n'en a pas)
+inline bool flagshipShield(const QString &faction)
+{
+    return faction != "Wraith";
+}
+
+// Dégâts reçus par ton vaisseau amiral selon sa coque (1.0 = normal).
+// Ruche wraith : 0.3 = elle encaisse ~3 fois plus de tirs, pour compenser
+// l'absence de bouclier (et elle se régénère, voir hullRegen plus bas).
+inline float flagshipArmor(const QString &faction)
+{
+    return faction == "Wraith" ? 0.3f : 1.0f;
+}
+
 // Missiles et drones : munitions limitées (nombre de salves par vaisseau).
 // Les drones des Anciens traversent les boucliers : arme très forte, donc rare.
 constexpr int kMissileSalvos = 6;
@@ -119,7 +137,7 @@ inline FlagshipLoadout flagshipLoadout(const QString &faction)
     if (faction == "Lucian Alliance")   // Ha'tak récupéré, moins bien armé
         return {QT_TRANSLATE_NOOP("Balance", "Staff cannons"), 120.0f, false, true, false, 8, 0, 0.0f};
     if (faction == "Wraith")            // Ruche : nuées de Darts, coque organique qui se régénère
-        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.4f};
+        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.8f};
     if (faction == "Asgard")            // O'Neill : rayons très puissants, peu de chasseurs
         return {QT_TRANSLATE_NOOP("Balance", "Asgard beam"), 230.0f, true, false, false, 2, 0, 0.0f};
     if (faction == "Ancients")          // Aurora : armes à énergie et drones
@@ -167,6 +185,8 @@ constexpr int kRailgunPower = 15;
 constexpr int kShieldPower = 25;
 constexpr int kDronePower = 20;             // guidage des drones : il faut ce surplus pour lancer une salve
 constexpr int kEvasionPower = 15;           // manœuvres d'évitement ('evade on')
+constexpr int kAutoFirePower = 5;           // tir automatique : par arme confiée à l'ordinateur ('auto ...')
+constexpr float kAutoFireAim = 0.9f;        // …dont les tirs sont un peu moins précis (x0.9)
 
 // ----------------------------------------------------------------
 //  6b. TACTIQUE : précision, rayons, railguns, missiles, saut FTL
@@ -218,6 +238,19 @@ constexpr double kConversionChance = 0.03;      // conversion ori, par voisin ne
 constexpr double kPactChance = 0.06;            // deux IA s'allient contre un ennemi fort
 constexpr double kPactEndChance = 0.25;         // la menace disparaît : le pacte se dissout
 constexpr double kBetrayalChance = 0.04;        // l'allié devenu bien plus fort trahit l'autre
+// Espionnage et sabotage par les équipes de porte ('spy', 'sabotage')
+constexpr double kSpyCost = 15.0;               // naquadah par mission d'espionnage
+constexpr double kSabotageCost = 40.0;          // naquadah par sabotage
+constexpr double kGateTeamCooldown = 45.0;      // secondes avant qu'une équipe reparte
+constexpr int kGateRange = 2;                   // portée : à tant de couloirs de tes mondes
+constexpr double kSabotageChance = 0.6;         // chance de base, -8 % par niveau de défense
+constexpr double kYardSabotage = 120.0;         // chantier naval arrêté (secondes)
+constexpr double kMineSabotage = 150.0;         // revenus coupés (secondes)
+constexpr double kAiSabotageChance = 0.03;      // une IA sabote un de tes mondes, par période
+// Événements galactiques (invasion wraith, peste, Ancien élevé, tempête)
+constexpr double kGalacticPeriod = 150.0;       // secondes entre deux tirages
+constexpr double kGalacticChance = 0.5;         // chance qu'un événement arrive à chaque tirage
+constexpr double kUnderdogBoost = 1.3;          // chantiers des factions avec 2 mondes ou moins
 constexpr int kMaxBattleMotherships = 4;        // limites de la bataille 3D (12 contacts)
 constexpr int kMaxBattleFighters = 8;
 

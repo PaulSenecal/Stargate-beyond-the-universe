@@ -218,6 +218,19 @@ constexpr double kConversionChance = 0.03;      // conversion ori, par voisin ne
 constexpr double kPactChance = 0.06;            // deux IA s'allient contre un ennemi fort
 constexpr double kPactEndChance = 0.25;         // la menace disparaît : le pacte se dissout
 constexpr double kBetrayalChance = 0.04;        // l'allié devenu bien plus fort trahit l'autre
+// Espionnage et sabotage par les équipes de porte ('spy', 'sabotage')
+constexpr double kSpyCost = 15.0;               // naquadah par mission d'espionnage
+constexpr double kSabotageCost = 40.0;          // naquadah par sabotage
+constexpr double kGateTeamCooldown = 45.0;      // secondes avant qu'une équipe reparte
+constexpr int kGateRange = 2;                   // portée : à tant de couloirs de tes mondes
+constexpr double kSabotageChance = 0.6;         // chance de base, -8 % par niveau de défense
+constexpr double kYardSabotage = 120.0;         // chantier naval arrêté (secondes)
+constexpr double kMineSabotage = 150.0;         // revenus coupés (secondes)
+constexpr double kAiSabotageChance = 0.03;      // une IA sabote un de tes mondes, par période
+// Événements galactiques (invasion wraith, peste, Ancien élevé, tempête)
+constexpr double kGalacticPeriod = 150.0;       // secondes entre deux tirages
+constexpr double kGalacticChance = 0.5;         // chance qu'un événement arrive à chaque tirage
+constexpr double kUnderdogBoost = 1.3;          // chantiers des factions avec 2 mondes ou moins
 constexpr int kMaxBattleMotherships = 4;        // limites de la bataille 3D (12 contacts)
 constexpr int kMaxBattleFighters = 8;
 

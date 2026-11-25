@@ -59,6 +59,8 @@ struct Planet
     double fighterProgress = 0;     // 0..1
     double mothershipProgress = 0;
     double rebuild = 0;             // 0..1 toward the next defense level
+    double yardDown = 0;            // seconds left with a sabotaged shipyard
+    double mineDown = 0;            // seconds left without income (sabotage, plague)
 
     bool hasShipyard() const { return capital || bonus == Bonus::Shipyard; }
 };
@@ -107,6 +109,7 @@ struct Faction
     bool allied = false;            // allied with the player
     double allyCooldown = 0;        // seconds before a new proposal
     QStringList pacts;              // AI factions it is allied with (AI diplomacy)
+    double gateTeams = 0;           // seconds before the gate team can leave again
 };
 
 // Technology tree: 3 branches (weapons, defense, industry) of 3 tiers;
@@ -237,6 +240,23 @@ public:
     bool hasTrait(int faction, const char *factionId) const;
     static QString bonusName(Conquest::Bonus bonus);
 
+    // --- Espionage and sabotage by gate teams (the player's)
+    // Planets reachable by gate: at most kGateRange lanes from one of yours
+    bool inGateRange(int planetId) const;
+    double gateTeamCooldown() const { return m_factions.at(m_player).gateTeams; }
+    // Intelligence on a planet (garrison, docks, fleets around, income)
+    bool spy(int planetId, QStringList *report, QString *error = nullptr);
+    // target: yard | defense | mine. Returns false if it could not be
+    // tried; *success tells the result
+    bool sabotage(int planetId, const QString &target, bool *success, QString *error = nullptr);
+
+    // --- Galactic events: wraith (starving invasion), plague, ascended
+    // (an Ancient leaves technology), storm (hyperspace storm)
+    bool triggerGalacticEvent(const QString &id);
+    // Random galactic events and AI covert operations (off in some tests)
+    void setRandomEvents(bool on) { m_randomEvents = on; }
+    double stormLeft() const { return m_storm; }
+
     QJsonObject toJson() const;
     bool fromJson(const QJsonObject &json);
 
@@ -272,6 +292,9 @@ private:
     void factionEvents();
     void aiDiplomacy();
     void stopFightsBetween(int a, int b);
+    void galacticEvents();
+    void aiEconomy();
+    int leadingFaction() const;
 
     QList<Conquest::Planet> m_planets;
     QList<Conquest::Faction> m_factions;
@@ -289,6 +312,9 @@ private:
     int m_battleOwner = -1;         // faction fought by the flagship
     bool m_over = false;
     double m_eventClock = 0;        // seconds toward the next faction events
+    double m_galacticClock = 0;     // seconds toward the next galactic event
+    double m_storm = 0;             // hyperspace storm: fleets slowed
+    bool m_randomEvents = true;
     QRandomGenerator m_rng;
 };
 

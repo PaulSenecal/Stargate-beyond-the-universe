@@ -68,6 +68,9 @@ public:
     // No answer in time: the first option… or the worst
     Outcome expire();
     static QStringList choiceIds();
+    // Events of the mods (data only): one fixed outcome per option
+    void addCustomChoice(const QString &id, const QString &title, const QString &text, const QStringList &options,
+                         const QList<Outcome> &outcomes);
 
     // --- Communication stones: once every 24 game hours
     bool stonesReady(double hours) const { return hours - m_stonesUsedAt >= 24.0; }
@@ -95,6 +98,11 @@ private:
     void checkAchievements();
     float rand01() { return float(m_rng.generateDouble()); }
 
+    struct Custom {
+        Choice choice;
+        QList<Outcome> outcomes;
+    };
+    QList<Custom> m_custom;
     Choice m_pending;
     double m_stonesUsedAt = -1000;
     QMap<QString, double> m_stats;

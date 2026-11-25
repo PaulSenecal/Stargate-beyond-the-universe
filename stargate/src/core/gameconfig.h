@@ -1,6 +1,7 @@
 #ifndef GAMECONFIG_H
 #define GAMECONFIG_H
 
+#include <QJsonObject>
 #include <QString>
 #include <QStringList>
 
@@ -61,6 +62,8 @@ public:
     void setPath(const QString &path) { m_path = path; }   // tests
 
     static Values preset(Difficulty difficulty);
+    // Battle values set by a mod ("config" of a mod file), on top of the preset
+    void applyOverrides(const QJsonObject &json);
     static QString difficultyName(Difficulty difficulty);
     static Difficulty difficultyFromName(const QString &name);
 

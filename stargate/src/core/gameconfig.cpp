@@ -187,6 +187,22 @@ void GameConfig::setSeed(int seed)
     save();
 }
 
+void GameConfig::applyOverrides(const QJsonObject &o)
+{
+    auto number = [&o](const char *key, double current, double low, double high) {
+        return std::clamp(o.value(key).toDouble(current), low, high);
+    };
+    Values &v = m_values;
+    v.shipHullScale = float(number("shipHullScale", v.shipHullScale, 0.1, 10.0));
+    v.shipShieldScale = float(number("shipShieldScale", v.shipShieldScale, 0.0, 10.0));
+    v.damageToPlayer = float(number("damageToPlayer", v.damageToPlayer, 0.0, 10.0));
+    v.enemyFireRate = float(number("enemyFireRate", v.enemyFireRate, 0.1, 5.0));
+    v.autoBattleRate = number("autoBattleRate", v.autoBattleRate, 0.001, 1.0);
+    v.closeRange = float(number("closeRange", v.closeRange, 1.0, 200.0));
+    v.longRange = float(number("longRange", v.longRange, v.closeRange + 1.0, 400.0));
+    v.longRangeAccuracy = float(number("longRangeAccuracy", v.longRangeAccuracy, 0.05, 1.0));
+}
+
 float GameConfig::accuracyAt(float distance) const
 {
     const Values &v = m_values;

@@ -1,0 +1,48 @@
+{
+    "_comment": "Example mod. Copy this file into the 'mods' folder next to the saves (the 'mods' command shows where), then restart the game. Every section is optional.",
+    "name": "Example: Travellers and Aschen",
+
+    "ships": [
+        {
+            "name": "Aschen Warship",
+            "role": "MotherShip",
+            "faction": "Aschen",
+            "hull": 500,
+            "hostile": true,
+            "color": "#a7b3a0",
+            "description": "Cold and patient Aschen battleship.",
+            "attacks": [
+                { "name": "Plasma battery", "kind": "bolt", "damage": 2.2, "shots": 3, "cooldown": 3.5, "chance": 1.0 },
+                { "name": "Interceptor launch", "kind": "launch", "shots": 2, "cooldown": 25, "chance": 0.5,
+                  "payload": "Aschen Interceptor", "special": true }
+            ]
+        },
+        {
+            "name": "Aschen Interceptor",
+            "role": "Fighter",
+            "faction": "Aschen",
+            "hull": 55,
+            "hostile": true,
+            "color": "#8f9a88",
+            "attacks": [ { "name": "Light cannon", "kind": "bolt", "damage": 1.1, "cooldown": 2.4 } ]
+        }
+    ],
+
+    "events": [
+        {
+            "id": "travellers",
+            "title": "Travellers",
+            "text": "A fleet of Traveller ships offers to trade.",
+            "options": [
+                { "text": "Trade water for naquadah",
+                  "outcome": { "text": "A fair deal.", "tone": "good", "resources": { "water": -30, "naquadah": 10 } } },
+                { "text": "Decline",
+                  "outcome": { "text": "They go on their way.", "morale": -1 } }
+            ]
+        }
+    ],
+
+    "config": {
+        "shipHullScale": 1.2
+    }
+}

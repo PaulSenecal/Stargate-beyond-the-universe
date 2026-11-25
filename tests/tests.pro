@@ -13,7 +13,8 @@ INCLUDEPATH += $$GAME
 
 # Absolute paths to the data files used by the tests
 DEFINES += COMMANDS_JSON=\\\"$$PWD/../rcs/commands.json\\\" \
-           TEMPLATE_DB=\\\"$$GAME/src/db/stagateDataBase.db\\\"
+           TEMPLATE_DB=\\\"$$GAME/src/db/stagateDataBase.db\\\" \
+           EXAMPLE_MOD=\\\"$$PWD/../rcs/mods/example_mod.json\\\"
 
 SOURCES += \
     tst_game.cpp \
@@ -21,6 +22,7 @@ SOURCES += \
     $$GAME/src/core/commandmanager.cpp \
     $$GAME/src/core/destinystate.cpp \
     $$GAME/src/core/gameconfig.cpp \
+    $$GAME/src/core/modloader.cpp \
     $$GAME/src/core/campaignlife.cpp \
     $$GAME/src/core/interior.cpp \
     $$GAME/src/core/questsystem.cpp \

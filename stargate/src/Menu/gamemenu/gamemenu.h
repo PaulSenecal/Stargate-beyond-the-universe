@@ -145,6 +145,7 @@ private:
     double m_choiceTimer = 0;       // seconds left to answer a choice event
     double m_wearClock = 0;
     bool m_ended = false;
+    int m_lastFires = 0, m_lastBoarders = 0;    // alarms when they rise
     ConquestEndScreen *m_endScreen = nullptr;          // route stop where the Destiny last dived into a star
 };
 

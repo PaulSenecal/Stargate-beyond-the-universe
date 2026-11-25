@@ -20,7 +20,13 @@ enum class SoundCue
     Explosion,          // fighter destroyed, kamikaze impact
     BigExplosion,       // mothership destroyed
     ShieldHit,
-    HullHit
+    HullHit,
+    // Alerts of the ship (synthesized, short): never in the tests
+    AlertShields,       // shields collapsed: falling tone
+    AlertHull,          // hull critical: fast beeps
+    AlertFire,          // fire aboard
+    AlertBoarders,      // intruders: klaxon
+    Notice              // decision, achievement: soft chime
 };
 
 #endif // SOUNDCUE_H

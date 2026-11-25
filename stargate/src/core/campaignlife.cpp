@@ -77,8 +77,24 @@ QStringList CampaignLife::choiceIds()
     return ids;
 }
 
+void CampaignLife::addCustomChoice(const QString &id, const QString &title, const QString &text,
+                                   const QStringList &options, const QList<Outcome> &outcomes)
+{
+    Custom custom;
+    custom.choice = {id, title, text, options};
+    custom.outcomes = outcomes;
+    m_custom.erase(std::remove_if(m_custom.begin(), m_custom.end(), [&id](const Custom &c) { return c.choice.id == id; }),
+                   m_custom.end());
+    m_custom << custom;
+}
+
 bool CampaignLife::startChoice(const QString &id)
 {
+    for (const Custom &custom : m_custom)
+        if (custom.choice.id == id) {
+            m_pending = custom.choice;
+            return true;
+        }
     for (const ChoiceDef &d : choiceDefs())
         if (d.id == id) {
             m_pending.id = d.id;
@@ -97,7 +113,8 @@ bool CampaignLife::rollChoice(double chance)
     if (!m_pending.id.isEmpty() || m_rng.generateDouble() >= chance)
         return false;
     const QList<ChoiceDef> &defs = choiceDefs();
-    return startChoice(defs[int(m_rng.bounded(int(defs.size())))].id);
+    const int pick = int(m_rng.bounded(int(defs.size() + m_custom.size())));
+    return startChoice(pick < defs.size() ? QString::fromLatin1(defs[pick].id) : m_custom[pick - defs.size()].choice.id);
 }
 
 bool CampaignLife::choose(int index, Outcome *outcome)
@@ -126,6 +143,9 @@ Outcome CampaignLife::expire()
 // Consequences: partly random, so that a choice is a real gamble
 Outcome CampaignLife::resolve(const QString &id, int option)
 {
+    for (const Custom &custom : m_custom)
+        if (custom.choice.id == id && option < custom.outcomes.size())
+            return custom.outcomes[option];
     Outcome o;
     const float roll = rand01();
     if (id == "distress") {

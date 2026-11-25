@@ -25,6 +25,7 @@
 #include "src/Menu/gamemenu/commandconsole.h"
 #include "src/Menu/gamemenu/radarwidget.h"
 #include "src/Menu/gamemenu/replaydialog.h"
+#include "src/Menu/gamemenu/shiplibrarydialog.h"
 #include "src/Menu/gamemenu/shipcrew.h"
 #include "src/Menu/gamemenu/shipstatuswidget.h"
 #include "src/Menu/gamemenu/weaponstatuswidget.h"
@@ -714,6 +715,8 @@ void ConquestScreen::onCommand(const QString &command)
         m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
     } else if (name == "launch") {
         m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
+    } else if (name == "library" || name == "ships") {
+        ShipLibraryDialog::open(this, arg);
     } else if (name == "replay") {
         if (m_battle->lastReplay().isEmpty()) {
             warn(tr("No battle to replay yet"));
@@ -833,7 +836,8 @@ const QList<HelpCategory> &conquestHelp()
             {"shield on|off / evade on|off", QT_TRANSLATE_NOOP("ConquestScreen", "shields / evasive maneuvers")},
             {"launch [n]", QT_TRANSLATE_NOOP("ConquestScreen", "fighters of your hangar")},
             {"turrets / railguns / power", QT_TRANSLATE_NOOP("ConquestScreen", "energy of the flagship")},
-            {"replay", QT_TRANSLATE_NOOP("ConquestScreen", "the last battle again")}}},
+            {"replay", QT_TRANSLATE_NOOP("ConquestScreen", "the last battle again")},
+            {"library [ship]", QT_TRANSLATE_NOOP("ConquestScreen", "every ship, its attacks and chances")}}},
         {"ship", QT_TRANSLATE_NOOP("ConquestScreen", "Flagship and crew"), {
             {"plan [room] / plan T<n>", QT_TRANSLATE_NOOP("ConquestScreen", "your plan / an enemy mothership's plan")},
             {"repair <system|hull|room>", QT_TRANSLATE_NOOP("ConquestScreen", "a crew job (trinium); 'repair' alone: the hull")},
@@ -907,7 +911,7 @@ QStringList ConquestScreen::completeLine(const QString &text) const
                                    "drones", "turrets", "railguns", "power", "attack", "maintower", "pulseweapon",
                                    "secondarytower", "shield", "scan", "menu", "clear", "target", "missiles", "evade",
                                    "spy", "sabotage", "replay", "plan", "crew", "jobs", "cancel", "seal", "unseal",
-                                   "vent", "defend", "dock", "board"};
+                                   "vent", "defend", "dock", "board", "library"};
     QStringList lines;
     if (!text.contains(' ')) {
         for (const QString &n : names)

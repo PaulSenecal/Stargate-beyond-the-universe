@@ -29,6 +29,11 @@ public:
     // Selects a ship by (partial) name; false if none matches
     bool showShip(const QString &name);
 
+    // Every ship the game knows (database + mods; the built-in ones without database)
+    static QList<ShipClass> loadShips();
+    // Opens the library over `parent` (title screen, pause menu…)
+    static ShipLibraryDialog *open(QWidget *parent, const QString &ship = QString());
+
     // Index of the ship matching a typed name ("dart", "hatak"…), -1 if none
     static int find(const QList<ShipClass> &ships, const QString &name);
     // Text version of a card, for the console

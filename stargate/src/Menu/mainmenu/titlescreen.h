@@ -32,6 +32,7 @@ public:
 signals:
     void playRequested();
     void conquestRequested(const ConquestGame::Setup &setup, bool continueSaved);
+    void coopJoinRequested(const QString &host, quint16 port);
     void quitRequested();
     void languageChanged(const QString &code);
 

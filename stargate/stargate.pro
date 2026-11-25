@@ -31,6 +31,9 @@ SOURCES += \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
     src/Menu/mainmenu/titlescreen.cpp \
+    src/Menu/coop/coopclientscreen.cpp \
+    src/network/coopprotocol.cpp \
+    src/network/coopsession.cpp \
     src/Menu/pause/pausemenu.cpp \
     src/Menu/setting/settingspanel.cpp \
     src/audio/musicplayer.cpp \
@@ -84,6 +87,9 @@ HEADERS += \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
     src/Menu/mainmenu/titlescreen.h \
+    src/Menu/coop/coopclientscreen.h \
+    src/network/coopprotocol.h \
+    src/network/coopsession.h \
     src/Menu/menustyle.h \
     src/Menu/pause/pausemenu.h \
     src/Menu/setting/settingspanel.h \

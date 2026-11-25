@@ -21,6 +21,7 @@
 #include "src/core/gameconfig.h"
 #include "src/core/campaignlife.h"
 #include "src/core/modloader.h"
+#include "src/network/coopsession.h"
 #include "src/core/interior.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
@@ -1558,6 +1559,76 @@ private slots:
 };
 
 // ================================================================
+//  Co-op: stations and a session on the local machine
+// ================================================================
+
+class CoopTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void stations()
+    {
+        using namespace CoopProtocol;
+        QVERIFY(allowed(Role::Tactical, "attack 2"));
+        QVERIFY(!allowed(Role::Tactical, "repair engines"));
+        QVERIFY(allowed(Role::Engineering, "  Repair engines"));
+        QVERIFY(!allowed(Role::Engineering, "engine ftl"));          // only the captain jumps
+        QVERIFY(allowed(Role::Engineering, "destinystatus"));         // reports for both
+        QVERIFY(!allowed(Role::Tactical, ""));
+        Role role;
+        QVERIFY(roleFromName("Tactical", &role) && role == Role::Tactical);
+        QVERIFY(roleFromName("eng", &role) && role == Role::Engineering);
+        QVERIFY(!roleFromName("cook", &role));
+    }
+
+    void framing()
+    {
+        QByteArray buffer = CoopProtocol::encode(QJsonObject{{"type", "log"}, {"text", "a"}})
+                          + CoopProtocol::encode(QJsonObject{{"type", "bye"}}) + "{\"type\": \"par";
+        const QList<QJsonObject> messages = CoopProtocol::decode(buffer);
+        QCOMPARE(messages.size(), 2);
+        QCOMPARE(messages[1].value("type").toString(), QStringLiteral("bye"));
+        QVERIFY(buffer.startsWith("{"));                             // the partial line waits
+        buffer += "tial\"}\n";
+        QCOMPARE(CoopProtocol::decode(buffer).size(), 1);
+        QVERIFY(buffer.isEmpty());
+    }
+
+    void sessionOnThisMachine()
+    {
+        CoopHost host;
+        QVERIFY(host.listen(0, CoopProtocol::Role::Engineering, nullptr, true));
+        CoopClient client;
+        QSignalSpy welcomed(&client, &CoopClient::welcomed);
+        QSignalSpy commands(&host, &CoopHost::guestCommand);
+        QSignalSpy denied(&client, &CoopClient::denied);
+        QSignalSpy status(&client, &CoopClient::status);
+        client.connectTo("127.0.0.1", host.port());
+        QVERIFY(welcomed.wait(3000));
+        QCOMPARE(welcomed.first().at(0).toString(), QStringLiteral("engineering"));
+        QVERIFY(host.hasGuest());
+        client.sendCommand("repair engines");
+        QVERIFY(commands.wait(3000));
+        QCOMPARE(commands.first().at(0).toString(), QStringLiteral("repair engines"));
+        client.sendCommand("attack 1");                             // not the engineer's job
+        QVERIFY(denied.wait(3000));
+        host.sendStatus({"HULL 80%"});
+        QVERIFY(status.wait(3000));
+        QCOMPARE(status.first().at(0).toStringList(), QStringList{"HULL 80%"});
+        // A second co-pilot is turned away
+        CoopClient other;
+        QSignalSpy gone(&other, &CoopClient::disconnected);
+        other.connectTo("127.0.0.1", host.port());
+        QVERIFY(gone.wait(3000));
+        QSignalSpy left(&host, &CoopHost::guestLeft);
+        client.disconnectFromHost();
+        QVERIFY(left.wait(3000));
+        QVERIFY(!host.hasGuest());
+    }
+};
+
+// ================================================================
 
 int main(int argc, char *argv[])
 {
@@ -1593,6 +1664,10 @@ int main(int argc, char *argv[])
     }
     {
         ModTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        CoopTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

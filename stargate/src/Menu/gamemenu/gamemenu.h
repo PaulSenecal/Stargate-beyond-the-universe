@@ -24,6 +24,7 @@ class QPushButton;
 class PauseMenu;
 class ShipPlanDialog;
 class ConquestEndScreen;
+class CoopHost;
 
 // ================================================================
 //  GameMenu
@@ -96,6 +97,8 @@ private:
     QString suggestLocal(const QString &word) const;
     void endCampaign(bool victory, const QString &heading, const QString &subtitle);
     void onBattleEnded(const BattleStats &stats);
+    bool coopCommand(const QString &first, const QStringList &words);
+    QStringList coopStatus() const;
     void dialGate(const QString &address);
     void explore();
     void recordCurrentSystem();
@@ -146,6 +149,7 @@ private:
     double m_wearClock = 0;
     bool m_ended = false;
     int m_lastFires = 0, m_lastBoarders = 0;    // alarms when they rise
+    CoopHost *m_coop = nullptr;     // co-pilot over the network
     ConquestEndScreen *m_endScreen = nullptr;          // route stop where the Destiny last dived into a star
 };
 

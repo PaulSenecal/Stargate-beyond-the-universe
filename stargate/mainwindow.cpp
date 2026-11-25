@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "src/Menu/coop/coopclientscreen.h"
 #include "ui_mainwindow.h"
 #include "src/Menu/gamemenu/gamemenu.h"
 #include "src/Menu/mainmenu/titlescreen.h"
@@ -48,6 +49,21 @@ void MainWindow::createTitle()
     connect(m_title, &TitleScreen::quitRequested, this, &MainWindow::close);
     connect(m_title, &TitleScreen::languageChanged, this, &MainWindow::changeLanguage);
     connect(m_title, &TitleScreen::conquestRequested, this, &MainWindow::startConquest);
+    connect(m_title, &TitleScreen::coopJoinRequested, this, &MainWindow::joinCoop);
+}
+
+void MainWindow::joinCoop(const QString &host, quint16 port)
+{
+    delete m_coop;
+    auto *screen = new CoopClientScreen(host, port, m_screens);
+    m_coop = screen;
+    m_screens->addWidget(screen);
+    connect(screen, &CoopClientScreen::quitToTitleRequested, this, [this] {
+        m_screens->setCurrentWidget(m_title);
+        m_coop->deleteLater();
+        m_coop = nullptr;
+    });
+    m_screens->setCurrentWidget(screen);
 }
 
 void MainWindow::startConquest(const ConquestGame::Setup &setup, bool continueSaved)

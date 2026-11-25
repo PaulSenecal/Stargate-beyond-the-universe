@@ -37,6 +37,7 @@ public:
 
 signals:
     void commandEntered(const QString &command);
+    void lineAppended(const QString &text, CommandConsole::Tone tone);     // co-op mirror
 
 protected:
     void paintEvent(QPaintEvent *event) override;

@@ -21,6 +21,7 @@
 #include "shipstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
 #include "src/conquest/conquestendscreen.h"
+#include "src/network/coopsession.h"
 #include "src/audio/musicplayer.h"
 #include "src/audio/soundsystem.h"
 #include "weaponstatuswidget.h"
@@ -178,7 +179,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
               << "target" << "missiles" << "drones" << "evade" << "ftl" << "star"
               << "plan" << "crew" << "jobs" << "cancel" << "seal" << "unseal" << "vent" << "unlock" << "install"
               << "blueprints" << "defend" << "board" << "choose" << "stones" << "kino" << "jumper" << "salvage"
-              << "observe" << "stats" << "achievements" << "seed" << "mods" << "replay";
+              << "observe" << "stats" << "achievements" << "seed" << "mods" << "replay" << "coop";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -410,7 +411,7 @@ bool GameMenu::localCommand(const QString &first, const QStringList &words)
         diveIntoStar();
         return true;
     }
-    return interiorCommand(first, words) || lifeCommand(first, words);
+    return interiorCommand(first, words) || lifeCommand(first, words) || coopCommand(first, words);
 }
 
 bool GameMenu::payFor(const QList<std::pair<QString, int>> &cost)
@@ -1088,6 +1089,109 @@ QString GameMenu::suggestLocal(const QString &word) const
     return best;
 }
 
+// ================================================================
+//  Co-op: a co-pilot at the tactical or engineering station
+// ================================================================
+
+bool GameMenu::coopCommand(const QString &first, const QStringList &words)
+{
+    if (first != "coop")
+        return false;
+    const QString sub = words.value(1).toLower();
+    if (sub == "stop" || sub == "off") {
+        if (m_coop)
+            m_coop->stop();
+        m_console->appendLine(tr("Co-op closed"));
+        return true;
+    }
+    if (sub == "host" || sub == "open") {
+        CoopProtocol::Role role = CoopProtocol::Role::Engineering;
+        if (!words.value(2).isEmpty() && !CoopProtocol::roleFromName(words.value(2), &role)) {
+            m_console->appendLine(tr("Usage: coop host [tactical|engineering] [port]"), CommandConsole::Tone::Warning);
+            return true;
+        }
+        const quint16 port = quint16(words.value(3).toUInt() > 0 ? words.value(3).toUInt() : CoopProtocol::kDefaultPort);
+        if (!m_coop) {
+            m_coop = new CoopHost(this);
+            connect(m_coop, &CoopHost::guestJoined, this, [this](const QString &address) {
+                m_console->appendLine(tr("Co-pilot aboard (%1) at the %2 station").arg(address)
+                                          .arg(CoopProtocol::roleName(m_coop->guestRole())),
+                                      CommandConsole::Tone::Success);
+                m_coop->sendStatus(coopStatus());
+            });
+            connect(m_coop, &CoopHost::guestLeft, this, [this] {
+                m_console->appendLine(tr("The co-pilot left the ship"), CommandConsole::Tone::Warning);
+            });
+            connect(m_coop, &CoopHost::guestCommand, this, [this](const QString &text) {
+                m_console->appendLine(tr("[co-pilot] %1").arg(text), CommandConsole::Tone::Info);
+                onCommandEntered(text);
+            });
+            connect(m_coop, &CoopHost::guestDenied, this, [this](const QString &text) {
+                m_console->appendLine(tr("[co-pilot] '%1' refused: not their station").arg(text), CommandConsole::Tone::Warning);
+            });
+            // Everything written in the console goes to the co-pilot
+            connect(m_console, &CommandConsole::lineAppended, this, [this](const QString &text, CommandConsole::Tone tone) {
+                if (m_coop && m_coop->hasGuest())
+                    m_coop->sendLog(text, int(tone));
+            });
+        }
+        QString error;
+        if (!m_coop->listen(port, role, &error)) {
+            m_console->appendLine(tr("Co-op impossible: %1").arg(error), CommandConsole::Tone::Critical);
+            return true;
+        }
+        m_console->appendLine(tr("Co-op open on port %1 - the co-pilot joins from the title screen with: %2")
+                                  .arg(m_coop->port())
+                                  .arg(CoopHost::localAddresses().join(", ")),
+                              CommandConsole::Tone::Success);
+        m_console->appendLine(tr("Co-pilot station: %1 (%2)").arg(CoopProtocol::roleName(role))
+                                  .arg(CoopProtocol::commandsOf(role).join(", ")));
+        return true;
+    }
+    m_console->appendLine(m_coop && m_coop->isListening()
+                              ? tr("Co-op open on port %1 - %2").arg(m_coop->port())
+                                    .arg(m_coop->hasGuest() ? tr("co-pilot aboard") : tr("waiting for a co-pilot"))
+                              : tr("Co-op: coop host [tactical|engineering] [port], coop stop"));
+    return true;
+}
+
+// Ship status sent to the co-pilot every second
+QStringList GameMenu::coopStatus() const
+{
+    QStringList lines;
+    lines << tr("HULL %1%   SHIELD %2%%3").arg(qRound(m_battle->hull())).arg(qRound(m_battle->shieldStrength()))
+                 .arg(m_battle->shieldActive() ? QString() : tr(" (off)"));
+    QStringList systems;
+    for (const QString &key : BattleView::systemKeys())
+        systems << QStringLiteral("%1 %2%").arg(key).arg(qRound(m_battle->systemHealth(key)));
+    lines << systems.join("  ");
+    lines << m_battle->powerReport();
+    const WeaponReadiness w = m_battle->weaponReadiness();
+    lines << tr("HOSTILES %1   KILLS %2   TARGET %3").arg(w.hostiles).arg(w.kills)
+                 .arg(w.hasTarget ? QStringLiteral("T%1 %2 (%3%)").arg(w.targetIndex + 1).arg(w.targetClass)
+                                        .arg(qRound(w.targetHealth))
+                                  : tr("none"));
+    lines << tr("MAIN %1   PULSE %2   RAILGUNS %3 rounds, heat %4%   MISSILES %5   DRONES %6")
+                 .arg(w.mainCooldown > 0 ? QStringLiteral("%1 s").arg(w.mainCooldown, 0, 'f', 1) : tr("ready"))
+                 .arg(w.pulseCooldown > 0 ? QStringLiteral("%1 s").arg(w.pulseCooldown, 0, 'f', 1) : tr("ready"))
+                 .arg(w.railgunAmmo).arg(qRound(w.railgunHeat)).arg(w.missiles).arg(w.drones);
+    int fires = 0, breaches = 0;
+    for (const Interior::Compartment &c : m_interior.compartments()) {
+        fires += c.fire > 0.0f ? 1 : 0;
+        breaches += c.breach ? 1 : 0;
+    }
+    lines << tr("CREW %1   MORALE %2%   FREE HANDS %3   JOBS %4   FIRES %5   BREACHES %6   BOARDERS %7")
+                 .arg(m_route->state().crew).arg(qRound(m_interior.morale())).arg(m_interior.freeWorkers())
+                 .arg(m_interior.jobs().size()).arg(fires).arg(breaches).arg(m_interior.boarders());
+    for (const Interior::Compartment &c : m_interior.compartments())
+        if (c.fire > 0.0f || c.breach || c.leak || c.boarders > 0)
+            lines << QStringLiteral("  %1 (%2):%3%4%5%6").arg(QCoreApplication::translate("Interior", c.name.toUtf8().constData()), c.id)
+                         .arg(c.fire > 0.0f ? tr(" FIRE") : QString(), c.breach ? tr(" BREACH") : QString(),
+                              c.leak ? tr(" LEAK") : QString(),
+                              c.boarders > 0 ? tr(" %1 BOARDERS").arg(c.boarders) : QString());
+    return lines;
+}
+
 void GameMenu::dispatch(const QString &name, const QStringList &args)
 {
     // Arguments were already validated by CommandManager (see commands.json):
@@ -1162,6 +1266,7 @@ void GameMenu::showHelp()
     m_console->appendLine(tr("Journey: choose <n> (decisions), stones (Earth, once a day), kino <address> (scout), "
                              "jumper <address> (planets without gate), salvage (wrecks), observe (deck), stats, achievements"));
     m_console->appendLine(tr("Details: help <topic> (repair, target, seal, crew, ftl, energy, explore) - replay (last battle), mods"));
+    m_console->appendLine(tr("Co-op: coop host [tactical|engineering] - a second player takes a station from the title screen"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -1428,6 +1533,8 @@ void GameMenu::simulate()
     updateMusic(false);
     updateInterior(gameConfig().gameSpeed);
     const double seconds = gameConfig().gameSpeed;
+    if (m_coop && m_coop->hasGuest())
+        m_coop->sendStatus(coopStatus());
 
     // A decision without answer: the crew decides alone
     if (m_life.pendingChoice()) {

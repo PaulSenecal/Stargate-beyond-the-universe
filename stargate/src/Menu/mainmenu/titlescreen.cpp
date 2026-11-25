@@ -1,5 +1,6 @@
 #include "titlescreen.h"
 #include "src/network/coopprotocol.h"
+#include "src/Menu/gamemenu/shiplibrarydialog.h"
 
 #include <QComboBox>
 #include <QFrame>
@@ -47,13 +48,14 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     auto *conquest = new QPushButton(tr("Conquest"), mainPage);
     conquest->setToolTip(tr("Pick a faction and conquer a galaxy"));
     auto *coop = new QPushButton(tr("Co-op: join as co-pilot"), mainPage);
+    auto *library = new QPushButton(tr("Ship library"), mainPage);
     auto *settings = new QPushButton(tr("Settings"), mainPage);
     auto *quit = new QPushButton(tr("Quit game"), mainPage);
     quit->setObjectName("danger");
     auto *mainLayout = new QVBoxLayout(mainPage);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(10);
-    for (QPushButton *b : {play, conquest, coop, settings, quit})
+    for (QPushButton *b : {play, conquest, coop, library, settings, quit})
         mainLayout->addWidget(b);
     m_firstButton = play;
 
@@ -159,6 +161,7 @@ TitleScreen::TitleScreen(SoundSystem *sound, QWidget *parent)
     coopLayout->addWidget(backFromCoop);
     m_pages->addWidget(coopPage);
     connect(coop, &QPushButton::clicked, this, [this, coopPage] { m_pages->setCurrentWidget(coopPage); });
+    connect(library, &QPushButton::clicked, this, [this] { ShipLibraryDialog::open(window()); });
     connect(backFromCoop, &QPushButton::clicked, this, [this] { m_pages->setCurrentIndex(0); });
     connect(join, &QPushButton::clicked, this, [this, hostField, portField] {
         QSettings("Stargate", "stargate").setValue("coop/host", hostField->text().trimmed());

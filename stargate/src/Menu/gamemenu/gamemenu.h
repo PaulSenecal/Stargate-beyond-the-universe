@@ -99,6 +99,10 @@ private:
     void onBattleEnded(const BattleStats &stats);
     bool coopCommand(const QString &first, const QStringList &words);
     QStringList coopStatus() const;
+    // Tab completion of the arguments of the console-only commands
+    // ("repair inf" -> "repair infirmary")
+    QStringList argumentCompletions(const QString &text) const;
+    QStringList argumentChoices(const QStringList &before) const;
     void dialGate(const QString &address);
     void explore();
     void recordCurrentSystem();

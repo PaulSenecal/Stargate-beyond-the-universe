@@ -51,6 +51,79 @@ QString percent(float value)
 
 } // namespace
 
+namespace {
+
+// The orders of the campaign, by category, for 'help'
+struct HelpEntry { const char *syntax; const char *description; };
+struct HelpCategory { const char *key; const char *title; QList<HelpEntry> entries; };
+
+const QList<HelpCategory> &helpCatalog()
+{
+    static const QList<HelpCategory> catalog{
+        {"combat", QT_TRANSLATE_NOOP("GameMenu", "Combat"), {
+            {"attack <n>", QT_TRANSLATE_NOOP("GameMenu", "main weapon on target n (T1, T2... on screen)")},
+            {"scan <n>", QT_TRANSLATE_NOOP("GameMenu", "lock target n")},
+            {"target <n> <system>", QT_TRANSLATE_NOOP("GameMenu", "aim at weapons, shields, engines or hangar")},
+            {"pulseweapon", QT_TRANSLATE_NOOP("GameMenu", "volley on every contact")},
+            {"secondarytower", QT_TRANSLATE_NOOP("GameMenu", "burst of the towers on the target")},
+            {"missiles [n]", QT_TRANSLATE_NOOP("GameMenu", "missile salvo (limited stock)")},
+            {"drones [n]", QT_TRANSLATE_NOOP("GameMenu", "drone salvo through the shields (needs free power)")},
+            {"shield on|off", QT_TRANSLATE_NOOP("GameMenu", "raise or lower the shields")},
+            {"evade on|off", QT_TRANSLATE_NOOP("GameMenu", "evasive maneuvers: harder to hit")},
+            {"launch [n]", QT_TRANSLATE_NOOP("GameMenu", "fighters out of the hangar")},
+            {"board <n>", QT_TRANSLATE_NOOP("GameMenu", "capture a crippled mothership")},
+            {"replay", QT_TRANSLATE_NOOP("GameMenu", "watch the last battle again")}}},
+        {"energy", QT_TRANSLATE_NOOP("GameMenu", "Energy"), {
+            {"power", QT_TRANSLATE_NOOP("GameMenu", "report of the power use")},
+            {"power shields|weapons|balanced", QT_TRANSLATE_NOOP("GameMenu", "where the spare power goes")},
+            {"turrets on|off", QT_TRANSLATE_NOOP("GameMenu", "automatic towers (free their power)")},
+            {"railguns on|off", QT_TRANSLATE_NOOP("GameMenu", "point defense against missiles")},
+            {"star", QT_TRANSLATE_NOOP("GameMenu", "dive into a star to refill (shields up!)")}}},
+        {"ship", QT_TRANSLATE_NOOP("GameMenu", "Ship"), {
+            {"plan [room]", QT_TRANSLATE_NOOP("GameMenu", "plan of the compartments: fires, air, breaches")},
+            {"repair <system|hull|room>", QT_TRANSLATE_NOOP("GameMenu", "a repair job for the crew")},
+            {"jobs / cancel <n>", QT_TRANSLATE_NOOP("GameMenu", "repairs under way / stop one")},
+            {"seal <room> / unseal <room>", QT_TRANSLATE_NOOP("GameMenu", "close or open its doors")},
+            {"vent <room>", QT_TRANSLATE_NOOP("GameMenu", "open it to space: the fire dies")},
+            {"unlock <room>", QT_TRANSLATE_NOOP("GameMenu", "reopen a closed section")},
+            {"install <module> [room]", QT_TRANSLATE_NOOP("GameMenu", "build a module ('blueprints')")},
+            {"defend <room>", QT_TRANSLATE_NOOP("GameMenu", "soldiers against boarders")},
+            {"destinystatus", QT_TRANSLATE_NOOP("GameMenu", "hull, shields and systems")},
+            {"weaponstatus", QT_TRANSLATE_NOOP("GameMenu", "weapons, target, ammunition")},
+            {"showressource", QT_TRANSLATE_NOOP("GameMenu", "resources in the stores")}}},
+        {"crew", QT_TRANSLATE_NOOP("GameMenu", "Crew"), {
+            {"crew", QT_TRANSLATE_NOOP("GameMenu", "who does what, fatigue, injuries")},
+            {"crew rest <name>", QT_TRANSLATE_NOOP("GameMenu", "send someone to rest")},
+            {"crew rotate", QT_TRANSLATE_NOOP("GameMenu", "every tired crew member rests")}}},
+        {"explore", QT_TRANSLATE_NOOP("GameMenu", "Exploration"), {
+            {"scansector", QT_TRANSLATE_NOOP("GameMenu", "planets of the system and their addresses")},
+            {"kino <address>", QT_TRANSLATE_NOOP("GameMenu", "scout a planet first")},
+            {"stargate <address>", QT_TRANSLATE_NOOP("GameMenu", "send a team through the gate")},
+            {"jumper <address>", QT_TRANSLATE_NOOP("GameMenu", "fly a team there (planets without gate)")},
+            {"explore", QT_TRANSLATE_NOOP("GameMenu", "search the planet for resources")},
+            {"stargate destiny", QT_TRANSLATE_NOOP("GameMenu", "bring the team back")},
+            {"engine ftl / ftl abort", QT_TRANSLATE_NOOP("GameMenu", "jump to the next system / cancel")},
+            {"salvage", QT_TRANSLATE_NOOP("GameMenu", "recover the wrecks after a battle")}}},
+        {"journey", QT_TRANSLATE_NOOP("GameMenu", "Life aboard"), {
+            {"choose <n>", QT_TRANSLATE_NOOP("GameMenu", "answer a decision")},
+            {"stones", QT_TRANSLATE_NOOP("GameMenu", "communication stones (once a day)")},
+            {"observe on|off", QT_TRANSLATE_NOOP("GameMenu", "observation deck (morale)")},
+            {"quests / hint", QT_TRANSLATE_NOOP("GameMenu", "objectives / what to do next")},
+            {"stats / achievements", QT_TRANSLATE_NOOP("GameMenu", "journey statistics / achievements")}}},
+        {"game", QT_TRANSLATE_NOOP("GameMenu", "Game"), {
+            {"save", QT_TRANSLATE_NOOP("GameMenu", "save now (also automatic)")},
+            {"menu", QT_TRANSLATE_NOOP("GameMenu", "pause, settings, quit (Esc)")},
+            {"library [ship]", QT_TRANSLATE_NOOP("GameMenu", "every ship, its attacks and chances")},
+            {"coop host tactical|engineering", QT_TRANSLATE_NOOP("GameMenu", "a second player as co-pilot")},
+            {"mods / seed", QT_TRANSLATE_NOOP("GameMenu", "loaded mods / universe seed")},
+            {"sound / music on|off|<0-100>", QT_TRANSLATE_NOOP("GameMenu", "volume")},
+            {"clear", QT_TRANSLATE_NOOP("GameMenu", "clear the console")}}},
+    };
+    return catalog;
+}
+
+} // namespace
+
 GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     : QWidget(parent)
     , m_battle(new BattleView(this))
@@ -188,6 +261,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
             for (const Planet &p : m_route->currentPlanets())
                 addresses << p.gateAddress();
             QStringList lines = m_commands->completions(text, {{"stargate", addresses}});
+            lines += argumentCompletions(text);
             for (const QString &local : {QStringLiteral("help"), QStringLiteral("clear"), QStringLiteral("save"),
                                          QStringLiteral("quests"), QStringLiteral("hint"), QStringLiteral("library"),
                                          QStringLiteral("sound"), QStringLiteral("music"),
@@ -297,7 +371,7 @@ void GameMenu::onCommandEntered(const QString &command)
         if (topic.isEmpty())
             showHelp();
         else
-            showHelpTopic(topic);
+            showHelpTopic(topic.toLower());
         return;
     }
     if (first == "clear") {
@@ -1045,8 +1119,31 @@ void GameMenu::showHelpTopic(const QString &topic)
         {"explore", {QT_TRANSLATE_NOOP("GameMenuHelp", "scansector: planets of the system. kino <address>: scout first. stargate <address> or jumper <address>."),
                      QT_TRANSLATE_NOOP("GameMenuHelp", "explore: collect (minerals = slugs, naquadah = missiles, Ancient sites = drones/blueprints).")}},
     };
+    // A category: every order of it
+    for (const HelpCategory &category : helpCatalog())
+        if (topic == category.key || tr(category.title).compare(topic, Qt::CaseInsensitive) == 0) {
+            m_console->appendHeading(tr(category.title));
+            for (const HelpEntry &e : category.entries)
+                m_console->appendEntry(QString::fromLatin1(e.syntax), tr(e.description));
+            return;
+        }
     const QString key = topic.toLower() == "power" ? QStringLiteral("energy") : topic.toLower();
     const auto it = topics.constFind(key);
+    // A command: its line(s) of the catalog, then the details if any
+    bool found = false;
+    for (const HelpCategory &category : helpCatalog())
+        for (const HelpEntry &e : category.entries)
+            if (QString::fromLatin1(e.syntax).section(' ', 0, 0) == key) {
+                if (!found)
+                    m_console->appendHeading(key);
+                found = true;
+                m_console->appendEntry(QString::fromLatin1(e.syntax), tr(e.description));
+            }
+    if (found && it != topics.constEnd())
+        for (const QString &line : *it)
+            m_console->appendLine(QCoreApplication::translate("GameMenuHelp", line.toUtf8().constData()));
+    if (found)
+        return;
     if (it == topics.constEnd()) {
         m_console->appendLine(tr("No detailed help for '%1' - topics: %2").arg(topic, QStringList(topics.keys()).join(", ")),
                               CommandConsole::Tone::Warning);
@@ -1192,6 +1289,117 @@ QStringList GameMenu::coopStatus() const
     return lines;
 }
 
+// Values the next word can take, after the words already typed
+QStringList GameMenu::argumentChoices(const QStringList &before) const
+{
+    const QString command = before.value(0).toLower();
+    const int position = int(before.size());          // index of the word being typed
+    QStringList rooms;
+    for (const Interior::Compartment &c : m_interior.compartments())
+        rooms << c.id;
+    QStringList addresses;
+    for (const Planet &p : m_route->currentPlanets())
+        addresses << p.gateAddress();
+    const QStringList systems{"engines", "shields", "weapons", "lifesupport", "sensors"};
+    const QStringList onOff{"on", "off"};
+
+    if (position == 1) {
+        if (command == "repair")
+            return systems + QStringList{"hull"} + rooms;
+        if (command == "seal" || command == "unseal" || command == "vent" || command == "defend" || command == "plan")
+            return rooms;
+        if (command == "unlock") {
+            QStringList closed;
+            for (const Interior::Compartment &c : m_interior.compartments())
+                if (c.locked)
+                    closed << c.id;
+            return closed;
+        }
+        if (command == "install")
+            return m_interior.blueprints();
+        if (command == "crew")
+            return {"rest", "rotate"};
+        if (command == "kino")
+            return addresses + QStringList{"build"};
+        if (command == "jumper")
+            return addresses;
+        if (command == "coop")
+            return {"host", "stop"};
+        if (command == "help")
+            return {"combat", "energy", "ship", "crew", "explore", "journey", "game", "repair", "target", "seal", "ftl"};
+        if (command == "power")
+            return {"shields", "weapons", "balanced"};
+        if (command == "turrets" || command == "railguns" || command == "evade" || command == "observe"
+            || command == "sound" || command == "music")
+            return onOff;
+        if (command == "ftl")
+            return {"abort"};
+        if (command == "cancel") {
+            QStringList ids;
+            for (const Interior::Job &j : m_interior.jobs())
+                ids << QString::number(j.id);
+            return ids;
+        }
+        if (command == "target" || command == "aim" || command == "board" || command == "missiles" || command == "drones") {
+            QStringList numbers;
+            for (int i = 1; i <= m_battle->hostileCount(); ++i)
+                numbers << QString::number(i);
+            return numbers;
+        }
+        if (command == "choose" && m_life.pendingChoice()) {
+            QStringList numbers;
+            for (int i = 1; i <= m_life.pendingChoice()->options.size(); ++i)
+                numbers << QString::number(i);
+            return numbers;
+        }
+    }
+    if (position == 2) {
+        if (command == "target" || command == "aim")
+            return BattleView::enemySystems() + QStringList{"hull"};
+        if (command == "install")
+            return rooms;
+        if (command == "crew" && before.value(1).toLower() == "rest") {
+            QStringList names;
+            for (const Interior::Person &p : m_interior.people())
+                if (!p.generic)
+                    names << p.id;
+            return names;
+        }
+        if (command == "coop" && before.value(1).toLower() == "host")
+            return {"tactical", "engineering"};
+    }
+    return {};
+}
+
+QStringList GameMenu::argumentCompletions(const QString &text) const
+{
+    if (!text.contains(' '))
+        return {};
+    // Words already complete, and the one being typed (may be empty)
+    QStringList words = text.split(' ', Qt::SkipEmptyParts);
+    const QString partial = text.endsWith(' ') ? QString() : words.takeLast();
+    if (words.isEmpty())
+        return {};
+    const QString base = words.join(' ') + ' ';
+    QStringList lines;
+    for (const QString &choice : argumentChoices(words)) {
+        bool match = choice.startsWith(partial, Qt::CaseInsensitive);
+        // Rooms also answer to their name, translated or not ("infirm", "infirmerie")
+        if (!match && !partial.isEmpty()) {
+            const int room = m_interior.find(choice);
+            if (room >= 0) {
+                const QString name = m_interior.compartments()[room].name;
+                const QString shown = QCoreApplication::translate("Interior", name.toUtf8().constData());
+                match = QString(name).remove(' ').startsWith(partial, Qt::CaseInsensitive)
+                     || QString(shown).remove(' ').startsWith(partial, Qt::CaseInsensitive);
+            }
+        }
+        if (match)
+            lines << base + choice;
+    }
+    return lines;
+}
+
 void GameMenu::dispatch(const QString &name, const QStringList &args)
 {
     // Arguments were already validated by CommandManager (see commands.json):
@@ -1240,34 +1448,23 @@ void GameMenu::dispatch(const QString &name, const QStringList &args)
     }
 }
 
+
 void GameMenu::showHelp()
 {
-    for (const QString &category : m_commands->categories())
-        m_console->appendLine(QStringLiteral("%1: %2").arg(category.toUpper(),
-                                                          m_commands->usages(category).join(", ")));
-    m_console->appendLine(tr("Combat: attack 1, scan 2, shield off, pulseweapon - Repair: repair engines"));
-    m_console->appendLine(tr("Exploration: scansector, stargate <address>, explore, stargate destiny, engine ftl"));
-    m_console->appendLine(tr("Game: quests, hint, save (also automatic every 30 s, after each jump and on exit), clear"));
-    m_console->appendLine(tr("Library: library (all ships), library <ship> (e.g. library dart) - attacks and chances"));
-    m_console->appendLine(tr("Sound: sound (status), sound on, sound off, sound <0-100> (volume)"));
-    m_console->appendLine(tr("Music: music (status), music on, music off, music <0-100> (volume)"));
-    m_console->appendLine(tr("Menu: menu or Esc - pause, save, settings, quit"));
-    m_console->appendLine(tr("Hangar: launch [n] - Puddle Jumpers fight at your side, back after the battle"));
-    m_console->appendLine(tr("Energy: turrets on|off, railguns on|off, power shields|weapons|balanced (power: report)"));
-    m_console->appendLine(tr("Tactics: target <n> weapons|shields|engines|hangar (aim at a subsystem), missiles [n], "
-                             "drones [n] (Ancient caches only, need %1 free power), evade on|off").arg(Balance::kDronePower));
-    m_console->appendLine(tr("FTL: engine ftl (under fire the drive spools %1 s; fighters dock, those too far are left behind), "
-                             "ftl abort - star: dive into a star to recharge (shields up!)").arg(qRound(Balance::kFtlSpoolUnderFire)));
-    m_console->appendLine(tr("Supplies: railgun slugs (mineral planets), missiles (naquadah planets), drones (Ancient sites)"));
-    m_console->appendLine(tr("Ship: plan (zoomable plan of the compartments), repair <system|hull|room> (a crew job), "
-                             "jobs, cancel <job>, seal|unseal|vent <room>, unlock <room>, install <module> [room], blueprints"));
-    m_console->appendLine(tr("Crew: crew (list), crew rest <name>, crew rotate - defend <room> (boarders), "
-                             "board <n> (crippled mothership)"));
-    m_console->appendLine(tr("Journey: choose <n> (decisions), stones (Earth, once a day), kino <address> (scout), "
-                             "jumper <address> (planets without gate), salvage (wrecks), observe (deck), stats, achievements"));
-    m_console->appendLine(tr("Details: help <topic> (repair, target, seal, crew, ftl, energy, explore) - replay (last battle), mods"));
-    m_console->appendLine(tr("Co-op: coop host [tactical|engineering] - a second player takes a station from the title screen"));
-    m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
+    // Overview: the categories, each with a few of its orders
+    m_console->appendHeading(tr("Help - type 'help <category>' or 'help <command>'"));
+    for (const HelpCategory &category : helpCatalog()) {
+        QStringList first;
+        for (int i = 0; i < category.entries.size() && first.size() < 4; ++i) {
+            const QString word = QString::fromLatin1(category.entries[i].syntax).section(' ', 0, 0);
+            if (!first.contains(word))
+                first << word;
+        }
+        m_console->appendEntry(QStringLiteral("help %1").arg(category.key),
+                               tr("%1: %2...").arg(tr(category.title), first.join(", ")));
+    }
+    m_console->appendEntry(QStringLiteral("Tab"), tr("completes the command and its arguments (repair inf -> repair infirmary)"));
+    m_console->appendEntry(QStringLiteral("Up / Down"), tr("previous commands"));
 }
 
 void GameMenu::openPauseMenu()

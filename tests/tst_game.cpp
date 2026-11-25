@@ -18,6 +18,7 @@
 #include "src/core/commandmanager.h"
 #include "src/core/destinystate.h"
 #include "src/core/gameconfig.h"
+#include "src/core/interior.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
@@ -1060,6 +1061,202 @@ private slots:
 };
 
 // ================================================================
+//  Interior: compartments, crew, repair jobs
+// ================================================================
+
+class InteriorTest : public QObject
+{
+    Q_OBJECT
+
+    static Interior::Effects run(Interior &ship, float seconds, float lifeSupport = 100.0f)
+    {
+        Interior::Effects total;
+        for (float t = 0; t < seconds; t += 1.0f) {
+            const Interior::Effects e = ship.tick(1.0f, lifeSupport, false);
+            total.systemDamage += e.systemDamage;
+            total.systemRepair += e.systemRepair;
+            total.hullRepair += e.hullRepair;
+            total.crewLost += e.crewLost;
+            total.food += e.food;
+        }
+        return total;
+    }
+
+private slots:
+    void layout()
+    {
+        Interior ship;
+        QVERIFY(ship.compartments().size() >= 15);
+        for (const Interior::Compartment &c : ship.compartments())
+            QVERIFY2(!c.neighbours.isEmpty(), qPrintable(c.id));        // every room has a door
+        QCOMPARE(ship.compartments()[ship.compartmentOfSystem("engines")].id, QString("engines"));
+        QCOMPARE(ship.find("Bridge"), ship.find("bridge"));
+        QVERIFY(ship.compartmentAt(QPointF(7.0, 0.0)) == ship.find("maintower"));
+        QVERIFY(ship.freeWorkers() > 0);
+    }
+
+    void fireSpreadsAndBurnsTheSystem()
+    {
+        Interior ship;
+        ship.seed(7);
+        const int engines = ship.find("engines");
+        ship.startFire(engines, 0.6f);
+        const Interior::Effects e = run(ship, 30);
+        QVERIFY(ship.compartments()[engines].fire > 0.6f);
+        float damage = 0;
+        for (const auto &[system, amount] : e.systemDamage)
+            if (system == "engines")
+                damage += amount;
+        QVERIFY(damage > 10.0f);
+        QVERIFY(ship.compartments()[engines].air < 100.0f);
+    }
+
+    void ventingKillsTheFire()
+    {
+        Interior ship;
+        const int core = ship.find("core");
+        ship.startFire(core, 0.5f);
+        QVERIFY(ship.vent("core", nullptr));
+        QCOMPARE(ship.compartments()[core].fire, 0.0f);
+        QCOMPARE(ship.compartments()[core].air, 0.0f);
+        run(ship, 10);
+        QVERIFY(ship.compartments()[core].air < 5.0f);              // stays open to space
+        QVERIFY(ship.setSealed("core", false, nullptr));            // closed again
+        run(ship, 40);
+        QVERIFY(ship.compartments()[core].air > 50.0f);             // life support refills it
+    }
+
+    void sealedDoorsKeepTheAir()
+    {
+        Interior ship;
+        const int bay = ship.find("shuttlebay");
+        QString error;
+        QVERIFY(ship.setSealed("mess", true, &error));
+        QVERIFY(ship.setSealed("infirmary", true, &error));
+        QVERIFY(ship.setSealed("reclamation", true, &error));
+        Interior::Compartment &c = const_cast<Interior::Compartment &>(ship.compartments()[bay]);
+        c.breach = true;
+        run(ship, 20, 0.0f);
+        QVERIFY(ship.compartments()[bay].air < 20.0f);
+        QCOMPARE(ship.compartments()[ship.find("mess")].air, 100.0f);
+    }
+
+    void repairJobsTakeTimeAndWorkers()
+    {
+        Interior ship;
+        QString error;
+        const int job = ship.orderRepair("engines", &error);
+        QVERIFY2(job > 0, qPrintable(error));
+        QCOMPARE(ship.orderRepair("engine", &error), -1);           // already under way
+        QVERIFY(ship.jobs().first().workers.size() > 0);
+        Interior::Effects e = run(ship, 2);
+        QVERIFY(e.systemRepair.isEmpty());                          // not instant
+        float tired = 0;
+        for (const Interior::Person &p : ship.people())
+            tired = std::max(tired, p.fatigue);
+        QVERIFY(tired > 0.0f);                                      // the work tires them
+        e = run(ship, 40);
+        QCOMPARE(e.systemRepair.size(), 1);
+        QCOMPARE(e.systemRepair.first().first, QString("engines"));
+        QVERIFY(ship.jobs().isEmpty());
+    }
+
+    void workersAreLimited()
+    {
+        Interior ship;
+        ship.setCrewCount(20);                                      // a single repair team
+        QString error;
+        for (const char *system : {"engines", "shields", "weapons", "lifesupport", "sensors"})
+            QVERIFY(ship.orderRepair(system, &error) > 0);
+        QVERIFY(ship.orderRepair("hull", &error) > 0);
+        int idleJobs = 0;
+        for (const Interior::Job &j : ship.jobs())
+            if (j.workers.isEmpty())
+                ++idleJobs;
+        QVERIFY(idleJobs > 0);                                      // they wait for free hands
+        QCOMPARE(ship.freeWorkers(), 0);
+    }
+
+    void unlockingASection()
+    {
+        Interior ship;
+        QString error;
+        QVERIFY(!ship.hasCapability("food"));
+        QCOMPARE(ship.orderRepair("hydroponics", &error), -1);      // closed
+        QVERIFY(ship.orderUnlock("hydroponics", &error) > 0);
+        run(ship, 120);
+        QVERIFY(ship.hasCapability("food"));
+        const Interior::Effects e = run(ship, 40);
+        QVERIFY(e.food > 0.0f);                                     // hydroponics produce food
+    }
+
+    void modulesNeedABlueprintAndABay()
+    {
+        Interior ship;
+        QString error;
+        QCOMPARE(ship.orderInstall("asgard_shield", QString(), &error), -1);   // no blueprint
+        QVERIFY(ship.learnBlueprint("asgard_shield"));
+        QVERIFY(!ship.learnBlueprint("asgard_shield"));
+        QCOMPARE(ship.orderInstall("asgard_shield", QString(), &error), -1);   // no bay open
+        QVERIFY(ship.orderUnlock("upperdeck", &error) > 0);
+        run(ship, 120);
+        QVERIFY(ship.orderInstall("asgard_shield", QString(), &error) > 0);
+        run(ship, 120);
+        QVERIFY(ship.hasModule("asgard_shield"));
+    }
+
+    void injuriesHealAndBonusComesBack()
+    {
+        Interior ship;
+        ship.seed(3);
+        QVERIFY(ship.bonusActive("energy"));
+        const int control = ship.find("control");                   // Rush and Eli work there
+        for (int i = 0; i < 20 && ship.bonusActive("energy"); ++i)
+            ship.damageAt(ship.compartments()[control].rect.center(), 90.0f);
+        QVERIFY(!ship.bonusActive("energy"));
+        for (const Interior::Compartment &c : ship.compartments())
+            QVERIFY(ship.vent(c.id, nullptr) || true);              // no fire left to hurt anyone
+        for (const Interior::Compartment &c : ship.compartments())
+            ship.setSealed(c.id, false, nullptr);
+        run(ship, 400);
+        QVERIFY(ship.bonusActive("energy"));
+    }
+
+    void boardersAreFought()
+    {
+        Interior ship;
+        ship.seed(11);
+        ship.board(3);
+        QCOMPARE(ship.boarders(), 3);
+        QString where;
+        for (const Interior::Compartment &c : ship.compartments())
+            if (c.boarders > 0)
+                where = c.id;
+        QVERIFY(ship.defend(where, nullptr));
+        run(ship, 120);
+        QCOMPARE(ship.boarders(), 0);
+    }
+
+    void saveRoundTrip()
+    {
+        Interior ship;
+        QString error;
+        ship.startFire(ship.find("bridge"), 0.4f);
+        ship.orderUnlock("armory", &error);
+        ship.learnBlueprint("water_recycler");
+        ship.setSealed("mess", true, &error);
+        ship.changeMorale(-20.0f);
+        Interior copy;
+        copy.fromJson(ship.toJson());
+        QCOMPARE(copy.compartments()[copy.find("bridge")].fire, 0.4f);
+        QVERIFY(copy.compartments()[copy.find("mess")].sealed);
+        QCOMPARE(copy.jobs().size(), 1);
+        QCOMPARE(copy.blueprints(), QStringList{"water_recycler"});
+        QCOMPARE(copy.morale(), ship.morale());
+    }
+};
+
+// ================================================================
 
 int main(int argc, char *argv[])
 {
@@ -1083,6 +1280,10 @@ int main(int argc, char *argv[])
     }
     {
         ConfigTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        InteriorTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

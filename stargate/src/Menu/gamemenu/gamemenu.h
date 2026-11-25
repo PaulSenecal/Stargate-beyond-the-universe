@@ -5,6 +5,7 @@
 #include <QWidget>
 
 #include "src/core/destinystate.h"
+#include "src/core/interior.h"
 #include "src/render/battleview.h"
 #include "src/world/destinyroute.h"
 
@@ -20,6 +21,7 @@ class SoundSystem;
 class QTimer;
 class QPushButton;
 class PauseMenu;
+class ShipPlanDialog;
 
 // ================================================================
 //  GameMenu
@@ -77,6 +79,13 @@ private:
     void performJump();             // after the FTL drive spooled
     void diveIntoStar();
     bool localCommand(const QString &first, const QStringList &words);
+    bool interiorCommand(const QString &first, const QStringList &words);
+    void updateInterior(float seconds);
+    void applyBonuses();
+    void showCrew();
+    void showPlan();
+    void flushInteriorMessages();
+    bool payFor(const QList<std::pair<QString, int>> &cost);
     void dialGate(const QString &address);
     void explore();
     void recordCurrentSystem();
@@ -115,7 +124,9 @@ private:
     bool m_lowFoodWarned = false;
     int m_calmSeconds = 0;          // without enemy, before the calm music
     int m_starUsedAt = -1;
-    QJsonObject m_extra;            // save data of the newer systems (see GameSave::extra)          // route stop where the Destiny last dived into a star
+    QJsonObject m_extra;            // save data of the newer systems (see GameSave::extra)
+    Interior m_interior;            // compartments and crew of the Destiny
+    ShipPlanDialog *m_planDialog = nullptr;          // route stop where the Destiny last dived into a star
 };
 
 #endif // GAMEMENU_H

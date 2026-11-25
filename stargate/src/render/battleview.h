@@ -168,6 +168,17 @@ public:
     void relaunchAfterJump();
     const BattleStats &battleStats() const { return m_stats; }
 
+    // --- Interior of the ship (campaign)
+    void setPowerLoss(int power) { m_powerLoss = std::max(0, power); }  // leaking conduits
+    void setPowerBonus(int power) { m_powerBonus = std::max(0, power); } // naquadah generator
+    void setAccuracyBonus(float factor) { m_accuracyBonus = factor; }   // sensor suite, Eli
+    // Burning compartments shown on the hull (replaces the random fires)
+    void setFireSpots(const QList<QVector3D> &spots);
+    // Boarding a crippled enemy mothership (shield down, hull < 35%)
+    bool canBoard(int enemyIndex, QString *why) const;
+    // The boarded ship is taken: it leaves the battle. Returns its faction.
+    QString captureEnemy(int enemyIndex);
+
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
     void simulate(float seconds);
@@ -273,6 +284,7 @@ signals:
     void sectorCleared();               // last enemy destroyed (no auto waves)
     void hullBreached();                // hull reached 0 (emergency repairs follow)
     void jumpReady();                   // the FTL drive is spooled (startJumpSequence)
+    void hullHit(const QVector3D &local, float damage);    // ship-local impact (interior damage)
     void battleEnded(const BattleStats &stats);     // last enemy of a battle destroyed
     // delay: seconds before the sound starts (salvos)
     void sound(SoundCue cue, const QString &faction, float delay);
@@ -588,6 +600,9 @@ private:
     int m_adaptedWeapon = -1;               // weapon the drones resist (-1 = none)
     BattleStats m_stats;
     bool m_inBattle = false;
+    int m_powerLoss = 0, m_powerBonus = 0;
+    float m_accuracyBonus = 1.0f;
+    bool m_externalFires = false;
 };
 
 #endif // BATTLEVIEW_H

@@ -2099,7 +2099,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <location filename="src/conquest/conquestgame.cpp" line="1865"/>
         <source>none</source>
-        <translation type="unfinished">aucune</translation>
+        <translation>aucune</translation>
     </message>
     <message>
         <location filename="src/conquest/conquestgame.cpp" line="1883"/>
@@ -4099,12 +4099,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <location filename="src/Menu/gamemenu/gamemenu.cpp" line="742"/>
         <source>water</source>
-        <translation type="unfinished">eau</translation>
+        <translation>eau</translation>
     </message>
     <message>
         <location filename="src/Menu/gamemenu/gamemenu.cpp" line="743"/>
         <source>food</source>
-        <translation type="unfinished">nourriture</translation>
+        <translation>nourriture</translation>
     </message>
     <message>
         <location filename="src/Menu/gamemenu/gamemenu.cpp" line="744"/>
@@ -4448,7 +4448,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1366"/>
         <source>Cannot repair: %1</source>
-        <translation type="unfinished">Réparation impossible : %1</translation>
+        <translation>Réparation impossible : %1</translation>
     </message>
     <message>
         <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1372"/>
@@ -5048,7 +5048,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <location filename="src/core/interior.cpp" line="96"/>
         <source>Life Support</source>
-        <translation type="unfinished">Support vital</translation>
+        <translation>Support vital</translation>
     </message>
     <message>
         <location filename="src/core/interior.cpp" line="97"/>
@@ -5073,7 +5073,7 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <location filename="src/core/interior.cpp" line="101"/>
         <source>Power Core</source>
-        <translation type="unfinished">Cœur d&apos;énergie</translation>
+        <translation>Cœur d&apos;énergie</translation>
     </message>
     <message>
         <location filename="src/core/interior.cpp" line="102"/>
@@ -5764,12 +5764,12 @@ T%1  %2  coque %3%  distance %4 km</translation>
     <message>
         <location filename="src/Menu/gamemenu/replaydialog.cpp" line="88"/>
         <source>HULL</source>
-        <translation type="unfinished">COQUE</translation>
+        <translation>COQUE</translation>
     </message>
     <message>
         <location filename="src/Menu/gamemenu/replaydialog.cpp" line="89"/>
         <source>SHIELD</source>
-        <translation type="unfinished">BOUCLIER</translation>
+        <translation>BOUCLIER</translation>
     </message>
 </context>
 <context>

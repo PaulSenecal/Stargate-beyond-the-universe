@@ -340,7 +340,14 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
-    enum ShaderMode { ModeHull = 0, ModePlanet = 1, ModeShield = 2, ModeGlow = 3 };
+    enum ShaderMode { ModeHull = 0, ModePlanet = 1, ModeShield = 2, ModeGlow = 3, ModeSprite = 4 };
+    // Textures of the shots, from the mod (0 = missing: plain shapes)
+    enum Sprite { SpriteNone = -1, SpritePlasma, SpriteWraith, SpriteIon, SpriteAsgardLaser, SpriteAncientLaser,
+                  SpriteBeamCore, SpriteBeamGlow, SpriteCount };
+    static int spriteFor(const QString &faction);
+    GLuint spriteTexture(int sprite);
+    void drawSprite(int sprite, const QVector3D &center, const QVector3D &direction, float length, float width,
+                    const QVector3D &tint, float tintAmount, float alpha, float uvRepeat = 1.0f);
     enum class EnemyClass { Mothership, Fighter };
 
     struct Mesh {
@@ -421,6 +428,7 @@ private:
         bool drone = false;         // Ancient drone: goes through the shields
         bool miss = false;          // flies past its target (distance, sensors, evasion)
         bool rolled = false;        // hit chance already rolled
+        int sprite = -1;            // Sprite of the mod for this shot (-1 = plain shape)
         int aimSystem = -1;         // enemy subsystem aimed at (EnemySystem)
         Weapon weapon = Weapon::None;
         QVector3D pos, vel;
@@ -446,6 +454,7 @@ private:
         float width = 0.3f, age = 0, damageLeft = 0, tick = 0;
         bool fromDestiny = false;
         Weapon weapon = Weapon::None;
+        QString faction;            // look of the beam
     };
 
     struct Subsystem {
@@ -552,6 +561,11 @@ private:
     QOpenGLShaderProgram m_stars;
     Mesh m_box, m_sphere, m_spire, m_spireRidge, m_fan, m_fanPlate, m_hub;
     Mesh m_ring, m_pyramid, m_fighter;
+    // Quad with texture coordinates for the shot sprites
+    QOpenGLVertexArrayObject m_quadVao;
+    QOpenGLBuffer m_quadVbo;
+    GLuint m_sprites[SpriteCount] = {};
+    bool m_spritesTried[SpriteCount] = {};
     QOpenGLVertexArrayObject m_starVao;
     QOpenGLBuffer m_starVbo;
     int m_starCount = 0;

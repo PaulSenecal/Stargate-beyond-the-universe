@@ -84,12 +84,12 @@
         <translation>Tour principale : aucune cible</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="448"/>
+        <location filename="src/render/battleview.cpp" line="449"/>
         <source>Main tower fired at T%1</source>
         <translation>Tour principale : tir sur T%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="468"/>
+        <location filename="src/render/battleview.cpp" line="469"/>
         <source>No drone bay aboard</source>
         <translation>Pas de baie à drones à bord</translation>
     </message>
@@ -98,73 +98,73 @@
         <translation type="vanished">Baie à drones vide - les salves se rechargent hors combat</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="487"/>
+        <location filename="src/render/battleview.cpp" line="488"/>
         <source>Drones: no target</source>
         <translation>Drones : aucune cible</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="504"/>
+        <location filename="src/render/battleview.cpp" line="506"/>
         <source>Drone salvo launched at T%1 (%2 left)</source>
         <translation>Salve de drones lancée sur T%1 (%2 restantes)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="512"/>
+        <location filename="src/render/battleview.cpp" line="514"/>
         <source>No pulse weapons aboard this ship</source>
         <translation>Pas d&apos;armes à impulsion à bord de ce vaisseau</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="516"/>
+        <location filename="src/render/battleview.cpp" line="518"/>
         <source>Pulse weapons recharging (%1 s)</source>
         <translation>Armes à impulsion en recharge (%1 s)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="522"/>
+        <location filename="src/render/battleview.cpp" line="524"/>
         <source>Pulse weapons: no target</source>
         <translation>Armes à impulsion : aucune cible</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="536"/>
+        <location filename="src/render/battleview.cpp" line="539"/>
         <source>Pulse weapons: full volley on %1 targets</source>
         <translation>Armes à impulsion : salve complète sur %1 cibles</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="543"/>
-        <location filename="src/render/battleview.cpp" line="2125"/>
+        <location filename="src/render/battleview.cpp" line="546"/>
+        <location filename="src/render/battleview.cpp" line="2276"/>
         <source>No secondary towers aboard this ship</source>
         <translation>Pas de tours secondaires à bord de ce vaisseau</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="547"/>
+        <location filename="src/render/battleview.cpp" line="550"/>
         <source>Secondary towers recharging (%1 s)</source>
         <translation>Tours secondaires en recharge (%1 s)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="553"/>
+        <location filename="src/render/battleview.cpp" line="556"/>
         <source>Secondary towers: no target</source>
         <translation>Tours secondaires : aucune cible</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="565"/>
+        <location filename="src/render/battleview.cpp" line="568"/>
         <source>Secondary towers: burst on T%1</source>
         <translation>Tours secondaires : rafale sur T%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="591"/>
+        <location filename="src/render/battleview.cpp" line="594"/>
         <source>Shields raised (%1%)</source>
         <translation>Boucliers levés (%1%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="593"/>
+        <location filename="src/render/battleview.cpp" line="596"/>
         <source>Shields lowered</source>
         <translation>Boucliers baissés</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="744"/>
+        <location filename="src/render/battleview.cpp" line="747"/>
         <source>Hull repaired: %1%</source>
         <translation>Coque réparée : %1%</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="751"/>
+        <location filename="src/render/battleview.cpp" line="754"/>
         <source>%1 repaired: %2%</source>
         <translation>%1 réparé : %2%</translation>
     </message>
@@ -173,57 +173,59 @@
         <translation type="vanished">Système inconnu &apos;%1&apos; (engines, shields, weapons, lifesupport, hull)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="474"/>
+        <location filename="src/render/battleview.cpp" line="475"/>
         <source>Drone bay empty - drones are only found in Ancient caches</source>
         <translation>Baie à drones vide - on ne trouve des drones que dans les caches des Anciens</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="478"/>
+        <location filename="src/render/battleview.cpp" line="479"/>
         <source>Not enough power to guide the drones (%1 free, %2 needed) - turn off the turrets or the railguns</source>
         <translation>Pas assez d&apos;énergie pour guider les drones (%1 libre, %2 nécessaire) - coupe les tourelles ou les railguns</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="754"/>
+        <location filename="src/render/battleview.cpp" line="757"/>
         <source>Unknown system &apos;%1&apos; (engines, shields, weapons, lifesupport, sensors, hull)</source>
         <translation>Système inconnu &apos;%1&apos; (engines, shields, weapons, lifesupport, sensors, hull)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="761"/>
+        <location filename="src/render/battleview.cpp" line="764"/>
         <source>collapsed</source>
         <translation>effondrés</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="762"/>
+        <location filename="src/render/battleview.cpp" line="765"/>
         <source>online</source>
         <translation>actifs</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="763"/>
+        <location filename="src/render/battleview.cpp" line="766"/>
         <source>offline</source>
         <translation>coupés</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="764"/>
+        <location filename="src/render/battleview.cpp" line="767"/>
         <source>Hull %1% | Shields %2% (%3) | Fires on board: %4</source>
         <translation>Coque %1% | Boucliers %2% (%3) | Incendies à bord : %4</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="774"/>
+        <location filename="src/render/battleview.cpp" line="777"/>
         <source>recharging %1 s</source>
         <translation>recharge %1 s</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="774"/>
+        <location filename="src/render/battleview.cpp" line="777"/>
         <source>ready</source>
         <translation>prête</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="776"/>
+        <location filename="src/render/battleview.cpp" line="779"/>
+        <location filename="src/render/battleview.cpp" line="2032"/>
+        <location filename="src/render/battleview.cpp" line="2032"/>
         <source>none</source>
         <translation>aucune</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="778"/>
+        <location filename="src/render/battleview.cpp" line="781"/>
         <source>T%1 %2 (%3%)</source>
         <translation>T%1 %2 (%3%)</translation>
     </message>
@@ -238,322 +240,368 @@ Tours secondaires : %3 (tir auto, efficacité %4%)
 Cible actuelle : %5 | Destructions : %6</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="790"/>
+        <location filename="src/render/battleview.cpp" line="793"/>
         <source>
 Hit chance on the target: %1% (distance %2 km, sensors %3%)</source>
         <translation>
 Chance de toucher la cible : %1% (distance %2 km, capteurs %3%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="795"/>
+        <location filename="src/render/battleview.cpp" line="798"/>
         <source>
 Target systems: weapons %1%, shields %2%, engines %3%, hangar %4%</source>
         <translation>
 Systèmes de la cible : armes %1%, boucliers %2%, moteurs %3%, hangar %4%</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="799"/>
+        <location filename="src/render/battleview.cpp" line="802"/>
         <source>
 Railguns: %1 rounds, heat %2%%3</source>
         <translation>
 Railguns : %1 obus, chaleur %2%%3</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="800"/>
+        <location filename="src/render/battleview.cpp" line="803"/>
         <source> (OVERHEATED)</source>
         <translation> (SURCHAUFFE)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="802"/>
+        <location filename="src/render/battleview.cpp" line="805"/>
         <source>
 Missiles: %1/%2</source>
         <translation>
 Missiles : %1/%2</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="804"/>
+        <location filename="src/render/battleview.cpp" line="807"/>
         <source>
 Drone salvos: %1/%2</source>
         <translation>
 Salves de drones : %1/%2</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="812"/>
+        <location filename="src/render/battleview.cpp" line="815"/>
         <source>Sector clear — no hostile contact</source>
         <translation>Secteur dégagé — aucun contact hostile</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="814"/>
+        <location filename="src/render/battleview.cpp" line="817"/>
         <source>%1 hostile contact(s), %2:</source>
         <translation>%1 contact(s) hostile(s), %2 :</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="817"/>
+        <location filename="src/render/battleview.cpp" line="820"/>
         <source>
 T%1  %2  hull %3%  distance %4 km</source>
         <translation>
 T%1  %2  coque %3%  distance %4 km</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="893"/>
+        <location filename="src/render/battleview.cpp" line="896"/>
         <source>FTL jump in %1...</source>
         <translation>Saut FTL dans %1...</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="904"/>
+        <location filename="src/render/battleview.cpp" line="907"/>
         <source>Railguns cooled down - point defense back</source>
         <translation>Railguns refroidis - défense rapprochée rétablie</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="940"/>
+        <location filename="src/render/battleview.cpp" line="945"/>
         <source>auto-turrets</source>
         <translation>tourelles automatiques</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="945"/>
+        <location filename="src/render/battleview.cpp" line="950"/>
         <source>evasive maneuvers</source>
         <translation>manœuvres d&apos;évitement</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="953"/>
+        <location filename="src/render/battleview.cpp" line="958"/>
         <source>Power shortage (%1 available) - shed: %2</source>
         <translation>Manque d&apos;énergie (%1 disponible) - délestage : %2</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="981"/>
+        <location filename="src/render/battleview.cpp" line="986"/>
         <source>Shields restored (%1%)</source>
         <translation>Boucliers rétablis (%1%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1007"/>
+        <location filename="src/render/battleview.cpp" line="1012"/>
         <source>Sector clear</source>
         <translation>Secteur dégagé</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1055"/>
+        <location filename="src/render/battleview.cpp" line="1060"/>
         <source>New hostile contacts (%1): %2</source>
         <translation>Nouveaux contacts hostiles (%1) : %2</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1220"/>
+        <location filename="src/render/battleview.cpp" line="1225"/>
         <source>Friendly %1 ships join the battle</source>
         <translation>Des vaisseaux %1 amis rejoignent la bataille</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1235"/>
+        <location filename="src/render/battleview.cpp" line="1240"/>
         <source>No hangar aboard</source>
         <translation>Pas de hangar à bord</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1239"/>
+        <location filename="src/render/battleview.cpp" line="1244"/>
         <source>Hangar empty - fighters are rebuilt out of battle</source>
         <translation>Hangar vide - les chasseurs sont reconstruits hors combat</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1253"/>
+        <location filename="src/render/battleview.cpp" line="1258"/>
         <source>%1 %2 launched</source>
         <translation>%1 %2 lancé(s)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1302"/>
+        <location filename="src/render/battleview.cpp" line="1307"/>
         <source>%1 latched onto T%2 - &apos;board %2&apos; or &apos;sabotage %2 &lt;room&gt;&apos;</source>
         <translation>%1 arrimé à T%2 - &apos;board %2&apos; ou &apos;sabotage %2 &lt;salle&gt;&apos;</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1456"/>
+        <location filename="src/render/battleview.cpp" line="1461"/>
         <source>Your %1 is shot down</source>
         <translation>Votre %1 est abattu</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1457"/>
+        <location filename="src/render/battleview.cpp" line="1462"/>
         <source>Friendly %1 destroyed</source>
         <translation>%1 ami détruit</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1514"/>
+        <location filename="src/render/battleview.cpp" line="1519"/>
         <source>Unknown subsystem &apos;%1&apos; (weapons, shields, engines, hangar, hull)</source>
         <translation>Sous-système inconnu &apos;%1&apos; (weapons, shields, engines, hangar, hull)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1522"/>
+        <location filename="src/render/battleview.cpp" line="1527"/>
         <source>T%1 has no shield generator - a Wraith ship relies on its organic hull</source>
         <translation>T%1 n&apos;a pas de générateur de bouclier - un vaisseau wraith compte sur sa coque organique</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1529"/>
+        <location filename="src/render/battleview.cpp" line="1534"/>
         <source>Aiming at the hull of T%1</source>
         <translation>Visée sur la coque de T%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1531"/>
+        <location filename="src/render/battleview.cpp" line="1536"/>
         <source>Aiming at the %1 of T%2 (%3%) - harder to hit</source>
         <translation>Visée : %1 de T%2 (%3%) - plus difficile à toucher</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1548"/>
+        <location filename="src/render/battleview.cpp" line="1553"/>
         <source>No missile bay aboard this ship</source>
         <translation>Pas de baie à missiles à bord de ce vaisseau</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1554"/>
+        <location filename="src/render/battleview.cpp" line="1559"/>
         <source>Missile bay empty - resupply on a naquadah-rich planet</source>
         <translation>Baie à missiles vide - ravitaille sur une planète riche en naquadah</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1561"/>
+        <location filename="src/render/battleview.cpp" line="1566"/>
         <source>Missiles: no target</source>
         <translation>Missiles : aucune cible</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1578"/>
+        <location filename="src/render/battleview.cpp" line="1584"/>
         <source>%1 missile(s) launched at T%2 (%3 left)</source>
         <translation>%1 missile(s) lancé(s) sur T%2 (%3 restants)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1586"/>
+        <location filename="src/render/battleview.cpp" line="1592"/>
         <source>Engines too damaged for evasive maneuvers</source>
         <translation>Moteurs trop endommagés pour des manœuvres d&apos;évitement</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1590"/>
+        <location filename="src/render/battleview.cpp" line="1596"/>
         <source>Evasive maneuvers: enemy fire less accurate, yours too (-%1 power)</source>
         <translation>Manœuvres d&apos;évitement : tirs ennemis moins précis, les tiens aussi (-%1 énergie)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1591"/>
+        <location filename="src/render/battleview.cpp" line="1597"/>
         <source>Evasive maneuvers stopped</source>
         <translation>Manœuvres d&apos;évitement arrêtées</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1614"/>
+        <location filename="src/render/battleview.cpp" line="1620"/>
         <source>FTL drive spooling: %1 s - %2 fighter(s) recalled to the hangar</source>
         <translation>Moteur FTL en charge : %1 s - %2 chasseur(s) rappelé(s) au hangar</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1615"/>
+        <location filename="src/render/battleview.cpp" line="1621"/>
         <source>FTL drive spooling: %1 s - hold on</source>
         <translation>Moteur FTL en charge : %1 s - tenez bon</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1624"/>
+        <location filename="src/render/battleview.cpp" line="1630"/>
         <source>FTL jump aborted</source>
         <translation>Saut FTL annulé</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1646"/>
+        <location filename="src/render/battleview.cpp" line="1652"/>
         <source>%1 fighter(s) too far from the ship were left behind</source>
         <translation>%1 chasseur(s) trop loin du vaisseau ont été abandonnés</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1661"/>
+        <location filename="src/render/battleview.cpp" line="1667"/>
         <source>Not with hostile contacts around</source>
         <translation>Pas avec des contacts hostiles autour</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1725"/>
+        <location filename="src/render/battleview.cpp" line="1731"/>
         <source>T%1 %2: %3</source>
         <translation>T%1 %2 : %3</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1739"/>
+        <location filename="src/render/battleview.cpp" line="1745"/>
         <source>T%1 %2 beams a team aboard - your shields are down!</source>
         <translation>T%1 %2 téléporte une équipe à bord - tes boucliers sont tombés !</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1799"/>
-        <location filename="src/render/battleview.cpp" line="1853"/>
+        <location filename="src/render/battleview.cpp" line="1805"/>
+        <location filename="src/render/battleview.cpp" line="1859"/>
         <source>no contact T%1</source>
         <translation>aucun contact T%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1801"/>
+        <location filename="src/render/battleview.cpp" line="1807"/>
         <source>only motherships can be docked with</source>
         <translation>on ne s&apos;arrime qu&apos;aux vaisseaux-mères</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1803"/>
+        <location filename="src/render/battleview.cpp" line="1809"/>
         <source>no ship in the hangar</source>
         <translation>aucun appareil au hangar</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1805"/>
+        <location filename="src/render/battleview.cpp" line="1811"/>
         <source>a ship is already latched on it</source>
         <translation>un appareil y est déjà arrimé</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1815"/>
+        <location filename="src/render/battleview.cpp" line="1821"/>
         <source>%1 on its way to latch onto T%2 - protect it</source>
         <translation>%1 part s&apos;arrimer à T%2 - protège-le</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1858"/>
+        <location filename="src/render/battleview.cpp" line="1864"/>
         <source>only motherships can be boarded</source>
         <translation>seuls les vaisseaux-mères peuvent être abordés</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1862"/>
+        <location filename="src/render/battleview.cpp" line="1868"/>
         <source>its shield is still up (%1%)</source>
         <translation>son bouclier tient encore (%1%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1866"/>
+        <location filename="src/render/battleview.cpp" line="1872"/>
         <source>not crippled enough (hull %1%, needs 35%)</source>
         <translation>pas assez endommagé (coque %1%, il faut 35%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1870"/>
+        <location filename="src/render/battleview.cpp" line="1876"/>
         <source>too far for the shuttles</source>
         <translation>trop loin pour les navettes</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1889"/>
+        <location filename="src/render/battleview.cpp" line="1895"/>
         <source>T%1 %2 captured - its crew surrendered</source>
         <translation>T%1 %2 capturé - son équipage s&apos;est rendu</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="1938"/>
+        <location filename="src/render/battleview.cpp" line="1944"/>
         <source>Battle report (%1): %2 s, %3 kill(s), accuracy %4% (%5/%6), damage dealt %7, hull -%8%, shields -%9%</source>
         <translation>Rapport de bataille (%1) : %2 s, %3 destruction(s), précision %4% (%5/%6), dégâts infligés %7, coque -%8%, boucliers -%9%</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2129"/>
+        <location filename="src/render/battleview.cpp" line="1975"/>
+        <source>Every weapon fires on its own</source>
+        <translation>Toutes les armes tirent seules</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="1975"/>
+        <source>Automatic fire off - weapons on your orders only</source>
+        <translation>Tir automatique coupé - les armes n&apos;obéissent qu&apos;à tes ordres</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2004"/>
+        <source>Unknown weapon &apos;%1&apos; (main, pulse, missiles, drones, towers, railguns, all)</source>
+        <translation>Arme inconnue &apos;%1&apos; (main, pulse, missiles, drones, towers, railguns, all)</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2009"/>
+        <source>No %1 aboard this ship</source>
+        <translation>Pas de %1 à bord de ce vaisseau</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2013"/>
+        <source>Automatic fire on: %1</source>
+        <translation>Tir automatique activé : %1</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2013"/>
+        <source>Automatic fire off: %1</source>
+        <translation>Tir automatique coupé : %1</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2031"/>
+        <source>Automatic fire - on: %1 | off: %2 (&apos;auto &lt;weapon&gt; on|off&apos;, &apos;auto all on|off&apos;)</source>
+        <translation>Tir automatique - activé : %1 | coupé : %2 (&apos;auto &lt;arme&gt; on|off&apos;, &apos;auto all on|off&apos;)</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2076"/>
+        <source>evasion</source>
+        <translation>évitement</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2077"/>
+        <source>fire control</source>
+        <translation>conduite de tir</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="2280"/>
         <source>Secondary towers: auto-fire on</source>
         <translation>Tours secondaires : tir automatique activé</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2129"/>
+        <location filename="src/render/battleview.cpp" line="2280"/>
         <source>Secondary towers: auto-fire off (+%1 power)</source>
         <translation>Tours secondaires : tir automatique coupé (+%1 d&apos;énergie)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2136"/>
+        <location filename="src/render/battleview.cpp" line="2287"/>
         <source>No railguns aboard this ship</source>
         <translation>Pas de railguns à bord de ce vaisseau</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2140"/>
+        <location filename="src/render/battleview.cpp" line="2291"/>
         <source>Railguns: point defense on</source>
         <translation>Railguns : défense rapprochée activée</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2140"/>
+        <location filename="src/render/battleview.cpp" line="2291"/>
         <source>Railguns: point defense off (+%1 power)</source>
         <translation>Railguns : défense rapprochée coupée (+%1 d&apos;énergie)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2181"/>
-        <location filename="src/render/battleview.cpp" line="2877"/>
+        <location filename="src/render/battleview.cpp" line="2075"/>
+        <location filename="src/render/battleview.cpp" line="2333"/>
+        <location filename="src/render/battleview.cpp" line="3032"/>
         <source>shields</source>
         <translation>boucliers</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2182"/>
-        <location filename="src/render/battleview.cpp" line="2877"/>
+        <location filename="src/render/battleview.cpp" line="2334"/>
+        <location filename="src/render/battleview.cpp" line="3032"/>
         <source>weapons</source>
         <translation>armes</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2183"/>
+        <location filename="src/render/battleview.cpp" line="2335"/>
         <source>balanced</source>
         <translation>équilibrée</translation>
     </message>
@@ -562,16 +610,16 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation type="vanished">Énergie %1 : libre %2 - priorité %3 (recharge du bouclier x%4, des armes x%5) - tours %6, railguns %7</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2191"/>
-        <location filename="src/render/battleview.cpp" line="2193"/>
-        <location filename="src/render/battleview.cpp" line="2197"/>
+        <location filename="src/render/battleview.cpp" line="2343"/>
+        <location filename="src/render/battleview.cpp" line="2345"/>
+        <location filename="src/render/battleview.cpp" line="2349"/>
         <source>on</source>
         <translation>actifs</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2191"/>
-        <location filename="src/render/battleview.cpp" line="2193"/>
-        <location filename="src/render/battleview.cpp" line="2197"/>
+        <location filename="src/render/battleview.cpp" line="2343"/>
+        <location filename="src/render/battleview.cpp" line="2345"/>
+        <location filename="src/render/battleview.cpp" line="2349"/>
         <source>off</source>
         <translation>coupés</translation>
     </message>
@@ -580,314 +628,334 @@ T%1  %2  coque %3%  distance %4 km</translation>
         <translation type="vanished"> - évitement %1, les drones demandent %2 libres</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2199"/>
+        <location filename="src/render/battleview.cpp" line="2351"/>
         <source> - LEAKS -%1</source>
         <translation> - FUITES -%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2200"/>
+        <location filename="src/render/battleview.cpp" line="2352"/>
         <source> - generator +%1</source>
         <translation> - générateur +%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2306"/>
+        <location filename="src/render/battleview.cpp" line="2458"/>
         <source>T%1 %2 latched onto the hull - boarders incoming! (railguns, &apos;defend &lt;room&gt;&apos;)</source>
         <translation>T%1 %2 s&apos;est arrimé à la coque - abordeurs en approche ! (railguns, &apos;defend &lt;salle&gt;&apos;)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2317"/>
+        <location filename="src/render/battleview.cpp" line="2469"/>
         <source>T%1 %2 heads for the hull to latch on - shoot it down!</source>
         <translation>T%1 %2 fonce s&apos;arrimer à la coque - abats-le !</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2344"/>
+        <location filename="src/render/battleview.cpp" line="2496"/>
         <source>T%1 %2 falls back to recharge its shields</source>
         <translation>T%1 %2 se replie pour recharger ses boucliers</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2448"/>
+        <location filename="src/render/battleview.cpp" line="2600"/>
         <source>%1 fires a salvo of %2 missiles</source>
         <translation>%1 tire une salve de %2 missiles</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2458"/>
+        <location filename="src/render/battleview.cpp" line="2610"/>
         <source>%1: %2 fired</source>
         <translation>%1 : %2 tiré</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2462"/>
+        <location filename="src/render/battleview.cpp" line="2614"/>
         <source>T%1 %2 is diving at the Destiny!</source>
         <translation>T%1 %2 plonge sur le Destiny !</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2474"/>
+        <location filename="src/render/battleview.cpp" line="2626"/>
         <source>%1 launches %2 %3</source>
         <translation>%1 lance %2 %3</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2502"/>
+        <location filename="src/render/battleview.cpp" line="2654"/>
         <source>%1 crashed into the shield</source>
         <translation>%1 s&apos;est écrasé sur le bouclier</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2503"/>
+        <location filename="src/render/battleview.cpp" line="2655"/>
         <source>%1 rammed the hull (-%2)</source>
         <translation>%1 a percuté la coque (-%2)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2607"/>
+        <location filename="src/render/battleview.cpp" line="2762"/>
         <source>Railguns overheated - point defense offline while they cool down</source>
         <translation>Railguns en surchauffe - défense rapprochée coupée le temps qu&apos;ils refroidissent</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2610"/>
+        <location filename="src/render/battleview.cpp" line="2765"/>
         <source>Railguns out of ammunition - resupply on a mineral-rich planet</source>
         <translation>Railguns à court d&apos;obus - ravitaille sur une planète riche en minerais</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2612"/>
+        <location filename="src/render/battleview.cpp" line="2767"/>
         <source>Railgun ammunition low (%1 rounds)</source>
         <translation>Obus de railgun bas (%1)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2864"/>
+        <location filename="src/render/battleview.cpp" line="3019"/>
         <source>T%1 %2 destroyed</source>
         <translation>T%1 %2 détruit</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2877"/>
+        <location filename="src/render/battleview.cpp" line="2074"/>
+        <location filename="src/render/battleview.cpp" line="3032"/>
         <source>engines</source>
         <translation>moteurs</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2878"/>
+        <location filename="src/render/battleview.cpp" line="3033"/>
         <source>hangar</source>
         <translation>hangar</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2879"/>
+        <location filename="src/render/battleview.cpp" line="3034"/>
         <source>T%1 %2: %3 knocked out</source>
         <translation>T%1 %2 : %3 hors service</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2903"/>
+        <location filename="src/render/battleview.cpp" line="2073"/>
+        <location filename="src/render/battleview.cpp" line="3058"/>
         <source>main weapon</source>
         <translation>arme principale</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2903"/>
+        <location filename="src/render/battleview.cpp" line="1988"/>
+        <location filename="src/render/battleview.cpp" line="2026"/>
+        <location filename="src/render/battleview.cpp" line="3058"/>
         <source>pulse weapons</source>
         <translation>armes à impulsion</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2904"/>
+        <location filename="src/render/battleview.cpp" line="2027"/>
+        <location filename="src/render/battleview.cpp" line="3059"/>
         <source>towers</source>
         <translation>tours</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="950"/>
-        <location filename="src/render/battleview.cpp" line="2904"/>
+        <location filename="src/render/battleview.cpp" line="955"/>
+        <location filename="src/render/battleview.cpp" line="2028"/>
+        <location filename="src/render/battleview.cpp" line="3059"/>
         <source>railguns</source>
         <translation>railguns</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="586"/>
+        <location filename="src/render/battleview.cpp" line="589"/>
         <source>No shield on this ship - its organic hull takes the blows</source>
         <translation>Pas de bouclier sur ce vaisseau - sa coque organique encaisse les coups</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="782"/>
+        <location filename="src/render/battleview.cpp" line="785"/>
         <source>%1: %2</source>
         <translation>%1 : %2</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="784"/>
+        <location filename="src/render/battleview.cpp" line="787"/>
         <source>
 Pulse weapons: %1</source>
         <translation>
 Armes à impulsion : %1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="786"/>
+        <location filename="src/render/battleview.cpp" line="789"/>
         <source>
 Secondary towers: %1 (auto-fire, %2% efficiency)</source>
         <translation>
 Tours secondaires : %1 (tir auto, efficacité %2%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="788"/>
+        <location filename="src/render/battleview.cpp" line="791"/>
         <source>
 Current target: %1 | Kills: %2</source>
         <translation>
 Cible actuelle : %1 | Destructions : %2</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2184"/>
+        <location filename="src/render/battleview.cpp" line="2336"/>
         <source>Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5)</source>
         <translation>Énergie %1 : libre %2 - priorité %3 (recharge bouclier x%4, recharge armes x%5)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2191"/>
+        <location filename="src/render/battleview.cpp" line="2343"/>
         <source> - towers %1</source>
         <translation> - tours %1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2193"/>
+        <location filename="src/render/battleview.cpp" line="2345"/>
         <source> - railguns %1</source>
         <translation> - railguns %1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2195"/>
+        <location filename="src/render/battleview.cpp" line="2347"/>
         <source> - no shield</source>
         <translation> - pas de bouclier</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2197"/>
+        <location filename="src/render/battleview.cpp" line="2349"/>
         <source> - evasion %1</source>
         <translation> - évitement %1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2198"/>
+        <location filename="src/render/battleview.cpp" line="2350"/>
         <source>, drones need %1 free</source>
         <translation>, les drones demandent %1 libres</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2904"/>
+        <location filename="src/render/battleview.cpp" line="1996"/>
+        <location filename="src/render/battleview.cpp" line="2030"/>
+        <location filename="src/render/battleview.cpp" line="3059"/>
         <source>drones</source>
         <translation>drones</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2905"/>
+        <location filename="src/render/battleview.cpp" line="1992"/>
+        <location filename="src/render/battleview.cpp" line="2029"/>
+        <location filename="src/render/battleview.cpp" line="3060"/>
         <source>missiles</source>
         <translation>missiles</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="2906"/>
+        <location filename="src/render/battleview.cpp" line="3061"/>
         <source>The drones adapted their shields to your %1 - switch weapons</source>
         <translation>Les drones ont adapté leurs boucliers à tes %1 - change d&apos;arme</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3052"/>
+        <location filename="src/render/battleview.cpp" line="3207"/>
         <source>Shields collapsed!</source>
         <translation>Boucliers effondrés !</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3067"/>
+        <location filename="src/render/battleview.cpp" line="3222"/>
         <source>Missile impact on the hull (-%1)</source>
         <translation>Impact de missile sur la coque (-%1)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3079"/>
+        <location filename="src/render/battleview.cpp" line="3234"/>
         <source>Hull integrity %1%</source>
         <translation>Intégrité de la coque %1%</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3085"/>
+        <location filename="src/render/battleview.cpp" line="3240"/>
         <source>Hull breach! Emergency repair teams deployed</source>
         <translation>Brèche dans la coque ! Équipes de réparation d&apos;urgence déployées</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3196"/>
+        <location filename="src/render/battleview.cpp" line="3357"/>
         <source>%1 damaged (%2%)</source>
         <translation>%1 endommagé (%2%)</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3198"/>
+        <location filename="src/render/battleview.cpp" line="3359"/>
         <source>%1 : Error — system offline</source>
         <translation>%1 : Erreur — système hors ligne</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="3431"/>
+        <location filename="src/render/battleview.cpp" line="3592"/>
         <source>OpenGL 3.3 unavailable — 3D view disabled</source>
         <translation>OpenGL 3.3 indisponible — vue 3D désactivée</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4147"/>
+        <location filename="src/render/battleview.cpp" line="4308"/>
         <source>OBSERVATION DECK</source>
         <translation>PONT D&apos;OBSERVATION</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4149"/>
+        <location filename="src/render/battleview.cpp" line="4310"/>
         <source>the crew rests its eyes - &apos;observe off&apos; to go back</source>
         <translation>l&apos;équipage repose ses yeux - &apos;observe off&apos; pour revenir</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4194"/>
+        <location filename="src/render/battleview.cpp" line="4355"/>
         <source>T%1 LOCK</source>
         <translation>T%1 VERROU</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4194"/>
+        <location filename="src/render/battleview.cpp" line="4355"/>
         <source>T%1</source>
         <translation>T%1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4267"/>
+        <location filename="src/render/battleview.cpp" line="4428"/>
         <source>Pulse</source>
         <translation>Impulsion</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4268"/>
+        <location filename="src/render/battleview.cpp" line="4429"/>
         <source>Towers</source>
         <translation>Tours</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4269"/>
+        <location filename="src/render/battleview.cpp" line="4430"/>
         <source>Beam</source>
         <translation>Rayon</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4270"/>
+        <location filename="src/render/battleview.cpp" line="4431"/>
         <source>Drones</source>
         <translation>Drones</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4271"/>
+        <location filename="src/render/battleview.cpp" line="4432"/>
         <source>Missiles</source>
         <translation>Missiles</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4272"/>
+        <location filename="src/render/battleview.cpp" line="4433"/>
         <source>Railguns</source>
         <translation>Railguns</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4316"/>
+        <location filename="src/render/battleview.cpp" line="4477"/>
         <source>HULL</source>
         <translation>COQUE</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4317"/>
+        <location filename="src/render/battleview.cpp" line="4478"/>
         <source> DOWN</source>
         <translation> HS</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4317"/>
+        <location filename="src/render/battleview.cpp" line="4478"/>
         <source> OFF</source>
         <translation> COUPÉ</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4319"/>
+        <location filename="src/render/battleview.cpp" line="4480"/>
         <source>SHIELD</source>
         <translation>BOUCLIER</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4325"/>
+        <location filename="src/render/battleview.cpp" line="4486"/>
         <source>ORGANIC HULL - heals %1%/s</source>
         <translation>COQUE ORGANIQUE - se régénère de %1%/s</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4331"/>
+        <location filename="src/render/battleview.cpp" line="4495"/>
+        <source>POWER</source>
+        <translation>ÉNERGIE</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="4504"/>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
+    <message>
+        <location filename="src/render/battleview.cpp" line="4510"/>
         <source>NO CONTACT</source>
         <translation>AUCUN CONTACT</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4331"/>
+        <location filename="src/render/battleview.cpp" line="4510"/>
         <source>HOSTILES: %1</source>
         <translation>HOSTILES : %1</translation>
     </message>
     <message>
-        <location filename="src/render/battleview.cpp" line="4371"/>
+        <location filename="src/render/battleview.cpp" line="4550"/>
         <source>drag: rotate camera  •  wheel: zoom</source>
         <translation>glisser : tourner la caméra  •  molette : zoom</translation>
     </message>
@@ -2656,262 +2724,267 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation>Usage : target &lt;n&gt; [weapons|shields|engines|hangar|hull]</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="763"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="768"/>
         <source>Cannot engage: %1</source>
         <translation>Intervention impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="773"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="778"/>
         <source>Usage: send &lt;fleet number&gt; &lt;planet&gt; - see &apos;fleets&apos;</source>
         <translation>Usage : send &lt;numéro de flotte&gt; &lt;planète&gt; - voir &apos;fleets&apos;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="775"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="780"/>
         <source>Cannot send the fleet: %1</source>
         <translation>Impossible d&apos;envoyer la flotte : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="786"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="791"/>
         <source>Usage: build fighter|mothership [planet] (%1 / %2 naquadah)</source>
         <translation>Usage : build fighter|mothership [planète] (%1 / %2 naquadah)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="790"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="795"/>
         <source>Cannot build: %1</source>
         <translation>Construction impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="806"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="811"/>
         <source>Unknown command &apos;%1&apos; - type &apos;help&apos;</source>
         <translation>Commande inconnue &apos;%1&apos; - tapez &apos;help&apos;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="819"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="824"/>
         <source>Travel</source>
         <translation>Voyage</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="820"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="825"/>
         <source>fly there (or double click it on the map)</source>
         <translation>y aller (ou double clic sur la carte)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="821"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="826"/>
         <source>list of the worlds / one world</source>
         <translation>liste des mondes / un monde</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="822"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="827"/>
         <source>your faction, resources, flagship</source>
         <translation>ta faction, ressources, vaisseau amiral</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="823"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="828"/>
         <source>Economy</source>
         <translation>Économie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="824"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="829"/>
         <source>+1 defense (naquadah)</source>
         <translation>+1 défense (naquadah)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="825"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="830"/>
         <source>order ships at a shipyard</source>
         <translation>commander des vaisseaux à un chantier</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="826"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="831"/>
         <source>technology tree (also the TECH button)</source>
         <translation>arbre technologique (aussi le bouton TECH)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="827"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="832"/>
         <source>Fleets</source>
         <translation>Flottes</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="828"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="833"/>
         <source>your fleets (they also act on their own)</source>
         <translation>tes flottes (elles agissent aussi seules)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="829"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="834"/>
         <source>order a fleet somewhere</source>
         <translation>envoyer une flotte quelque part</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="830"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="835"/>
         <source>join a battle between two other factions</source>
         <translation>rejoindre une bataille entre deux autres factions</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="831"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="836"/>
         <source>Battle</source>
         <translation>Bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="832"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="837"/>
         <source>main weapon / lock a target</source>
         <translation>arme principale / verrouiller une cible</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="833"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="838"/>
         <source>aim at weapons, shields, engines, hangar</source>
         <translation>viser armes, boucliers, moteurs, hangar</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="834"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="839"/>
         <source>volleys of the towers</source>
         <translation>salves des tours</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="835"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="840"/>
         <source>limited salvos</source>
         <translation>salves limitées</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="836"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="841"/>
         <source>shields / evasive maneuvers</source>
         <translation>boucliers / évitement</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="837"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="842"/>
+        <source>automatic fire of a weapon, or of all</source>
+        <translation>tir automatique d&apos;une arme, ou de toutes</translation>
+    </message>
+    <message>
+        <location filename="src/conquest/conquestscreen.cpp" line="843"/>
         <source>fighters of your hangar</source>
         <translation>chasseurs de ton hangar</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="838"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="844"/>
         <source>energy of the flagship</source>
         <translation>énergie du vaisseau amiral</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="839"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="845"/>
         <source>the last battle again</source>
         <translation>revoir la dernière bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="840"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="846"/>
         <source>every ship, its attacks and chances</source>
         <translation>tous les vaisseaux, leurs attaques et leurs chances</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="841"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="847"/>
         <source>Flagship and crew</source>
         <translation>Vaisseau amiral et équipage</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="842"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="848"/>
         <source>your plan / an enemy mothership&apos;s plan</source>
         <translation>ton plan / le plan d&apos;un vaisseau-mère ennemi</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="843"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="849"/>
         <source>a crew job (trinium); &apos;repair&apos; alone: the hull</source>
         <translation>une tâche de l&apos;équipage (trinium) ; &apos;repair&apos; seul : la coque</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="844"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="850"/>
         <source>repairs / your crew / rest the tired ones</source>
         <translation>réparations / ton équipage / reposer les fatigués</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="845"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="851"/>
         <source>doors and fires</source>
         <translation>portes et incendies</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="846"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="852"/>
         <source>soldiers against boarders</source>
         <translation>des soldats contre les abordeurs</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="847"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="853"/>
         <source>Boarding</source>
         <translation>Abordage</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="848"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="854"/>
         <source>a hangar ship latches onto mothership n</source>
         <translation>un appareil du hangar s&apos;arrime au vaisseau-mère n</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="849"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="855"/>
         <source>take a crippled mothership (it joins you)</source>
         <translation>prendre un vaisseau-mère en perdition (il te rejoint)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="850"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="856"/>
         <source>set a room of mothership n on fire</source>
         <translation>mettre le feu à une salle du vaisseau-mère n</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="851"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="857"/>
         <source>a docked ship, a transport beam (shield down) or the gate (both ships)</source>
         <translation>un appareil arrimé, la téléportation (bouclier tombé) ou la porte (les deux vaisseaux)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="852"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="858"/>
         <source>Diplomacy and intrigue</source>
         <translation>Diplomatie et intrigues</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="853"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="859"/>
         <source>relations, alliances</source>
         <translation>relations, alliances</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="854"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="860"/>
         <source>intelligence by a gate team</source>
         <translation>renseignement par une équipe de porte</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="855"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="861"/>
         <source>strike a world of an enemy</source>
         <translation>frapper un monde ennemi</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="856"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="862"/>
         <source>Game</source>
         <translation>Partie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="857"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="863"/>
         <source>radar, ship and weapon panels</source>
         <translation>radar, panneaux vaisseau et armes</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="858"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="864"/>
         <source>pause, save, settings (Esc)</source>
         <translation>pause, sauvegarde, réglages (Échap)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="859"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="865"/>
         <source>clear the console</source>
         <translation>effacer la console</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="868"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="874"/>
         <source>Help - type &apos;help &lt;category&gt;&apos;</source>
         <translation>Aide - tape &apos;help &lt;catégorie&gt;&apos;</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="877"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="883"/>
         <source>%1: %2...</source>
         <translation>%1 : %2...</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="879"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="885"/>
         <source>completes commands and arguments (plan T2, repair eng...)</source>
         <translation>complète commandes et arguments (plan T2, repair eng...)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="880"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="886"/>
         <source>Win by taking every planet of the enemy factions.</source>
         <translation>Gagne en prenant toutes les planètes des factions ennemies.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="903"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="909"/>
         <source>No help for &apos;%1&apos; - &apos;help&apos; lists the categories</source>
         <translation>Pas d&apos;aide pour &apos;%1&apos; - &apos;help&apos; liste les catégories</translation>
     </message>
@@ -3000,112 +3073,112 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation type="vanished">Vous gagnez en prenant toutes les planètes des factions ennemies. Menu : Échap ou &apos;menu&apos;.</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="951"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="961"/>
         <source>Weapons</source>
         <translation>Armes</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="951"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="961"/>
         <source>Defense</source>
         <translation>Défense</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="951"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="961"/>
         <source>Industry</source>
         <translation>Industrie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="958"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="968"/>
         <source>done</source>
         <translation>terminée</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="961"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="971"/>
         <source>in progress %1%</source>
         <translation>en cours %1%</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="964"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="974"/>
         <source>%1 naquadah, %2 s</source>
         <translation>%1 naquadah, %2 s</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="980"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="990"/>
         <source>No fleet in the galaxy</source>
         <translation>Aucune flotte dans la galaxie</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="986"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="996"/>
         <source> -&gt; %1</source>
         <translation> -&gt; %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="987"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="997"/>
         <source>%1 %2: %3 mothership(s), %4 fighter(s) at %5%6</source>
         <translation>%1 %2 : %3 vaisseau(x)-mère(s), %4 chasseur(s) à %5%6</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="988"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="998"/>
         <source>Fleet %1</source>
         <translation>Flotte %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="989"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="999"/>
         <source>(yours)</source>
         <translation>(à vous)</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1000"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1010"/>
         <source>neutral</source>
         <translation>neutre</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1001"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1011"/>
         <source>yours</source>
         <translation>à vous</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1149"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1159"/>
         <source>Your fleet %1 joins the battle</source>
         <translation>Votre flotte %1 rejoint la bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1150"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1160"/>
         <source>Allied %1 ships join the battle</source>
         <translation>Des vaisseaux %1 alliés rejoignent la bataille</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1153"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1163"/>
         <source>Your fleet %1 is in orbit</source>
         <translation>Ta flotte %1 est en orbite</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1154"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1164"/>
         <source>Allied %1 ships in orbit</source>
         <translation>Vaisseaux alliés (%1) en orbite</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1187"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1197"/>
         <source>Worlds held: %1 of %2</source>
         <translation>Mondes contrôlés : %1 sur %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1188"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1198"/>
         <source>Fleets: %1</source>
         <translation>Flottes : %1</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1189"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1199"/>
         <source>Flagship battles: %1 won, %2 lost</source>
         <translation>Batailles du vaisseau amiral : %1 gagnées, %2 perdues</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1190"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1200"/>
         <source>Technologies: %1 of %2</source>
         <translation>Technologies : %1 sur %2</translation>
     </message>
     <message>
-        <location filename="src/conquest/conquestscreen.cpp" line="1191"/>
+        <location filename="src/conquest/conquestscreen.cpp" line="1201"/>
         <source>Time of this session: %1 min %2 s</source>
         <translation>Durée de cette session : %1 min %2 s</translation>
     </message>
@@ -4282,87 +4355,87 @@ Cible actuelle : %1 | Destructions : %2</translation>
 <context>
     <name>GameMenu</name>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="236"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="237"/>
         <source>Game saved</source>
         <translation>Partie sauvegardée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="236"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="237"/>
         <source>Save failed (no save database)</source>
         <translation>Échec de la sauvegarde (pas de base de sauvegarde)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="249"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="250"/>
         <source>MENU</source>
         <translation>MENU</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="252"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="253"/>
         <source>Pause, save, settings, quit (Esc)</source>
         <translation>Pause, sauvegarde, réglages, quitter (Échap)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="275"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="276"/>
         <source>DESTINY LOST</source>
         <translation>DESTINY PERDU</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="275"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="276"/>
         <source>Ironman: the hull gave way - this journey is over</source>
         <translation>Ironman : la coque a cédé - ce voyage est terminé</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="321"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="322"/>
         <source>Command database unavailable</source>
         <translation>Base des commandes indisponible</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="324"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="325"/>
         <source>Destiny tactical console online</source>
         <translation>Console tactique du Destiny en ligne</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="329"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="330"/>
         <source>Dropped out of FTL in %1 - %2 planet(s), gate window %3 h - type &apos;scansector&apos;</source>
         <translation>Sortie de FTL dans %1 - %2 planète(s), fenêtre de porte %3 h - tapez &apos;scansector&apos;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="333"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="334"/>
         <source>Hostile ships detected - shields up</source>
         <translation>Vaisseaux hostiles détectés - boucliers levés</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="334"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="335"/>
         <source>Type &apos;help&apos; for the command list</source>
         <translation>Tapez &apos;help&apos; pour la liste des commandes</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="423"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="424"/>
         <source>No quest available (no save database)</source>
         <translation>Aucune quête disponible (pas de base de sauvegarde)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="469"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="470"/>
         <source>No hint right now</source>
         <translation>Aucun indice pour le moment</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="469"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="470"/>
         <source>Hint: %1</source>
         <translation>Indice : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="481"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="482"/>
         <source>Did you mean &apos;%1&apos;? (&apos;help %1&apos; for details)</source>
         <translation>Vouliez-vous dire &apos;%1&apos; ? (&apos;help %1&apos; pour les détails)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="495"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="496"/>
         <source>Usage: target &lt;n&gt; [weapons|shields|engines|hangar|hull]</source>
         <translation>Usage : target &lt;n&gt; [weapons|shields|engines|hangar|hull]</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="534"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="542"/>
         <source>Missing: %1</source>
         <translation>Manque : %1</translation>
     </message>
@@ -4425,7 +4498,7 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation type="vanished">Équipe d&apos;abordage partie (chance de succès %1%)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="161"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="162"/>
         <source>Salvage from the captured ship: %1</source>
         <translation>Butin du vaisseau capturé : %1</translation>
     </message>
@@ -4608,413 +4681,413 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation>L&apos;équipe de sabotage a été repérée (%1 de T%2) et se replie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="579"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="587"/>
         <source>No decision is waiting</source>
         <translation>Aucune décision en attente</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="581"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="589"/>
         <source>Choose an option between 1 and %1</source>
         <translation>Choisis une option entre 1 et %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="590"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="598"/>
         <source>The communication stones need %1 h more to link with Earth</source>
         <translation>Les pierres de communication ont besoin de %1 h de plus pour se relier à la Terre</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="595"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="603"/>
         <source>Communication stones: a crew member swaps body with someone on Earth...</source>
         <translation>Pierres de communication : un membre d&apos;équipage échange son corps avec quelqu&apos;un sur Terre...</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="602"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="610"/>
         <source>Usage: kino &lt;address&gt; - a planet of this system (&apos;scansector&apos;), kino build</source>
         <translation>Usage : kino &lt;adresse&gt; - une planète de ce système (&apos;scansector&apos;), kino build</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="608"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="616"/>
         <source>Six Kinos already</source>
         <translation>Déjà six Kinos</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="610"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="618"/>
         <source>Kino assembled (%1)</source>
         <translation>Kino assemblé (%1)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="614"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="622"/>
         <source>No Kino left - they are rebuilt from minerals (&apos;kino build&apos;, 4 minerals)</source>
         <translation>Plus de Kino - on en refait avec des minerais (&apos;kino build&apos;, 4 minerais)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="620"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="628"/>
         <source>Kino on %1 &quot;%2&quot;: air %3, toxicity %4, radiation %5, %6</source>
         <translation>Kino sur %1 &quot;%2&quot; : air %3, toxicité %4, radiations %5, %6</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="622"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="630"/>
         <source>life signs</source>
         <translation>signes de vie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="622"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="630"/>
         <source>no life</source>
         <translation>pas de vie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="625"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="633"/>
         <source>minerals (railgun slugs)</source>
         <translation>minerais (obus de railgun)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="626"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="634"/>
         <source>naquadah (missiles)</source>
         <translation>naquadah (missiles)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="627"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="635"/>
         <source>water</source>
         <translation>eau</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="628"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="636"/>
         <source>food</source>
         <translation>nourriture</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="629"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="637"/>
         <source>an Ancient structure (drones, blueprints?)</source>
         <translation>une structure des Anciens (drones, plans ?)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="630"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="638"/>
         <source>Nothing worth the trip</source>
         <translation>Rien qui vaille le voyage</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="630"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="638"/>
         <source>Worth it: %1</source>
         <translation>Ça vaut le coup : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="633"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="641"/>
         <source>No Stargate there: the Puddle Jumper can fly (&apos;jumper %1&apos;)</source>
         <translation>Pas de porte là-bas : le Puddle Jumper peut y aller (&apos;jumper %1&apos;)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="639"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="647"/>
         <source>The Kino stopped transmitting (%1 left)</source>
         <translation>Le Kino a cessé d&apos;émettre (%1 restants)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="645"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="653"/>
         <source>Usage: jumper &lt;address&gt; - fly a team to a planet of the system, even without a gate (2 naquadah of fuel)</source>
         <translation>Usage : jumper &lt;adresse&gt; - emmène une équipe sur une planète du système, même sans porte (2 naquadah de carburant)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="652"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="660"/>
         <source>No planet at %1 in this system</source>
         <translation>Pas de planète %1 dans ce système</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="654"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="662"/>
         <source>Too dangerous with hostile ships around</source>
         <translation>Trop dangereux avec des vaisseaux hostiles autour</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="656"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="664"/>
         <source>No Puddle Jumper in the hangar</source>
         <translation>Pas de Puddle Jumper au hangar</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="660"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="668"/>
         <source>Flight impossible: %1</source>
         <translation>Vol impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="664"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="672"/>
         <source>The Puddle Jumper lands on %1 &quot;%2&quot; - &apos;explore&apos;, then &apos;stargate destiny&apos; to fly back</source>
         <translation>Le Puddle Jumper se pose sur %1 &quot;%2&quot; - &apos;explore&apos;, puis &apos;stargate destiny&apos; pour revenir</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="674"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="682"/>
         <source>No wreck to salvage - win a battle first</source>
         <translation>Aucune épave à récupérer - gagne d&apos;abord une bataille</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="676"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="684"/>
         <source>Not under fire</source>
         <translation>Pas sous le feu</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="681"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="689"/>
         <source>Wrecks salvaged: %1</source>
         <translation>Épaves récupérées : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="700"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="708"/>
         <source>The observation deck is not usable</source>
         <translation>Le pont d&apos;observation est inutilisable</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="704"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="712"/>
         <source>The crew gathers on the observation deck - morale rises while you watch</source>
         <translation>L&apos;équipage se réunit au pont d&apos;observation - le moral monte pendant que vous regardez</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="711"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="719"/>
         <source>Journey: %1 jump(s), %2 planet(s) explored, %3 battle(s), %4 kill(s) (%5 motherships), best accuracy %6%, %7 fire(s) put out, %8 capture(s)</source>
         <translation>Voyage : %1 saut(s), %2 planète(s) explorée(s), %3 bataille(s), %4 destruction(s) (%5 vaisseaux-mères), meilleure précision %6%, %7 incendie(s) éteint(s), %8 capture(s)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="716"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="724"/>
         <source>Universe seed %1 - day %2</source>
         <translation>Graine de l&apos;univers %1 - jour %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="731"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="739"/>
         <source>%1/%2 achievements</source>
         <translation>%1/%2 succès</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="736"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="744"/>
         <source>No battle to replay yet</source>
         <translation>Aucune bataille à revoir pour l&apos;instant</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="749"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="757"/>
         <source>Mods folder: %1</source>
         <translation>Dossier des mods : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="751"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="759"/>
         <source>No mod loaded - put JSON files there (see rcs/mods/example_mod.json)</source>
         <translation>Aucun mod chargé - mets-y des fichiers JSON (voir rcs/mods/example_mod.json)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="759"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="767"/>
         <source>Universe seed: %1 (0 = classic). Set &quot;seed&quot; in config.json for the next new journey.</source>
         <translation>Graine de l&apos;univers : %1 (0 = classique). Mets &quot;seed&quot; dans config.json pour le prochain voyage.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="771"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="779"/>
         <source>DECISION - %1: %2</source>
         <translation>DÉCISION - %1 : %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="774"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="782"/>
         <source>Type &apos;choose &lt;n&gt;&apos; (90 s, then the crew decides alone)</source>
         <translation>Tape &apos;choose &lt;n&gt;&apos; (90 s, puis l&apos;équipage décide seul)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="811"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="819"/>
         <source>morale %1%2</source>
         <translation>moral %1%2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="824"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="832"/>
         <source>hull -%1%</source>
         <translation>coque -%1%</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="827"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="835"/>
         <source>%1 crew member(s) out of duty</source>
         <translation>%1 membre(s) d&apos;équipage indisponible(s)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="863"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="871"/>
         <source>ACHIEVEMENT UNLOCKED: %1 - %2</source>
         <translation>SUCCÈS DÉBLOQUÉ : %1 - %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="886"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="894"/>
         <source>%1 wreck(s) drifting nearby - &apos;salvage&apos; before they scatter</source>
         <translation>%1 épave(s) dérivent tout près - &apos;salvage&apos; avant qu&apos;elles se dispersent</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="897"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="905"/>
         <source>Days aboard: %1</source>
         <translation>Jours à bord : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="898"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="906"/>
         <source>FTL jumps: %1 - planets explored: %2</source>
         <translation>Sauts FTL : %1 - planètes explorées : %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="899"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="907"/>
         <source>Ships destroyed: %1 (%2 motherships)</source>
         <translation>Vaisseaux détruits : %1 (%2 vaisseaux-mères)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="900"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="908"/>
         <source>Crew: %1 - morale %2%</source>
         <translation>Équipage : %1 - moral %2%</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="901"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="909"/>
         <source>Universe seed: %1</source>
         <translation>Graine de l&apos;univers : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="958"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="966"/>
         <source>No detailed help for &apos;%1&apos; - topics: %2</source>
         <translation>Pas d&apos;aide détaillée pour &apos;%1&apos; - sujets : %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1011"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1019"/>
         <source>Co-op closed</source>
         <translation>Coop fermée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1017"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1025"/>
         <source>Usage: coop host [tactical|engineering] [port]</source>
         <translation>Usage : coop host [tactical|engineering] [port]</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1024"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1032"/>
         <source>Co-pilot aboard (%1) at the %2 station</source>
         <translation>Copilote à bord (%1) au poste %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1030"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1038"/>
         <source>The co-pilot left the ship</source>
         <translation>Le copilote a quitté le vaisseau</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1033"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1041"/>
         <source>[co-pilot] %1</source>
         <translation>[copilote] %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1037"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1045"/>
         <source>[co-pilot] &apos;%1&apos; refused: not their station</source>
         <translation>[copilote] &apos;%1&apos; refusé : pas son poste</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1047"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1055"/>
         <source>Co-op impossible: %1</source>
         <translation>Coop impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1050"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1058"/>
         <source>Co-op open on port %1 - the co-pilot joins from the title screen with: %2</source>
         <translation>Coop ouverte sur le port %1 - le copilote rejoint depuis l&apos;écran titre avec : %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1054"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1062"/>
         <source>Co-pilot station: %1 (%2)</source>
         <translation>Poste du copilote : %1 (%2)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1059"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1067"/>
         <source>Co-op open on port %1 - %2</source>
         <translation>Coop ouverte sur le port %1 - %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1060"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1068"/>
         <source>co-pilot aboard</source>
         <translation>copilote à bord</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1060"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1068"/>
         <source>waiting for a co-pilot</source>
         <translation>en attente d&apos;un copilote</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1061"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1069"/>
         <source>Co-op: coop host [tactical|engineering] [port], coop stop</source>
         <translation>Coop : coop host [tactical|engineering] [port], coop stop</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1069"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1077"/>
         <source>HULL %1%   SHIELD %2%%3</source>
         <translation>COQUE %1%   BOUCLIER %2%%3</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1070"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1078"/>
         <source> (off)</source>
         <translation> (coupé)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1077"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1085"/>
         <source>HOSTILES %1   KILLS %2   TARGET %3</source>
         <translation>HOSTILES %1   DESTRUCTIONS %2   CIBLE %3</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1080"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1088"/>
         <source>none</source>
         <translation>aucune</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1081"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1089"/>
         <source>MAIN %1   PULSE %2   RAILGUNS %3 rounds, heat %4%   MISSILES %5   DRONES %6</source>
         <translation>PRINCIPALE %1   IMPULSION %2   RAILGUNS %3 obus, chaleur %4%   MISSILES %5   DRONES %6</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1082"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1083"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1090"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1091"/>
         <source>ready</source>
         <translation>prête</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1090"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1098"/>
         <source>CREW %1   MORALE %2%   FREE HANDS %3   JOBS %4   FIRES %5   BREACHES %6   BOARDERS %7</source>
         <translation>ÉQUIPAGE %1   MORAL %2%   BRAS LIBRES %3   TÂCHES %4   FEUX %5   BRÈCHES %6   ABORDEURS %7</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1096"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1104"/>
         <source> FIRE</source>
         <translation> FEU</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1096"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1104"/>
         <source> BREACH</source>
         <translation> BRÈCHE</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1097"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1105"/>
         <source> LEAK</source>
         <translation> FUITE</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1098"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1106"/>
         <source> %1 BOARDERS</source>
         <translation> %1 ABORDEURS</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1239"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1251"/>
         <source>Sublight engines engaged</source>
         <translation>Moteurs subluminiques engagés</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1255"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1267"/>
         <source>Door %1 closed: success</source>
         <translation>Porte %1 fermée : succès</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1258"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1270"/>
         <source>Order acknowledged: %1 (not simulated yet)</source>
         <translation>Ordre reçu : %1 (pas encore simulé)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1267"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1279"/>
         <source>Help - type &apos;help &lt;category&gt;&apos; or &apos;help &lt;command&gt;&apos;</source>
         <translation>Aide - tape &apos;help &lt;catégorie&gt;&apos; ou &apos;help &lt;commande&gt;&apos;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1276"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1288"/>
         <source>%1: %2...</source>
         <translation>%1 : %2...</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1278"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1290"/>
         <source>completes the command and its arguments (repair inf -&gt; repair infirmary)</source>
         <translation>complète la commande et ses arguments (repair inf -&gt; repair infirmary)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1279"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1291"/>
         <source>previous commands</source>
         <translation>commandes précédentes</translation>
     </message>
@@ -5087,57 +5160,57 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation type="vanished">Les réparations coûtent des ressources (showressource) ; &lt;n&gt; = numéro de cible affiché T1, T2…</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1339"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1351"/>
         <source>Music: no audio output available</source>
         <translation>Musique : aucune sortie audio disponible</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1353"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1365"/>
         <source>Usage: music on | off | &lt;0-100&gt;</source>
         <translation>Usage : music on | off | &lt;0-100&gt;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1365"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1377"/>
         <source>Sound: no audio output available</source>
         <translation>Son : aucune sortie audio disponible</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1379"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1391"/>
         <source>Usage: sound on | off | &lt;0-100&gt;</source>
         <translation>Usage : sound on | off | &lt;0-100&gt;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1384"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1396"/>
         <source>Sound: off</source>
         <translation>Son : coupé</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1399"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1411"/>
         <source>Ship library: %1</source>
         <translation>Bibliothèque des vaisseaux : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1403"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1415"/>
         <source>Unknown ship &apos;%1&apos; - type &apos;library&apos; for the list</source>
         <translation>Vaisseau inconnu &apos;%1&apos; - tapez &apos;library&apos; pour la liste</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1418"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1430"/>
         <source>No save database - progress will not be kept</source>
         <translation>Pas de base de sauvegarde - la progression ne sera pas conservée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1442"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1454"/>
         <source>Ship library unavailable - built-in enemies only</source>
         <translation>Bibliothèque des vaisseaux indisponible - ennemis intégrés uniquement</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1451"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1463"/>
         <source>Salvage recovered: %1</source>
         <translation>Récupération : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1454"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1466"/>
         <source>Ship data loaded: %1 components aboard</source>
         <translation>Données du vaisseau chargées : %1 composants à bord</translation>
     </message>
@@ -5171,57 +5244,57 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation>Réparation #%1 commencée (%2 personne(s))</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1462"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1474"/>
         <source>No save database</source>
         <translation>Pas de base de sauvegarde</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1507"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1519"/>
         <source>The wrecks drifted out of reach</source>
         <translation>Les épaves ont dérivé hors de portée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1520"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1532"/>
         <source>%1 wearing out (%2%) - schedule maintenance: &apos;repair %1&apos;</source>
         <translation>%1 s&apos;use (%2%) - prévois une maintenance : &apos;repair %1&apos;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1556"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1568"/>
         <source>Supplies exhausted: water or food missing - crew in danger</source>
         <translation>Réserves épuisées : eau ou nourriture manquante - équipage en danger</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1563"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1575"/>
         <source>A crew member died of deprivation (%1 left)</source>
         <translation>Un membre d&apos;équipage est mort de privations (%1 restants)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1569"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1581"/>
         <source>Supplies restored</source>
         <translation>Réserves rétablies</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1575"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1587"/>
         <source>Water reserves low (%1) - find a planet with water</source>
         <translation>Réserves d&apos;eau basses (%1) - trouvez une planète avec de l&apos;eau</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1578"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1590"/>
         <source>Food reserves low (%1) - find a planet with organics</source>
         <translation>Réserves de nourriture basses (%1) - trouvez une planète avec des matières organiques</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1593"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1605"/>
         <source>G%1 %2 - SYSTEM %3</source>
         <translation>G%1 %2 - SYSTÈME %3</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1597"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1609"/>
         <source>FTL %1   POWER %2</source>
         <translation>FTL %1   ÉNERGIE %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1600"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1612"/>
         <source>VIEW %1 &quot;%2&quot; %3</source>
         <translation>VUE %1 &quot;%2&quot; %3</translation>
     </message>
@@ -5230,120 +5303,120 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation type="vanished">PORTE OUVERTE %1 h</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1607"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1619"/>
         <source>GATE CLOSED</source>
         <translation>PORTE FERMÉE</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1609"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1621"/>
         <source>  TEAM ON %1</source>
         <translation>  ÉQUIPE SUR %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1612"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1624"/>
         <source>CREW %1</source>
         <translation>ÉQUIPAGE %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1614"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1626"/>
         <source>   WATER %1   FOOD %2</source>
         <translation>   EAU %1   VIVRES %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1618"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1630"/>
         <source>DAY %1  %2:%3</source>
         <translation>JOUR %1  %2:%3</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1673"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1685"/>
         <source>Progress cannot be saved (no session)</source>
         <translation>La progression ne peut pas être sauvegardée (pas de session)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1684"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1696"/>
         <source>New journey - progress is saved automatically (&apos;save&apos; to force it)</source>
         <translation>Nouveau voyage - la progression est sauvegardée automatiquement (&apos;save&apos; pour forcer)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1722"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1734"/>
         <source>Game restored: day %1, G%2 %3 system %4, crew %5</source>
         <translation>Partie restaurée : jour %1, G%2 %3 système %4, équipage %5</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1735"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1747"/>
         <source>No save database - cannot save</source>
         <translation>Pas de base de sauvegarde - impossible de sauvegarder</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1771"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1783"/>
         <source>Game saved (day %1)</source>
         <translation>Partie sauvegardée (jour %1)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1771"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1783"/>
         <source>Save failed</source>
         <translation>Échec de la sauvegarde</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1807"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1819"/>
         <source>Emergency drop: life support and sublight engines damaged</source>
         <translation>Sortie d&apos;urgence : support vital et moteurs subluminiques endommagés</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1810"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1822"/>
         <source>New quest: %1 - %2</source>
         <translation>Nouvelle quête : %1 - %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1814"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1826"/>
         <source>Objective complete: %1</source>
         <translation>Objectif accompli : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1819"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1831"/>
         <source>Quest complete: %1</source>
         <translation>Quête terminée : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1822"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1834"/>
         <source>Reward: %1</source>
         <translation>Récompense : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1826"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1838"/>
         <source>Tutorial campaign complete - the Destiny is yours to command</source>
         <translation>Campagne tutoriel terminée - le Destiny est sous votre commandement</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1835"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1847"/>
         <source>Hint: %1  (&apos;quests&apos; for the journal)</source>
         <translation>Indice : %1  (&apos;quests&apos; pour le journal)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1853"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1865"/>
         <source>The FTL drive is already spooling (&apos;ftl abort&apos; to cancel)</source>
         <translation>Le moteur FTL charge déjà (&apos;ftl abort&apos; pour annuler)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1858"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1876"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1882"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1870"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1888"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1894"/>
         <source>FTL jump impossible: %1</source>
         <translation>Saut FTL impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1888"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1900"/>
         <source>FTL jump - the Destiny enters hyperspace</source>
         <translation>Saut FTL - le Destiny entre en hyperespace</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1898"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1910"/>
         <source>Transit: %1 - %2</source>
         <translation>Transit : %1 - %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="815"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1902"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="823"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1914"/>
         <source>power %1%2%</source>
         <translation>énergie %1%2%</translation>
     </message>
@@ -5399,259 +5472,264 @@ Cible actuelle : %1 | Destructions : %2</translation>
     </message>
     <message>
         <location filename="src/Menu/gamemenu/gamemenu.cpp" line="74"/>
+        <source>automatic fire: main, pulse, missiles, drones, towers, railguns</source>
+        <translation>tir automatique : main, pulse, missiles, drones, towers, railguns</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="75"/>
         <source>fighters out of the hangar</source>
         <translation>sortir les chasseurs du hangar</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="75"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="76"/>
         <source>capture a crippled mothership</source>
         <translation>capturer un vaisseau-mère en perdition</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="76"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="77"/>
         <source>watch the last battle again</source>
         <translation>revoir la dernière bataille</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="77"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="78"/>
         <source>Energy</source>
         <translation>Énergie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="78"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="79"/>
         <source>report of the power use</source>
         <translation>rapport sur l&apos;usage de l&apos;énergie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="79"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="80"/>
         <source>where the spare power goes</source>
         <translation>où va l&apos;énergie en surplus</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="80"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="81"/>
         <source>automatic towers (free their power)</source>
         <translation>tours automatiques (libèrent leur énergie)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="81"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="82"/>
         <source>point defense against missiles</source>
         <translation>défense rapprochée contre les missiles</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="82"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="83"/>
         <source>dive into a star to refill (shields up!)</source>
         <translation>plonger dans une étoile pour recharger (boucliers levés !)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="83"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="84"/>
         <source>Ship</source>
         <translation>Vaisseau</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="84"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="85"/>
         <source>plan of the compartments: fires, air, breaches</source>
         <translation>plan des compartiments : feux, air, brèches</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="85"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="86"/>
         <source>a repair job for the crew</source>
         <translation>une réparation pour l&apos;équipage</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="86"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="87"/>
         <source>repairs under way / stop one</source>
         <translation>réparations en cours / en arrêter une</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="87"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="88"/>
         <source>close or open its doors</source>
         <translation>fermer ou ouvrir ses portes</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="88"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="89"/>
         <source>open it to space: the fire dies</source>
         <translation>l&apos;ouvrir sur l&apos;espace : le feu s&apos;éteint</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="89"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="90"/>
         <source>reopen a closed section</source>
         <translation>rouvrir une section fermée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="90"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="91"/>
         <source>build a module (&apos;blueprints&apos;)</source>
         <translation>construire un module (&apos;blueprints&apos;)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="91"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="92"/>
         <source>soldiers against boarders</source>
         <translation>des soldats contre les abordeurs</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="92"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="93"/>
         <source>hull, shields and systems</source>
         <translation>coque, boucliers et systèmes</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="93"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="94"/>
         <source>weapons, target, ammunition</source>
         <translation>armes, cible, munitions</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="94"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="95"/>
         <source>resources in the stores</source>
         <translation>ressources en réserve</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="95"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="96"/>
         <source>Crew</source>
         <translation>Équipage</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="96"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="97"/>
         <source>who does what, fatigue, injuries</source>
         <translation>qui fait quoi, fatigue, blessures</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="97"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="98"/>
         <source>send someone to rest</source>
         <translation>envoyer quelqu&apos;un se reposer</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="98"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="99"/>
         <source>every tired crew member rests</source>
         <translation>tous les fatigués se reposent</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="99"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="100"/>
         <source>Exploration</source>
         <translation>Exploration</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="100"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="101"/>
         <source>planets of the system and their addresses</source>
         <translation>planètes du système et leurs adresses</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="101"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="102"/>
         <source>scout a planet first</source>
         <translation>éclairer une planète d&apos;abord</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="102"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="103"/>
         <source>send a team through the gate</source>
         <translation>envoyer une équipe par la porte</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="103"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="104"/>
         <source>fly a team there (planets without gate)</source>
         <translation>y emmener une équipe en vol (planètes sans porte)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="104"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="105"/>
         <source>search the planet for resources</source>
         <translation>fouiller la planète pour des ressources</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="105"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="106"/>
         <source>bring the team back</source>
         <translation>ramener l&apos;équipe</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="106"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="107"/>
         <source>jump to the next system / cancel</source>
         <translation>sauter au système suivant / annuler</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="107"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="108"/>
         <source>recover the wrecks after a battle</source>
         <translation>récupérer les épaves après une bataille</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="108"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="109"/>
         <source>Life aboard</source>
         <translation>Vie à bord</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="109"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="110"/>
         <source>answer a decision</source>
         <translation>répondre à une décision</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="110"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="111"/>
         <source>communication stones (once a day)</source>
         <translation>pierres de communication (une fois par jour)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="111"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="112"/>
         <source>observation deck (morale)</source>
         <translation>pont d&apos;observation (moral)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="112"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="113"/>
         <source>objectives / what to do next</source>
         <translation>objectifs / quoi faire ensuite</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="113"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="114"/>
         <source>journey statistics / achievements</source>
         <translation>stats du voyage / succès</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="114"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="115"/>
         <source>Game</source>
         <translation>Partie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="115"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="116"/>
         <source>save now (also automatic)</source>
         <translation>sauvegarder maintenant (aussi automatique)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="116"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="117"/>
         <source>pause, settings, quit (Esc)</source>
         <translation>pause, réglages, quitter (Échap)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="117"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="118"/>
         <source>every ship, its attacks and chances</source>
         <translation>tous les vaisseaux, leurs attaques et leurs chances</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="118"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="119"/>
         <source>a second player as co-pilot</source>
         <translation>un second joueur comme copilote</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="119"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="120"/>
         <source>loaded mods / universe seed</source>
         <translation>mods chargés / graine de l&apos;univers</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="120"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="121"/>
         <source>volume</source>
         <translation>volume</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="121"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="122"/>
         <source>clear the console</source>
         <translation>effacer la console</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="819"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1904"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="827"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1916"/>
         <source>FTL charge %1%2%</source>
         <translation>charge FTL %1%2%</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="807"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1906"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="815"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1918"/>
         <source>crew %1%2</source>
         <translation>équipage %1%2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="850"/>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1912"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="858"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1924"/>
         <source>Effects: %1</source>
         <translation>Effets : %1</translation>
     </message>
@@ -5664,196 +5742,196 @@ Cible actuelle : %1 | Destructions : %2</translation>
         <translation type="vanished">Coop : coop host [tactical|engineering] - un second joueur prend un poste depuis l&apos;écran titre</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1605"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1617"/>
         <source>GATE OPEN %1 h (%2:%3)</source>
         <translation>PORTE OUVERTE %1 h (%2:%3)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1623"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1635"/>
         <source>IRONMAN</source>
         <translation>IRONMAN</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1625"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1637"/>
         <source>DECISION WAITING - &apos;choose &lt;n&gt;&apos;</source>
         <translation>DÉCISION EN ATTENTE - &apos;choose &lt;n&gt;&apos;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1686"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1698"/>
         <source>IRONMAN: a single save, lost with the ship</source>
         <translation>IRONMAN : une seule sauvegarde, perdue avec le vaisseau</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1928"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1940"/>
         <source>Dropped out of FTL: G%1 %2, system %3 - %4 planet(s), gate window %5 h</source>
         <translation>Sortie de FTL : G%1 %2, système %3 - %4 planète(s), fenêtre de porte %5 h</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1940"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1952"/>
         <source>DESTINY&apos;S PURPOSE</source>
         <translation>LE BUT DU DESTINY</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1941"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1953"/>
         <source>The Destiny reached the source of the signal at the edge of the universe</source>
         <translation>Le Destiny a atteint la source du signal, au bord de l&apos;univers</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1952"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1964"/>
         <source>The star of this system is not suitable - jump on and try further</source>
         <translation>L&apos;étoile de ce système ne convient pas - saute et essaie plus loin</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1957"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1969"/>
         <source>Already recharged in this star</source>
         <translation>Déjà rechargé dans cette étoile</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1961"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1973"/>
         <source>Not under fire - clear the sector first</source>
         <translation>Pas sous le feu - nettoie d&apos;abord le secteur</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1977"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1989"/>
         <source>Dive into the star: power %1%, FTL charge +50%</source>
         <translation>Plongée dans l&apos;étoile : énergie %1%, charge FTL +50%</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1980"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1992"/>
         <source>The shields could not hold the heat: hull -%1%</source>
         <translation>Les boucliers n&apos;ont pas tenu la chaleur : coque -%1%</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1990"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2002"/>
         <source>Gate dialed home - the team is back aboard the Destiny</source>
         <translation>Porte composée vers le Destiny - l&apos;équipe est de retour à bord</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="1994"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2006"/>
         <source>Recall impossible: %1</source>
         <translation>Rappel impossible : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2002"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2014"/>
         <source>No gate answers at %1 - addresses of this system: &apos;scansector&apos;</source>
         <translation>Aucune porte ne répond à %1 - adresses de ce système : &apos;scansector&apos;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2008"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2020"/>
         <source>Dialing failed: %1</source>
         <translation>Échec de la composition : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2014"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2026"/>
         <source>Chevron 7 locked - team deployed on %1 &quot;%2&quot; (%3)</source>
         <translation>Chevron 7 enclenché - équipe déployée sur %1 &quot;%2&quot; (%3)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2018"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2030"/>
         <source>Hazardous environment: toxicity %1, radiation %2</source>
         <translation>Environnement dangereux : toxicité %1, radiation %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2021"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2033"/>
         <source>Type &apos;explore&apos; to search for resources, &apos;stargate destiny&apos; to come back</source>
         <translation>Tapez &apos;explore&apos; pour chercher des ressources, &apos;stargate destiny&apos; pour revenir</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2030"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2042"/>
         <source>No team deployed - dial a planet first (&apos;stargate &lt;address&gt;&apos;)</source>
         <translation>Aucune équipe déployée - composez d&apos;abord une planète (&apos;stargate &lt;adresse&gt;&apos;)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2036"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2048"/>
         <source>%1 already explored - nothing more to find</source>
         <translation>%1 déjà explorée - plus rien à trouver</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2043"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2055"/>
         <source>no save database</source>
         <translation>pas de base de sauvegarde</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2044"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2056"/>
         <source>Exploration of %1: %2</source>
         <translation>Exploration de %1 : %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2046"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2058"/>
         <source>Ancient site found: &quot;%1&quot;</source>
         <translation>Site des Anciens découvert : &quot;%1&quot;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2053"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2065"/>
         <source>%1 railgun slugs</source>
         <translation>%1 obus de railgun</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2058"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2070"/>
         <source>%1 missile(s)</source>
         <translation>%1 missile(s)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2069"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2081"/>
         <source>%1 drone salvo(s) from an Ancient cache</source>
         <translation>%1 salve(s) de drones d&apos;une cache des Anciens</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2072"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2084"/>
         <source>Supplies loaded: %1</source>
         <translation>Ravitaillement chargé : %1</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2080"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2092"/>
         <source>A team member was lost on the hostile surface (crew %1)</source>
         <translation>Un membre de l&apos;équipe a été perdu sur la surface hostile (équipage %1)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2090"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2102"/>
         <source>System G%1-%2 (%3) - gate window %4</source>
         <translation>Système G%1-%2 (%3) - fenêtre de porte %4</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2094"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2106"/>
         <source>open %1 h</source>
         <translation>ouverte %1 h</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2094"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2106"/>
         <source>closed</source>
         <translation>fermée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2097"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2109"/>
         <source>
 %1 &quot;%2&quot; %3 - address %4</source>
         <translation>
 %1 &quot;%2&quot; %3 - adresse %4</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2099"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2111"/>
         <source> [TEAM]</source>
         <translation> [ÉQUIPE]</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2101"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2113"/>
         <source> [explored]</source>
         <translation> [explorée]</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2103"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2115"/>
         <source>
    water %1  O2 %2  minerals %3  energy %4  organics %5  | toxicity %6  radiation %7%8</source>
         <translation>
    eau %1  O2 %2  minéraux %3  énergie %4  organique %5  | toxicité %6  radiation %7%8</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2106"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2118"/>
         <source>  | life signs</source>
         <translation>  | signes de vie</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2115"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="2127"/>
         <source>Route stop %1/%2 | Crew %3 | Power %4 | FTL %5 | Planets discovered: %6</source>
         <translation>Étape %1/%2 | Équipage %3 | Énergie %4 | FTL %5 | Planètes découvertes : %6</translation>
     </message>
@@ -5861,77 +5939,77 @@ Cible actuelle : %1 | Destructions : %2</translation>
 <context>
     <name>GameMenuHelp</name>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="916"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="924"/>
         <source>repair &lt;system|hull|room&gt;: the crew starts a repair job (resources paid at once, work takes time).</source>
         <translation>repair &lt;système|hull|salle&gt; : l&apos;équipage lance une réparation (ressources payées tout de suite, le travail prend du temps).</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="917"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="925"/>
         <source>Systems: engines, shields, weapons, lifesupport, sensors. Rooms: see &apos;plan&apos; (fire, breach, leak first).</source>
         <translation>Systèmes : engines, shields, weapons, lifesupport, sensors. Salles : voir &apos;plan&apos; (feu, brèche, fuite d&apos;abord).</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="918"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="926"/>
         <source>Jobs run in parallel only with free hands: &apos;jobs&apos;, &apos;cancel &lt;n&gt;&apos;, &apos;crew rotate&apos;.</source>
         <translation>Les tâches avancent en parallèle seulement avec des bras libres : &apos;jobs&apos;, &apos;cancel &lt;n&gt;&apos;, &apos;crew rotate&apos;.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="919"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="927"/>
         <source>target &lt;n&gt; &lt;weapons|shields|engines|hangar|hull&gt;: aim the main weapon, missiles and drones at a subsystem.</source>
         <translation>target &lt;n&gt; &lt;weapons|shields|engines|hangar|hull&gt; : l&apos;arme principale, les missiles et les drones visent un sous-système.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="920"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="928"/>
         <source>Harder to hit (x0.8) but it knocks it out: no fire, no shield, slow ship, no launches.</source>
         <translation>Plus dur à toucher (x0,8) mais il le met hors service : plus de tirs, plus de bouclier, vaisseau lent, plus de lancements.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="921"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="929"/>
         <source>seal &lt;room&gt; / unseal &lt;room&gt;: close the doors (fires and air do not pass).</source>
         <translation>seal &lt;salle&gt; / unseal &lt;salle&gt; : ferme les portes (ni feu ni air ne passent).</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="922"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="930"/>
         <source>vent &lt;room&gt;: open it to space - the fire dies, people and boarders inside suffer.</source>
         <translation>vent &lt;salle&gt; : l&apos;ouvre sur l&apos;espace - le feu meurt, les gens et les abordeurs dedans souffrent.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="923"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="931"/>
         <source>crew: list of the crew (bonus, fatigue, job). crew rest &lt;name&gt;, crew rotate (tired ones rest).</source>
         <translation>crew : liste de l&apos;équipage (bonus, fatigue, tâche). crew rest &lt;nom&gt;, crew rotate (les fatigués se reposent).</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="924"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="932"/>
         <source>Injured people heal in the infirmary; key characters lose their bonus meanwhile.</source>
         <translation>Les blessés guérissent à l&apos;infirmerie ; les personnages clés perdent leur bonus pendant ce temps.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="925"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="933"/>
         <source>engine ftl: jump when the FTL drive is charged. Under fire it spools 10 s (7 s with Rush).</source>
         <translation>engine ftl : saute quand le FTL est chargé. Sous le feu il charge 10 s (7 s avec Rush).</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="926"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="934"/>
         <source>Fighters outside dock first; those too far are left behind. ftl abort cancels.</source>
         <translation>Les chasseurs dehors rentrent d&apos;abord ; ceux trop loin sont abandonnés. ftl abort annule.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="927"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="935"/>
         <source>power: report. turrets on|off, railguns on|off, evade on|off, power shields|weapons|balanced.</source>
         <translation>power : rapport. turrets on|off, railguns on|off, evade on|off, power shields|weapons|balanced.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="928"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="936"/>
         <source>Drones need free power. Leaks lower the power; if it runs short the lowest priorities are shed.</source>
         <translation>Les drones demandent de l&apos;énergie libre. Les fuites la réduisent ; si elle manque, les priorités les plus basses sont délestées.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="929"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="937"/>
         <source>scansector: planets of the system. kino &lt;address&gt;: scout first. stargate &lt;address&gt; or jumper &lt;address&gt;.</source>
         <translation>scansector : planètes du système. kino &lt;adresse&gt; : éclaire d&apos;abord. stargate &lt;adresse&gt; ou jumper &lt;adresse&gt;.</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="930"/>
+        <location filename="src/Menu/gamemenu/gamemenu.cpp" line="938"/>
         <source>explore: collect (minerals = slugs, naquadah = missiles, Ancient sites = drones/blueprints).</source>
         <translation>explore : collecte (minerais = obus, naquadah = missiles, sites anciens = drones/plans).</translation>
     </message>
@@ -7733,103 +7811,123 @@ TÂCHES %3   FEUX %4   BRÈCHES %5
 <context>
     <name>WeaponStatusWidget</name>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="95"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="96"/>
         <source>WEAPONS</source>
         <translation>ARMES</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="98"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="99"/>
         <source>HOSTILES %1   KILLS %2</source>
         <translation>HOSTILES %1   DÉTRUITS %2</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="131"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="132"/>
         <source>MAIN TOWER</source>
         <translation>TOUR PRINCIPALE</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="133"/>
         <source>attack &lt;n&gt; / maintower</source>
-        <translation>attack &lt;n&gt; / maintower</translation>
+        <translation type="vanished">attack &lt;n&gt; / maintower</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="133"/>
         <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="135"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="138"/>
         <source>READY</source>
         <translation>PRÊTE</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="135"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="137"/>
         <source>PULSE</source>
         <translation>IMPULSION</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="135"/>
         <source>pulseweapon</source>
-        <translation>pulseweapon</translation>
+        <translation type="vanished">pulseweapon</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="137"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="140"/>
         <source>TOWERS</source>
         <translation>TOURS</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="138"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="141"/>
         <source>auto-fire %1% - burst: secondarytower</source>
         <translation>tir auto %1% - rafale : secondarytower</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="139"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="142"/>
         <source>auto-fire OFF (&apos;turrets on&apos;) - burst: secondarytower</source>
         <translation>tir auto COUPÉ (&apos;turrets on&apos;) - rafale : secondarytower</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="140"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="135"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="138"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="143"/>
         <source>AUTO</source>
         <translation>AUTO</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="146"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="134"/>
+        <source>automatic fire (&apos;auto main off&apos;)</source>
+        <translation>tir automatique (&apos;auto main off&apos;)</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="134"/>
+        <source>attack &lt;n&gt; / maintower - &apos;auto main on&apos;</source>
+        <translation>attack &lt;n&gt; / maintower - &apos;auto main on&apos;</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="137"/>
+        <source>automatic fire (&apos;auto pulse off&apos;)</source>
+        <translation>tir automatique (&apos;auto pulse off&apos;)</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="137"/>
+        <source>pulseweapon - &apos;auto pulse on&apos;</source>
+        <translation>pulseweapon - &apos;auto pulse on&apos;</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="149"/>
         <source>AIM T%1 %2 - HIT %3%</source>
         <translation>VISÉE T%1 %2 - TOUCHE %3%</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="147"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="150"/>
         <source>hull</source>
         <translation>coque</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="150"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="153"/>
         <source>EVADING</source>
         <translation>ÉVITEMENT</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="152"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="155"/>
         <source>FTL %1 s</source>
         <translation>FTL %1 s</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="165"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="168"/>
         <source>RAILGUNS</source>
         <translation>RAILGUNS</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="178"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="181"/>
         <source>HOT</source>
         <translation>CHAUD</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="178"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="181"/>
         <source>EMPTY</source>
         <translation>VIDE</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="179"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="182"/>
         <source>%1 MSL</source>
         <translation>%1 MSL</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="179"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="182"/>
         <source>PD ON</source>
         <translation>DP ACTIVE</translation>
     </message>
@@ -7838,27 +7936,26 @@ TÂCHES %3   FEUX %4   BRÈCHES %5
         <translation type="vanished">défense rapprochée %1 km - %2 missiles abattus - contre chasseurs x2,5</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="194"/>
         <source>POWER free %1 - priority %2 (&apos;power shields|weapons|balanced&apos;)</source>
-        <translation>ÉNERGIE libre %1 - priorité %2 (&apos;power shields|weapons|balanced&apos;)</translation>
+        <translation type="vanished">ÉNERGIE libre %1 - priorité %2 (&apos;power shields|weapons|balanced&apos;)</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="196"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="226"/>
         <source>shields</source>
         <translation>boucliers</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="196"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="226"/>
         <source>weapons</source>
         <translation>armes</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="196"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="226"/>
         <source>balanced</source>
         <translation>équilibrée</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="203"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="234"/>
         <source>DRONES</source>
         <translation>DRONES</translation>
     </message>
@@ -7867,54 +7964,70 @@ TÂCHES %3   FEUX %4   BRÈCHES %5
         <translation type="vanished">drones &lt;n&gt; - salve qui traverse les boucliers, rechargée hors combat</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="238"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="269"/>
         <source>HANGAR</source>
         <translation>HANGAR</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="252"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="283"/>
         <source>launch [n] - %1 fighter(s) out, %2 friendly ship(s) in battle</source>
         <translation>launch [n] - %1 chasseur(s) dehors, %2 vaisseau(x) ami(s) au combat</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="263"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="294"/>
         <source>HIT </source>
         <translation>TOUCHÉ </translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="140"/>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="178"/>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="272"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="143"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="181"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="303"/>
         <source>OFF</source>
         <translation>COUPÉ</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="185"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="188"/>
         <source>heat %1% - %2/%3 slugs - %4 missiles shot down</source>
         <translation>chaleur %1% - %2/%3 obus - %4 missiles abattus</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="217"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="197"/>
+        <source>POWER</source>
+        <translation>ÉNERGIE</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="223"/>
+        <source>%1 - free %2 (%3)</source>
+        <translation>%1 - libre %2 (%3)</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="243"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="263"/>
+        <source> A</source>
+        <translation> A</translation>
+    </message>
+    <message>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="248"/>
         <source>drones &lt;n&gt; - through the shields, needs free power, Ancient caches only</source>
         <translation>drones &lt;n&gt; - traversent les boucliers, énergie libre requise, caches des Anciens seulement</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="223"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="254"/>
         <source>MISSILES</source>
         <translation>MISSILES</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="289"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="320"/>
         <source>NO TARGET LOCKED - scan &lt;n&gt;</source>
         <translation>AUCUNE CIBLE VERROUILLÉE - scan &lt;n&gt;</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="289"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="320"/>
         <source>NO CONTACT</source>
         <translation>AUCUN CONTACT</translation>
     </message>
     <message>
-        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="306"/>
+        <location filename="src/Menu/gamemenu/weaponstatuswidget.cpp" line="337"/>
         <source>TARGET T%1  %2</source>
         <translation>CIBLE T%1  %2</translation>
     </message>

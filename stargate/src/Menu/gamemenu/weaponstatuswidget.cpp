@@ -2,6 +2,7 @@
 #include "src/db/dbtext.h"
 
 #include <QCoreApplication>
+#include <QHash>
 #include <QFontDatabase>
 #include <QPainter>
 #include "src/Menu/uipalette.h"
@@ -130,9 +131,11 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     const QString mainName = w.mainName.isEmpty()
         ? tr("MAIN TOWER")
         : QCoreApplication::translate("Balance", w.mainName.toLatin1().constData()).toUpper();
-    cooldown(mainName, tr("attack <n> / maintower"), w.mainCooldown, w.mainMax, tr("READY"));
+    cooldown(mainName, w.autoMain ? tr("automatic fire ('auto main off')") : tr("attack <n> / maintower - 'auto main on'"),
+             w.mainCooldown, w.mainMax, w.autoMain ? tr("AUTO") : tr("READY"));
     if (w.hasPulse)
-        cooldown(tr("PULSE"), tr("pulseweapon"), w.pulseCooldown, w.pulseMax, tr("READY"));
+        cooldown(tr("PULSE"), w.autoPulse ? tr("automatic fire ('auto pulse off')") : tr("pulseweapon - 'auto pulse on'"),
+                 w.pulseCooldown, w.pulseMax, w.autoPulse ? tr("AUTO") : tr("READY"));
     if (w.hasTowers)
         cooldown(tr("TOWERS"),
                  w.turretsOn ? tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency))
@@ -187,14 +190,42 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     y += smallLine + 4;
     }
 
-    // Energy: power left for the shields / weapon recharge
-    p.setFont(small);
-    p.setPen(w.freePower > 10 ? kOk : kDim);
-    p.drawText(QRectF(left, y, right - left, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
-               tr("POWER free %1 - priority %2 ('power shields|weapons|balanced')")
-                   .arg(w.freePower)
-                   .arg(w.priority == "shields" ? tr("shields") : w.priority == "weapons" ? tr("weapons") : tr("balanced")));
-    y += smallLine + 4;
+    // Energy: a bar split between the systems that draw power, the rest free
+    {
+        p.setFont(font);
+        p.setPen(kText);
+        p.drawText(QRectF(left, y, labelWidth, line), Qt::AlignLeft | Qt::AlignVCenter, tr("POWER"));
+        const QRectF bar(barLeft, y + line / 2 - 5, barWidth, 10);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60));
+        p.drawRect(bar);
+        static const QHash<QString, QColor> colors{
+            {"main weapon", QColor(120, 200, 255)}, {"engines", QColor(150, 150, 150)}, {"towers", QColor(90, 160, 230)},
+            {"railguns", QColor(230, 220, 160)},    {"shields", QColor(70, 130, 255)},  {"drones", QColor(255, 210, 90)},
+            {"evasion", QColor(200, 120, 255)}};
+        const double total = std::max(1, w.powerTotal);
+        double x = bar.left();
+        QStringList legend;
+        for (const auto &[name, power] : w.powerUse) {
+            const double width = std::min(bar.right() - x, bar.width() * power / total);
+            p.setBrush(colors.value(name, kDim));
+            p.drawRect(QRectF(x, bar.top(), std::max(0.0, width - 1), bar.height()));
+            x += width;
+            legend << QStringLiteral("%1 %2").arg(QCoreApplication::translate("BattleView", name.toUtf8().constData())).arg(power);
+        }
+        p.setPen(w.freePower >= 20 ? kOk : w.freePower > 0 ? kCharging : kCritical);
+        p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
+                   QStringLiteral("%1/%2").arg(w.freePower).arg(w.powerTotal));
+        y += line;
+        p.setFont(small);
+        p.setPen(kDim);
+        p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
+                   tr("%1 - free %2 (%3)")
+                       .arg(legend.join(", "))
+                       .arg(w.freePower)
+                       .arg(w.priority == "shields" ? tr("shields") : w.priority == "weapons" ? tr("weapons") : tr("balanced")));
+        y += smallLine + 4;
+    }
 
     // Hangar: fighters to launch ('launch'), friendly ships in the battle
     if (w.dronesMax > 0) {
@@ -209,7 +240,7 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * w.drones / std::max(1, w.dronesMax), bar.height()));
         p.setPen(w.drones > 0 ? kOk : kCharging);
         p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
-                   QStringLiteral("%1/%2").arg(w.drones).arg(w.dronesMax));
+                   QStringLiteral("%1/%2%3").arg(w.drones).arg(w.dronesMax).arg(w.autoDrones ? tr(" A") : QString()));
         y += line;
         p.setFont(small);
         p.setPen(kDim);
@@ -229,7 +260,7 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * w.missiles / std::max(1, w.missilesMax), bar.height()));
         p.setPen(w.missiles > 0 ? kOk : kCharging);
         p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
-                   QStringLiteral("%1/%2").arg(w.missiles).arg(w.missilesMax));
+                   QStringLiteral("%1/%2%3").arg(w.missiles).arg(w.missilesMax).arg(w.autoMissiles ? tr(" A") : QString()));
         y += line + 2;
     }
     if (w.hangarMax > 0 || w.allies > 0) {

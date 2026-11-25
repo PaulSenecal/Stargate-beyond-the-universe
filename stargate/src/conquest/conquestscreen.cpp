@@ -755,6 +755,11 @@ void ConquestScreen::onCommand(const QString &command)
             m_battle->aimAt(target - 1, words.value(2));
     } else if (name == "missiles" || name == "missile") {
         m_battle->fireMissiles(arg.isEmpty() ? -1 : arg.toInt() - 1);
+    } else if (name == "auto") {
+        if (words.size() < 2)
+            m_console->appendLine(m_battle->autoFireReport());
+        else
+            m_battle->setAutoFire(words.value(1), words.value(2).toLower() != "off");
     } else if (name == "evade" || name == "evasive") {
         m_battle->setEvasion(arg.toLower() != "off");
     } else if (name == "engage") {
@@ -834,6 +839,7 @@ const QList<HelpCategory> &conquestHelp()
             {"pulseweapon / secondarytower", QT_TRANSLATE_NOOP("ConquestScreen", "volleys of the towers")},
             {"missiles [n] / drones [n]", QT_TRANSLATE_NOOP("ConquestScreen", "limited salvos")},
             {"shield on|off / evade on|off", QT_TRANSLATE_NOOP("ConquestScreen", "shields / evasive maneuvers")},
+            {"auto <weapon|all> on|off", QT_TRANSLATE_NOOP("ConquestScreen", "automatic fire of a weapon, or of all")},
             {"launch [n]", QT_TRANSLATE_NOOP("ConquestScreen", "fighters of your hangar")},
             {"turrets / railguns / power", QT_TRANSLATE_NOOP("ConquestScreen", "energy of the flagship")},
             {"replay", QT_TRANSLATE_NOOP("ConquestScreen", "the last battle again")},
@@ -911,7 +917,7 @@ QStringList ConquestScreen::completeLine(const QString &text) const
                                    "drones", "turrets", "railguns", "power", "attack", "maintower", "pulseweapon",
                                    "secondarytower", "shield", "scan", "menu", "clear", "target", "missiles", "evade",
                                    "spy", "sabotage", "replay", "plan", "crew", "jobs", "cancel", "seal", "unseal",
-                                   "vent", "defend", "dock", "board", "library"};
+                                   "vent", "defend", "dock", "board", "library", "auto"};
     QStringList lines;
     if (!text.contains(' ')) {
         for (const QString &n : names)
@@ -933,6 +939,10 @@ QStringList ConquestScreen::completeLine(const QString &text) const
     if (words.size() == 1 && command == "help")
         for (const HelpCategory &category : conquestHelp())
             choices << QString::fromLatin1(category.key);
+    if (words.size() == 1 && command == "auto")
+        choices << QStringList{"main", "pulse", "missiles", "drones", "towers", "railguns", "all"};
+    if (words.size() == 2 && command == "auto")
+        choices << QStringList{"on", "off"};
     if (words.size() == 1 && command == "sabotage")
         choices << QStringList{"yard", "defense", "mine"};
     if (words.size() == 1 && (command == "turrets" || command == "railguns" || command == "evade" || command == "hud"

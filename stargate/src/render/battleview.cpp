@@ -436,7 +436,7 @@ bool BattleView::fireMainWeapon(int enemyIndex)
                         ? QVector3D(1.0f, 0.85f, 0.55f) : kBeamColor;
         ray.width = 0.35f;
         ray.weapon = Weapon::Main;
-        fireRay(ray, m_loadout.mainDamage * m_damageBonus);
+        fireRay(ray, m_loadout.mainDamage * m_damageBonus * (m_autoFiring ? kAutoFireAim : 1.0f));
     } else {
         shoot(true, destinyWorld(kMainTowerLocal), target->id, {}, m_loadout.mainDamage, 48.0f,
               QVector3D(0.7f, 0.92f, 1.0f), 3.2f, 0.32f);
@@ -445,6 +445,7 @@ bool BattleView::fireMainWeapon(int enemyIndex)
     }
     m_mainCooldown = kMainCooldown;
     emit sound(SoundCue::DestinyMainGun, {}, 0.0f);
+    if (!m_autoFiring)
     emit logMessage(tr("Main tower fired at T%1").arg(indexOfId(target->id) + 1), LogLevel::Success);
     return true;
 }
@@ -501,7 +502,8 @@ bool BattleView::fireDrones(int enemyIndex)
     }
     --m_drones;
     emit sound(SoundCue::EnemyMissile, QStringLiteral("Ancients"), 0.0f);
-    emit logMessage(tr("Drone salvo launched at T%1 (%2 left)").arg(indexOfId(target->id) + 1).arg(m_drones),
+    if (!m_autoFiring)
+        emit logMessage(tr("Drone salvo launched at T%1 (%2 left)").arg(indexOfId(target->id) + 1).arg(m_drones),
                     LogLevel::Success);
     return true;
 }
@@ -533,6 +535,7 @@ bool BattleView::firePulseVolley()
     m_pulseCooldown = kPulseCooldown;
     for (int i = 0; i < 4; ++i)
         emit sound(SoundCue::DestinyTurret, {}, i * 0.15f);
+    if (!m_autoFiring)
     emit logMessage(tr("Pulse weapons: full volley on %1 targets").arg(ids.size()), LogLevel::Success);
     return true;
 }
@@ -926,6 +929,8 @@ void BattleView::step(float dt)
             emit sound(SoundCue::DestinyTurret, {}, 0.0f);
         }
     }
+
+    autoFire(dt);
 
     // Not enough power (leaks, drones, evasion): the lowest priorities are shed
     {
@@ -1575,7 +1580,8 @@ bool BattleView::fireMissiles(int enemyIndex)
     }
     m_missiles -= salvo;
     emit sound(SoundCue::EnemyMissile, {}, 0.0f);
-    emit logMessage(tr("%1 missile(s) launched at T%2 (%3 left)").arg(salvo).arg(indexOfId(target->id) + 1).arg(m_missiles),
+    if (!m_autoFiring)
+        emit logMessage(tr("%1 missile(s) launched at T%2 (%3 left)").arg(salvo).arg(indexOfId(target->id) + 1).arg(m_missiles),
                     LogLevel::Success);
     return true;
 }
@@ -1951,6 +1957,151 @@ void BattleView::finishBattle()
 }
 
 // ================================================================
+//  Automatic fire and energy
+// ================================================================
+
+bool BattleView::setAutoFire(const QString &weapon, bool on)
+{
+    const QString w = weapon.trimmed().toLower();
+    if (w == "all") {
+        m_autoMain = on;
+        m_autoPulse = on && m_loadout.pulse;
+        m_autoMissiles = on && m_missileBay > 0;
+        m_autoDrones = on && m_droneBay > 0;
+        if (m_loadout.towers)
+            m_turretsOn = on;
+        if (m_loadout.railguns)
+            m_railgunsOn = on;
+        emit logMessage(on ? tr("Every weapon fires on its own") : tr("Automatic fire off - weapons on your orders only"),
+                        LogLevel::Success);
+        return true;
+    }
+    bool *flag = nullptr;
+    bool carried = true;
+    QString name;
+    if (w.startsWith("main") || w == "attack" || w == "tower") {
+        flag = &m_autoMain;
+        name = QCoreApplication::translate("Balance", m_loadout.mainName);
+    } else if (w.startsWith("pulse")) {
+        flag = &m_autoPulse;
+        carried = m_loadout.pulse;
+        name = tr("pulse weapons");
+    } else if (w.startsWith("missile")) {
+        flag = &m_autoMissiles;
+        carried = m_missileBay > 0;
+        name = tr("missiles");
+    } else if (w.startsWith("drone")) {
+        flag = &m_autoDrones;
+        carried = m_droneBay > 0;
+        name = tr("drones");
+    } else if (w.startsWith("turret") || w.startsWith("tower")) {
+        setTurretsActive(on);
+        return m_loadout.towers;
+    } else if (w.startsWith("railgun")) {
+        setRailgunsActive(on);
+        return m_loadout.railguns;
+    } else {
+        emit logMessage(tr("Unknown weapon '%1' (main, pulse, missiles, drones, towers, railguns, all)").arg(weapon),
+                        LogLevel::Warning);
+        return false;
+    }
+    if (!carried) {
+        emit logMessage(tr("No %1 aboard this ship").arg(name), LogLevel::Warning);
+        return false;
+    }
+    *flag = on;
+    emit logMessage(on ? tr("Automatic fire on: %1").arg(name) : tr("Automatic fire off: %1").arg(name),
+                    LogLevel::Success);
+    return true;
+}
+
+QString BattleView::autoFireReport() const
+{
+    QStringList on, off;
+    auto add = [&on, &off](bool carried, bool active, const QString &name) {
+        if (carried)
+            (active ? on : off) << name;
+    };
+    add(true, m_autoMain, QCoreApplication::translate("Balance", m_loadout.mainName));
+    add(m_loadout.pulse, m_autoPulse, tr("pulse weapons"));
+    add(m_loadout.towers, m_turretsOn, tr("towers"));
+    add(m_loadout.railguns, m_railgunsOn, tr("railguns"));
+    add(m_missileBay > 0, m_autoMissiles, tr("missiles"));
+    add(m_droneBay > 0, m_autoDrones, tr("drones"));
+    return tr("Automatic fire - on: %1 | off: %2 ('auto <weapon> on|off', 'auto all on|off')")
+        .arg(on.isEmpty() ? tr("none") : on.join(", "), off.isEmpty() ? tr("none") : off.join(", "));
+}
+
+// Every weapon set to auto fires as soon as it is ready
+void BattleView::autoFire(float dt)
+{
+    m_autoMissileTimer = std::max(0.0f, m_autoMissileTimer - dt);
+    m_autoDroneTimer = std::max(0.0f, m_autoDroneTimer - dt);
+    if (aliveIds().empty() || m_jumpCountdown >= 0.0f)
+        return;
+    m_autoFiring = true;
+    if (m_autoMain && m_mainCooldown <= 0.0f)
+        fireMainWeapon();
+    if (m_autoPulse && m_loadout.pulse && m_pulseCooldown <= 0.0f)
+        firePulseVolley();
+    // Missiles and drones are limited: kept for the motherships, one salvo at a time
+    auto mothership = [this]() {
+        const std::vector<int> ids = aliveIds();
+        if (const Enemy *locked = findEnemy(m_lockedId); locked && locked->alive && locked->cls == EnemyClass::Mothership)
+            return indexOfId(locked->id);
+        for (size_t i = 0; i < ids.size(); ++i)
+            if (findEnemy(ids[i])->cls == EnemyClass::Mothership)
+                return int(i);
+        return -1;
+    };
+    if (m_autoMissiles && m_missiles > 0 && m_autoMissileTimer <= 0.0f) {
+        const int target = mothership();
+        if (target >= 0 && fireMissiles(target))
+            m_autoMissileTimer = 10.0f;
+    }
+    if (m_autoDrones && m_drones > 0 && m_autoDroneTimer <= 0.0f && freePower() >= kDronePower) {
+        const int target = mothership();
+        if (target >= 0 && fireDrones(target))
+            m_autoDroneTimer = 12.0f;
+    }
+    m_autoFiring = false;
+}
+
+QList<std::pair<QString, int>> BattleView::powerUse() const
+{
+    // Names translated where they are shown (context BattleView)
+    Q_UNUSED(QT_TR_NOOP("main weapon"))
+    Q_UNUSED(QT_TR_NOOP("engines"))
+    Q_UNUSED(QT_TR_NOOP("shields"))
+    Q_UNUSED(QT_TR_NOOP("evasion"))
+    Q_UNUSED(QT_TR_NOOP("fire control"))
+    QList<std::pair<QString, int>> use{{QStringLiteral("main weapon"), kMainTowerPower}, {QStringLiteral("engines"), kEnginePower}};
+    if (m_turretsOn && m_loadout.towers)
+        use.append({QStringLiteral("towers"), kTurretPower});
+    if (m_railgunsOn && m_loadout.railguns)
+        use.append({QStringLiteral("railguns"), kRailgunPower});
+    if (m_shieldOrdered)
+        use.append({QStringLiteral("shields"), kShieldPower});
+    if (m_dronesInFlight > 0)
+        use.append({QStringLiteral("drones"), kDronePower});
+    if (m_evading)
+        use.append({QStringLiteral("evasion"), kEvasionPower});
+    if (autoWeapons() > 0)
+        use.append({QStringLiteral("fire control"), kAutoFirePower * autoWeapons()});
+    return use;
+}
+
+int BattleView::autoWeapons() const
+{
+    return (m_autoMain ? 1 : 0) + (m_autoPulse ? 1 : 0) + (m_autoMissiles ? 1 : 0) + (m_autoDrones ? 1 : 0);
+}
+
+int BattleView::powerTotal() const
+{
+    return std::max(0, kCorePower + m_powerBonus - m_powerLoss);
+}
+
+// ================================================================
 //  Continuous beams
 // ================================================================
 
@@ -2161,6 +2312,7 @@ int BattleView::freePower() const
         used += kDronePower;                // guidance of the drones in flight
     if (m_evading)
         used += kEvasionPower;
+    used += kAutoFirePower * autoWeapons();
     return std::max(0, kCorePower + m_powerBonus - m_powerLoss - used);
 }
 
@@ -2519,6 +2671,7 @@ void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, co
     p.length = length;
     p.width = width;
     p.delay = delay;
+    p.autoFired = m_autoFiring;
     // The player's energy shots: blue ion bolts (railgun slugs stay plain)
     if (fromDestiny)
         p.sprite = m_loadout.mainName && QString::fromLatin1(m_loadout.mainName).contains(QLatin1String("Staff"))
@@ -2557,6 +2710,8 @@ void BattleView::rollAccuracy(Projectile &p, const QVector3D &target, float floo
     float chance = hitChance(p.pos, target, fromPlayer, enemy);
     if (fromPlayer && p.aimSystem >= 0)
         chance *= kSubsystemAim;
+    if (p.autoFired)
+        chance *= kAutoFireAim;
     chance = std::max(chance, floor);
     if (fromPlayer)
         ++m_stats.shots;
@@ -3152,6 +3307,12 @@ WeaponReadiness BattleView::weaponReadiness() const
     w.incomingMissiles = int(std::count_if(m_projectiles.begin(), m_projectiles.end(), [](const Projectile &p) {
         return !p.dead && !p.fromDestiny && p.kind == Projectile::Kind::Missile;
     }));
+    w.autoMain = m_autoMain;
+    w.autoPulse = m_autoPulse;
+    w.autoMissiles = m_autoMissiles;
+    w.autoDrones = m_autoDrones;
+    w.powerTotal = powerTotal();
+    w.powerUse = powerUse();
     w.railgunHeat = m_railgunHeat;
     w.railgunOverheated = m_railgunOverheated;
     w.railgunAmmo = m_railgunAmmo;
@@ -4309,7 +4470,7 @@ void BattleView::drawOverlay()
     }
 
     // --- Status block (top left)
-    const QRectF panel(12, 12, 270, 62);
+    const QRectF panel(12, 12, 270, 88);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 150));
     p.drawRoundedRect(panel, 4, 4);
@@ -4323,6 +4484,24 @@ void BattleView::drawOverlay()
         p.setPen(QColor(190, 150, 230));
         p.drawText(QRectF(22, 44, 250, 22), Qt::AlignVCenter,
                    tr("ORGANIC HULL - heals %1%/s").arg(double(m_loadout.hullRegen), 0, 'f', 1));
+    }
+
+    // Energy left once every active system took its share
+    {
+        const int total = powerTotal();
+        const int free = freePower();
+        const QRectF row(22, 70, 250, 22);
+        p.setPen(QColor(220, 220, 210));
+        p.drawText(QRectF(row.left(), row.top(), 64, row.height()), Qt::AlignVCenter, tr("POWER"));
+        const QRectF bar(row.left() + 66, row.center().y() - 4, row.width() - 130, 8);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60, 200));
+        p.drawRect(bar);
+        p.setBrush(free >= kDronePower ? QColor(240, 200, 60) : free > 0 ? QColor(200, 150, 60) : QColor(150, 80, 60));
+        p.drawRect(QRectF(bar.left(), bar.top(), total > 0 ? bar.width() * free / total : 0.0, bar.height()));
+        p.setPen(QColor(220, 220, 210));
+        p.drawText(QRectF(bar.right() + 6, row.top(), 64, row.height()), Qt::AlignVCenter,
+                   tr("%1/%2").arg(free).arg(total));
     }
 
     // --- Contacts (top right) and hint (bottom left)

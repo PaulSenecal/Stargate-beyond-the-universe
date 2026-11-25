@@ -4,6 +4,7 @@
 #include <QFontDatabase>
 #include <QHash>
 #include <QPainter>
+#include "src/Menu/uipalette.h"
 #include <QPainterPath>
 #include <QTimer>
 #include <QtMath>
@@ -36,14 +37,13 @@ const QHash<QString, QPointF> kComponentPos = {
     {"Missile Bay",        {-2.2, -3.6}},
     {"Medical Bay",        {-0.5,  1.8}},
     {"Science Lab",        {-0.5, -1.8}},
+    {"Sensor Array",       { 3.4, -0.6}},
     {"Cargo Hold",         {-3.0, -2.5}},
 };
 
 QColor healthColor(float pct)
 {
-    if (pct >= 70) return kOk;
-    if (pct >= 35) return kDamaged;
-    return kCritical;
+    return UiPalette::health(pct, 70.0f - 0.01f, 35.0f - 0.01f);
 }
 } // namespace
 
@@ -116,7 +116,8 @@ void ShipStatusWidget::paintEvent(QPaintEvent *)
     p.setPen(kText);
     p.drawText(QRectF(left, y, right - left, line), Qt::AlignLeft | Qt::AlignVCenter, tr("DESTINY STATUS"));
     const QString shield = m_data.shieldUp ? QStringLiteral("%1%").arg(qRound(m_data.shield)) : tr("OFF");
-    const QString status = tr("HULL %1%   SHIELD %2").arg(qRound(m_data.hull)).arg(shield);
+    const QString status = m_data.hasShield ? tr("HULL %1%   SHIELD %2").arg(qRound(m_data.hull)).arg(shield)
+                                            : tr("ORGANIC HULL %1%").arg(qRound(m_data.hull));
     p.setPen(healthColor(m_data.hull));
     p.drawText(QRectF(left, y, right - left, line), Qt::AlignRight | Qt::AlignVCenter, status);
     y += line + 2;

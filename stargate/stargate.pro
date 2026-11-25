@@ -26,9 +26,15 @@ SOURCES += \
     src/Menu/gamemenu/radarwidget.cpp \
     src/Menu/gamemenu/routemapwidget.cpp \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
+    src/Menu/gamemenu/shipplandialog.cpp \
+    src/Menu/gamemenu/shipcrew.cpp \
+    src/Menu/gamemenu/replaydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
     src/Menu/mainmenu/titlescreen.cpp \
+    src/Menu/coop/coopclientscreen.cpp \
+    src/network/coopprotocol.cpp \
+    src/network/coopsession.cpp \
     src/Menu/pause/pausemenu.cpp \
     src/Menu/setting/settingspanel.cpp \
     src/audio/musicplayer.cpp \
@@ -41,6 +47,10 @@ SOURCES += \
     src/core/commandmanager.cpp \
     src/core/language.cpp \
     src/core/destinystate.cpp \
+    src/core/campaignlife.cpp \
+    src/core/gameconfig.cpp \
+    src/core/modloader.cpp \
+    src/core/interior.cpp \
     src/core/questsystem.cpp \
     src/db/databasemanager.cpp \
     src/db/repositories/characterrepository.cpp \
@@ -73,9 +83,15 @@ HEADERS += \
     src/Menu/gamemenu/radarwidget.h \
     src/Menu/gamemenu/routemapwidget.h \
     src/Menu/gamemenu/shiplibrarydialog.h \
+    src/Menu/gamemenu/shipplandialog.h \
+    src/Menu/gamemenu/shipcrew.h \
+    src/Menu/gamemenu/replaydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
     src/Menu/mainmenu/titlescreen.h \
+    src/Menu/coop/coopclientscreen.h \
+    src/network/coopprotocol.h \
+    src/network/coopsession.h \
     src/Menu/menustyle.h \
     src/Menu/pause/pausemenu.h \
     src/Menu/setting/settingspanel.h \
@@ -93,6 +109,11 @@ HEADERS += \
     src/core/questsystem.h \
     src/core/assets.h \
     src/core/balance.h \
+    src/core/gameconfig.h \
+    src/core/modloader.h \
+    src/core/campaignlife.h \
+    src/core/interior.h \
+    src/Menu/uipalette.h \
     src/core/shipclass.h \
     src/db/databasemanager.h \
     src/db/dbtext.h \

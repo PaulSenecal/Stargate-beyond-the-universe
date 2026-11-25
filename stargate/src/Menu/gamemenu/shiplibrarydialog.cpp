@@ -1,4 +1,7 @@
 #include "shiplibrarydialog.h"
+#include "src/core/modloader.h"
+#include "src/db/databasemanager.h"
+#include "src/db/repositories/shiplibraryrepository.h"
 
 #include <QFontDatabase>
 #include <QHBoxLayout>
@@ -338,4 +341,26 @@ QStringList ShipLibraryDialog::describe(const ShipClass &ship)
     for (const ShipAttack &a : ship.attacks)
         lines << QStringLiteral("  ") + describe(a);
     return lines;
+}
+
+QList<ShipClass> ShipLibraryDialog::loadShips()
+{
+    QList<ShipClass> ships;
+    if (DatabaseManager::instance().isOpen() && ShipLibraryRepository::migrate())
+        ships = ShipLibraryRepository::all();
+    if (ships.isEmpty())
+        ships = ShipClass::fallbackRoster();
+    return ModLoader::instance().merged(ships);
+}
+
+ShipLibraryDialog *ShipLibraryDialog::open(QWidget *parent, const QString &ship)
+{
+    auto *dialog = new ShipLibraryDialog(parent);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setShips(loadShips());
+    if (!ship.isEmpty())
+        dialog->showShip(ship);
+    dialog->show();
+    dialog->raise();
+    return dialog;
 }

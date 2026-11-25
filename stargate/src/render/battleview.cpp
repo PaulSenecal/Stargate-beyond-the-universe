@@ -3,6 +3,8 @@
 #include "modmesh.h"
 #include "src/core/assets.h"
 #include "src/core/balance.h"
+#include "src/core/gameconfig.h"
+#include "src/Menu/uipalette.h"
 #include "src/db/dbtext.h"
 
 #include <QCoreApplication>
@@ -18,6 +20,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QQuaternion>
+#include <QRadialGradient>
 #include <QRandomGenerator>
 #include <QTimer>
 #include <QVector4D>
@@ -83,7 +86,9 @@ uniform vec3 uLightColor;   // color of the ship lights (faction)
 uniform vec3 uColor;
 uniform float uEmissive;
 uniform float uAlpha;
-uniform int uMode;          // 0 hull, 1 planet, 2 shield, 3 glow
+uniform int uMode;          // 0 hull, 1 planet, 2 shield, 3 glow, 4 sprite
+uniform vec2 uUvScale;      // sprite: texture repeats (beams along their length)
+uniform float uTint;        // sprite: 0 = its own colors, 1 = recolored with uColor
 uniform vec3 uLightDir;     // direction the light travels
 uniform vec3 uCamPos;
 uniform float uTime;
@@ -123,6 +128,13 @@ void main() {
     vec3 L = normalize(-uLightDir);
     vec3 V = normalize(uCamPos - vWorldPos);
 
+    if (uMode == 4) {                       // textured shot of the mod (additive)
+        vec3 t = texture(uTexture, vUv * uUvScale).rgb;
+        float lum = max(t.r, max(t.g, t.b));
+        vec3 col = mix(t, uColor * lum * 1.4, uTint);
+        fragColor = vec4(col * uEmissive, uAlpha);
+        return;
+    }
     if (uMode == 3) {                       // additive glow
         fragColor = vec4(uColor * uEmissive, uAlpha);
         return;
@@ -276,14 +288,14 @@ QVector3D boltColor(const QString &faction)
     if (faction == "Wraith") return {0.8f, 0.45f, 1.0f};
     if (faction == "Drones") return {1.0f, 0.3f, 0.25f};
     if (faction == "Tau'ri") return {1.0f, 0.95f, 0.7f};
+    if (faction == "Nakai") return {0.55f, 1.0f, 0.35f};
+    if (faction == "Ursini") return {0.85f, 0.6f, 1.0f};
     return kEnemyBolt;
 }
 
 QColor healthColor(float pct)
 {
-    if (pct > 60) return QColor(70, 230, 100);
-    if (pct > 30) return QColor(240, 190, 60);
-    return QColor(255, 70, 60);
+    return UiPalette::health(pct);
 }
 
 } // namespace
@@ -303,6 +315,7 @@ BattleView::BattleView(QWidget *parent)
         {"shields",     tr("Shields"),      { 0.4f, 1.6f,  0.0f}, {-190, -120}},
         {"weapons",     tr("Weapons"),      { 5.2f, 0.55f, 0.0f}, { 170, -110}},
         {"lifesupport", tr("Life support"), {-1.2f, 0.4f,  3.0f}, {-180,   90}},
+        {"sensors",     tr("Sensors"),      { 3.4f, 0.9f, -0.6f}, { 150, -150}},
     };
 
     for (float a : {150.0f, 165.0f, 195.0f, 210.0f}) {
@@ -314,9 +327,14 @@ BattleView::BattleView(QWidget *parent)
 
     step(0.0f);
     spawnWave(false);
+    // The log of a battle goes into its replay
+    connect(this, &BattleView::logMessage, this, [this](const QString &text, LogLevel) {
+        if (m_inBattle && m_replayEvents.size() < 6)
+            m_replayEvents << text;
+    });
 
     connect(m_timer, &QTimer::timeout, this, [this] {
-        const float dt = std::min(0.05f, float(m_clock.restart()) / 1000.0f);
+        const float dt = std::min(0.05f, float(m_clock.restart()) / 1000.0f) * gameConfig().gameSpeed;
         step(dt);
         update();
     });
@@ -350,6 +368,11 @@ BattleView::~BattleView()
                 if (texture)
                     glDeleteTextures(1, &texture);
         }
+    for (GLuint &texture : m_sprites)
+        if (texture)
+            glDeleteTextures(1, &texture);
+    m_quadVao.destroy();
+    m_quadVbo.destroy();
     m_starVao.destroy();
     m_starVbo.destroy();
     doneCurrent();
@@ -372,6 +395,8 @@ bool BattleView::lockTarget(int enemyIndex)
         emit logMessage(tr("No contact T%1 in range").arg(enemyIndex + 1), LogLevel::Warning);
         return false;
     }
+    if (m_lockedId != ids[enemyIndex])
+        m_aimSystem = -1;
     m_lockedId = ids[enemyIndex];
     const Enemy *e = findEnemy(m_lockedId);
     emit logMessage(tr("Target locked: T%1 %2 — hull %3%")
@@ -401,10 +426,26 @@ bool BattleView::fireMainWeapon(int enemyIndex)
         m_lockedId = target->id;
     }
 
-    shoot(true, destinyWorld(kMainTowerLocal), target->id, {}, m_loadout.mainDamage, 48.0f,
-          QVector3D(0.7f, 0.92f, 1.0f), 3.2f, 0.32f);
+    if (QString::fromLatin1(m_loadout.mainName).contains(QLatin1String("beam"), Qt::CaseInsensitive)) {
+        // Asgard / Ori beam: a continuous ray, not a bolt
+        Ray ray;
+        ray.fromDestiny = true;
+        ray.sourceLocal = kMainTowerLocal;
+        ray.targetEnemy = target->id;
+        ray.color = QString::fromLatin1(m_loadout.mainName).startsWith(QLatin1String("Ori"))
+                        ? QVector3D(1.0f, 0.85f, 0.55f) : kBeamColor;
+        ray.width = 0.35f;
+        ray.weapon = Weapon::Main;
+        fireRay(ray, m_loadout.mainDamage * m_damageBonus * (m_autoFiring ? kAutoFireAim : 1.0f));
+    } else {
+        shoot(true, destinyWorld(kMainTowerLocal), target->id, {}, m_loadout.mainDamage, 48.0f,
+              QVector3D(0.7f, 0.92f, 1.0f), 3.2f, 0.32f);
+        m_projectiles.back().weapon = Weapon::Main;
+        m_projectiles.back().aimSystem = m_aimSystem;
+    }
     m_mainCooldown = kMainCooldown;
     emit sound(SoundCue::DestinyMainGun, {}, 0.0f);
+    if (!m_autoFiring)
     emit logMessage(tr("Main tower fired at T%1").arg(indexOfId(target->id) + 1), LogLevel::Success);
     return true;
 }
@@ -431,7 +472,13 @@ bool BattleView::fireDrones(int enemyIndex)
     if (enemyIndex >= 0 && !lockTarget(enemyIndex))
         return false;
     if (m_drones == 0) {
-        emit logMessage(tr("Drone bay empty - salvos are rebuilt out of battle"), LogLevel::Warning);
+        emit logMessage(tr("Drone bay empty - drones are only found in Ancient caches"), LogLevel::Warning);
+        return false;
+    }
+    if (m_dronesInFlight == 0 && freePower() < kDronePower) {
+        emit logMessage(tr("Not enough power to guide the drones (%1 free, %2 needed) - turn off the turrets or the railguns")
+                            .arg(freePower()).arg(kDronePower),
+                        LogLevel::Warning);
         return false;
     }
     const Enemy *target = findEnemy(m_lockedId);
@@ -450,10 +497,13 @@ bool BattleView::fireDrones(int enemyIndex)
         m_projectiles.back().kind = Projectile::Kind::Missile;
         m_projectiles.back().drone = true;
         m_projectiles.back().life = 10.0f;
+        m_projectiles.back().weapon = Weapon::Drones;
+        m_projectiles.back().aimSystem = m_aimSystem;
     }
     --m_drones;
     emit sound(SoundCue::EnemyMissile, QStringLiteral("Ancients"), 0.0f);
-    emit logMessage(tr("Drone salvo launched at T%1 (%2 left)").arg(indexOfId(target->id) + 1).arg(m_drones),
+    if (!m_autoFiring)
+        emit logMessage(tr("Drone salvo launched at T%1 (%2 left)").arg(indexOfId(target->id) + 1).arg(m_drones),
                     LogLevel::Success);
     return true;
 }
@@ -479,11 +529,13 @@ bool BattleView::firePulseVolley()
             const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
             shoot(true, destinyWorld(turret), id, {}, 22.0f, 40.0f, kDestinyBolt, 1.3f, 0.12f,
                   randRange(0.0f, 0.6f));
+            m_projectiles.back().weapon = Weapon::Pulse;
         }
     }
     m_pulseCooldown = kPulseCooldown;
     for (int i = 0; i < 4; ++i)
         emit sound(SoundCue::DestinyTurret, {}, i * 0.15f);
+    if (!m_autoFiring)
     emit logMessage(tr("Pulse weapons: full volley on %1 targets").arg(ids.size()), LogLevel::Success);
     return true;
 }
@@ -508,6 +560,7 @@ bool BattleView::fireSecondaryBurst()
         const QVector3D &turret = m_turrets[i % m_turrets.size()];
         shoot(true, destinyWorld(turret), target->id, {}, 10.0f, 42.0f, kDestinyBolt, 1.1f, 0.1f,
               randRange(0.0f, 0.5f));
+        m_projectiles.back().weapon = Weapon::Towers;
     }
     m_secondaryCooldown = kSecondaryCooldown;
     for (int i = 0; i < 4; ++i)
@@ -516,8 +569,26 @@ bool BattleView::fireSecondaryBurst()
     return true;
 }
 
+void BattleView::setShipEquipment(bool shield, float armor)
+{
+    m_hasShield = shield;
+    m_armor = std::max(0.1f, armor);
+    if (!shield) {
+        m_shieldOrdered = false;
+        m_shieldStrength = 0.0f;
+        m_shieldCollapsed = true;
+    } else if (!m_shieldOrdered && m_shieldStrength <= 0.0f) {
+        m_shieldOrdered = true;
+        m_shieldCollapsed = false;
+    }
+}
+
 void BattleView::setShieldActive(bool active)
 {
+    if (!m_hasShield) {
+        emit logMessage(tr("No shield on this ship - its organic hull takes the blows"), LogLevel::Warning);
+        return;
+    }
     m_shieldOrdered = active;
     if (active)
         emit logMessage(tr("Shields raised (%1%)").arg(qRound(m_shieldStrength)), LogLevel::Success);
@@ -599,13 +670,14 @@ QString BattleView::systemKey(const QString &name)
     if (key == "shield" || key == "shields") return QStringLiteral("shields");
     if (key == "weapon" || key == "weapons") return QStringLiteral("weapons");
     if (key == "life" || key == "lifesupport") return QStringLiteral("lifesupport");
+    if (key == "sensor" || key == "sensors") return QStringLiteral("sensors");
     if (key == "hull") return QStringLiteral("hull");
     return QString();
 }
 
 QStringList BattleView::systemKeys()
 {
-    return {"engines", "shields", "weapons", "lifesupport"};
+    return {"engines", "shields", "weapons", "lifesupport", "sensors"};
 }
 
 void BattleView::setSubsystemHealth(const QString &key, float health)
@@ -617,8 +689,8 @@ void BattleView::setSubsystemHealth(const QString &key, float health)
 void BattleView::restoreDefenses(float hull, float shield, bool shieldOn)
 {
     m_hull = hull > 0.0f ? std::min(hull, 100.0f) : 35.0f;
-    m_shieldStrength = std::clamp(shield, 0.0f, 100.0f);
-    m_shieldOrdered = shieldOn;
+    m_shieldStrength = m_hasShield ? std::clamp(shield, 0.0f, 100.0f) : 0.0f;
+    m_shieldOrdered = shieldOn && m_hasShield;
     m_shieldCollapsed = m_shieldStrength <= 0.0f;
 }
 
@@ -630,9 +702,13 @@ void BattleView::clearBattlefield(float calmSeconds, bool keepAllies)
     if (!keepAllies)
         clearAllies();
     m_projectiles.clear();
+    m_rays.clear();
     m_effects.clear();
     m_lockedId = -1;
+    m_aimSystem = -1;
     m_waveTimer = calmSeconds;
+    m_jumpCountdown = -1.0f;
+    m_inBattle = false;                 // left behind: no summary
 }
 
 void BattleView::setObjectiveLines(const QStringList &lines)
@@ -678,7 +754,7 @@ bool BattleView::repairSubsystem(const QString &name)
         emit logMessage(tr("%1 repaired: %2%").arg(s->name).arg(qRound(s->health)), LogLevel::Success);
         return true;
     }
-    emit logMessage(tr("Unknown system '%1' (engines, shields, weapons, lifesupport, hull)").arg(name),
+    emit logMessage(tr("Unknown system '%1' (engines, shields, weapons, lifesupport, sensors, hull)").arg(name),
                     LogLevel::Warning);
     return false;
 }
@@ -705,12 +781,31 @@ QString BattleView::weaponReport() const
         target = tr("T%1 %2 (%3%)").arg(indexOfId(e->id) + 1).arg(className(*e))
                      .arg(qRound(100.0f * e->hp / e->maxHp));
 
-    return tr("Main tower: %1\nPulse weapons: %2\nSecondary towers: %3 (auto-fire, %4% efficiency)\n"
-              "Current target: %5 | Kills: %6")
-        .arg(state(m_mainCooldown), state(m_pulseCooldown), state(m_secondaryCooldown))
-        .arg(qRound(subsystemHealth("weapons")))
-        .arg(target)
-        .arg(m_kills);
+    // Only the weapons of this ship
+    QString report = tr("%1: %2").arg(QCoreApplication::translate("Balance", m_loadout.mainName), state(m_mainCooldown));
+    if (m_loadout.pulse)
+        report += tr("\nPulse weapons: %1").arg(state(m_pulseCooldown));
+    if (m_loadout.towers)
+        report += tr("\nSecondary towers: %1 (auto-fire, %2% efficiency)").arg(state(m_secondaryCooldown))
+                      .arg(qRound(subsystemHealth("weapons")));
+    report += tr("\nCurrent target: %1 | Kills: %2").arg(target).arg(m_kills);
+    if (const Enemy *e = findEnemy(m_lockedId); e && e->alive) {
+        report += tr("\nHit chance on the target: %1% (distance %2 km, sensors %3%)")
+                      .arg(qRound(100.0f * hitChance(destinyWorld(kMainTowerLocal), e->pos, true, e)
+                                  * (m_aimSystem >= 0 ? kSubsystemAim : 1.0f)))
+                      .arg(qRound(e->pos.length() * 10.0f))
+                      .arg(qRound(subsystemHealth("sensors")));
+        report += tr("\nTarget systems: weapons %1%, shields %2%, engines %3%, hangar %4%")
+                      .arg(qRound(e->systems[0])).arg(qRound(e->systems[1])).arg(qRound(e->systems[2])).arg(qRound(e->systems[3]));
+    }
+    if (m_loadout.railguns)
+        report += tr("\nRailguns: %1 rounds, heat %2%%3").arg(m_railgunAmmo).arg(qRound(m_railgunHeat))
+                      .arg(m_railgunOverheated ? tr(" (OVERHEATED)") : QString());
+    if (m_missileBay > 0)
+        report += tr("\nMissiles: %1/%2").arg(m_missiles).arg(m_missileBay);
+    if (m_droneBay > 0)
+        report += tr("\nDrone salvos: %1/%2").arg(m_drones).arg(m_droneBay);
+    return report;
 }
 
 QString BattleView::sectorReport() const
@@ -739,10 +834,13 @@ void BattleView::step(float dt)
 {
     m_time += dt;
 
+    // Evasive maneuvers: the ship weaves sideways and rolls
+    m_evadeBlend = std::clamp(m_evadeBlend + (m_evading ? dt : -dt) * 0.5f, 0.0f, 1.0f);
     m_destinyModel.setToIdentity();
-    m_destinyModel.translate(0.0f, 0.25f * std::sin(m_time * 0.5f), 0.0f);
+    m_destinyModel.translate(0.0f, 0.25f * std::sin(m_time * 0.5f) + 0.8f * m_evadeBlend * std::sin(m_time * 1.3f),
+                             2.6f * m_evadeBlend * std::sin(m_time * 0.7f));
     m_destinyModel.rotate(30.0f, 0, 1, 0);
-    m_destinyModel.rotate(3.0f * std::sin(m_time * 0.3f), 1, 0, 0);
+    m_destinyModel.rotate(3.0f * std::sin(m_time * 0.3f) + 14.0f * m_evadeBlend * std::cos(m_time * 0.7f), 1, 0, 0);
     m_destinyInverse = m_destinyModel.inverted();
 
     if (dt <= 0.0f)
@@ -765,12 +863,48 @@ void BattleView::step(float dt)
     m_allyLaunches.clear();
     m_allies.erase(std::remove_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return !a.alive; }),
                    m_allies.end());
-    if (aliveIds().empty() && m_drones < m_droneBay) {
-        m_droneRefill += dt;
-        if (m_droneRefill >= kPlayerDroneRefill) {
-            m_droneRefill = 0;
-            ++m_drones;                 // drones recovered and recharged
+    // Battle statistics, summary when the last enemy falls
+    if (!aliveIds().empty()) {
+        if (!m_inBattle) {
+            m_inBattle = true;
+            m_stats = BattleStats();
+            m_stats.faction = m_waveFaction;
+            m_stats.interceptions = m_interceptions;    // baseline
+            m_replay.clear();
+            m_replayClock = 0;
+            m_weaponHits.clear();
+            m_adaptedWeapon = -1;
         }
+        m_stats.seconds += dt;
+        m_replayClock += dt;
+        if (m_replayClock >= 0.1f) {
+            m_replayClock = 0;
+            recordFrame();
+        }
+    } else if (m_inBattle) {
+        finishBattle();
+    }
+    m_dronesInFlight = int(std::count_if(m_projectiles.begin(), m_projectiles.end(), [](const Projectile &p) {
+        return !p.dead && p.drone && p.fromDestiny && !p.fromAlly;
+    }));
+
+    // FTL drive spooling under fire
+    if (m_jumpCountdown >= 0.0f) {
+        const float before = m_jumpCountdown;
+        m_jumpCountdown -= dt;
+        if (std::ceil(before) != std::ceil(m_jumpCountdown) && m_jumpCountdown > 0.0f && m_jumpCountdown <= 3.0f)
+            emit logMessage(tr("FTL jump in %1...").arg(int(std::ceil(m_jumpCountdown))), LogLevel::Info);
+        if (m_jumpCountdown <= 0.0f) {
+            m_jumpCountdown = -1.0f;
+            emit jumpReady();
+        }
+    }
+
+    // Railguns cool down when they do not fire
+    m_railgunHeat = std::max(0.0f, m_railgunHeat - kRailgunCooling * dt);
+    if (m_railgunOverheated && m_railgunHeat <= kRailgunRestart) {
+        m_railgunOverheated = false;
+        emit logMessage(tr("Railguns cooled down - point defense back"), LogLevel::Success);
     }
     if (aliveIds().empty() && m_hangarCapacity > 0) {
         const int out = int(std::count_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return a.group == -1; }));
@@ -791,8 +925,38 @@ void BattleView::step(float dt)
             const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
             shoot(true, destinyWorld(turret), t->id, {}, m_cannon.damage / 17.0f * efficiency, 38.0f,
                   kDestinyBolt, 1.0f, 0.09f);
+            m_projectiles.back().weapon = Weapon::Towers;
             emit sound(SoundCue::DestinyTurret, {}, 0.0f);
         }
+    }
+
+    autoFire(dt);
+
+    // Not enough power (leaks, drones, evasion): the lowest priorities are shed
+    {
+        int need = kMainTowerPower + kEnginePower + (m_turretsOn && m_loadout.towers ? kTurretPower : 0)
+                 + (m_railgunsOn && m_loadout.railguns ? kRailgunPower : 0) + (m_shieldOrdered ? kShieldPower : 0)
+                 + (m_dronesInFlight > 0 ? kDronePower : 0) + (m_evading ? kEvasionPower : 0);
+        const int available = kCorePower + m_powerBonus - m_powerLoss;
+        QStringList shed;
+        if (need > available && m_turretsOn && m_loadout.towers) {
+            m_turretsOn = false;
+            need -= kTurretPower;
+            shed << tr("auto-turrets");
+        }
+        if (need > available && m_evading) {
+            m_evading = false;
+            need -= kEvasionPower;
+            shed << tr("evasive maneuvers");
+        }
+        if (need > available && m_railgunsOn && m_loadout.railguns) {
+            m_railgunsOn = false;
+            need -= kRailgunPower;
+            shed << tr("railguns");
+        }
+        if (!shed.isEmpty())
+            emit logMessage(tr("Power shortage (%1 available) - shed: %2").arg(available).arg(shed.join(", ")),
+                            LogLevel::Critical);
     }
 
     if (m_railgunsOn)
@@ -803,13 +967,16 @@ void BattleView::step(float dt)
     m_pulseCooldown = std::max(0.0f, m_pulseCooldown - recharge);
     m_secondaryCooldown = std::max(0.0f, m_secondaryCooldown - recharge);
     m_shieldFlash = std::max(0.0f, m_shieldFlash - dt * 2.0f);
+    m_shake = std::max(0.0f, m_shake - dt * 2.5f);
+    if (m_observing && !aliveIds().empty())
+        setObservation(false);              // contacts: back to the tactical view
 
     // Organic hull (Wraith): it heals itself, even in battle
     if (m_loadout.hullRegen > 0.0f && m_hull > 0.0f)
         m_hull = std::min(100.0f, m_hull + m_loadout.hullRegen * dt);
 
     // Shield regeneration (slower while under fire)
-    if (m_shieldOrdered) {
+    if (m_shieldOrdered && m_hasShield) {
         const float base = m_time - m_lastShieldHit > 1.5f ? kPlayerShieldRegen : kPlayerShieldRegenUnderFire;
         const float rate = base * m_shieldRegenBonus * shieldPowerBoost()
                          * std::max(0.2f, subsystemHealth("shields") / 100.0f);
@@ -821,6 +988,7 @@ void BattleView::step(float dt)
     }
 
     updateProjectiles(dt);
+    updateRays(dt);
 
     m_hits.erase(std::remove_if(m_hits.begin(), m_hits.end(),
                                 [this](const auto &h) { return m_time - h.second.first > 1.5f; }),
@@ -1085,6 +1253,7 @@ int BattleView::launchFighters(int count)
         ++launched;
     }
     m_hangar -= launched;
+    m_launchedByOrder += launched;
     if (launched > 0) {
         emit logMessage(tr("%1 %2 launched").arg(launched).arg(m_hangarClass), LogLevel::Success);
         emit sound(SoundCue::Launch, m_classes[classIndex].faction, 0.0f);
@@ -1124,6 +1293,31 @@ void BattleView::updateAlly(Enemy &a, float dt)
 {
     a.hitFlash = std::max(0.0f, a.hitFlash - dt * 4.0f);
     regenShield(a, dt);
+    // Shuttle sent to latch onto an enemy ship (a way in for a team)
+    if (a.latchedOn > 0) {
+        const Enemy *target = findEnemy(a.latchedOn);
+        if (!target || !target->alive) {
+            a.latchedOn = -1;               // nothing left to latch on: back to normal duty
+        } else {
+            const QVector3D spot = target->pos + QVector3D(0.0f, target->radius * 0.5f, 0.0f);
+            const QVector3D toSpot = spot - a.pos;
+            const float distance = toSpot.length();
+            if (a.latchTime > 0.0f || distance < 2.0f) {
+                if (a.latchTime <= 0.0f)
+                    emit logMessage(tr("%1 latched onto T%2 - 'board %2' or 'sabotage %2 <room>'")
+                                        .arg(className(a)).arg(indexOfId(target->id) + 1),
+                                    LogLevel::Success);
+                a.latchTime += dt;
+                a.pos = spot;
+                a.vel = QVector3D();
+            } else {
+                a.vel = toSpot / distance * kAllyFighterSpeed;
+                a.pos += a.vel * dt;
+                a.facing = toSpot / distance;
+            }
+            return;
+        }
+    }
     Enemy *target = findEnemy(a.targetId);
     if (!target || !target->alive) {
         target = nearestEnemy(a.pos, a.cls == EnemyClass::Fighter);
@@ -1139,6 +1333,8 @@ void BattleView::updateAlly(Enemy &a, float dt)
     const bool fighter = a.cls == EnemyClass::Fighter;
     QVector3D goal;
     float speed = fighter ? kAllyFighterSpeed : kAllyMothershipSpeed;
+    if (a.group == -1 && m_jumpCountdown >= 0.0f)
+        target = nullptr;                   // recalled: they fly back to dock
     if (target) {
         a.idle = 0;
         if (fighter) {
@@ -1158,14 +1354,13 @@ void BattleView::updateAlly(Enemy &a, float dt)
             goal = centroid * 0.45f + side * ((a.phase - float(M_PI)) * 4.0f) + QVector3D(0, a.height, 0);
         }
     } else if (a.group == -1) {
-        // Hangar fighter: back to the Destiny, then lands
+        // Hangar fighter: stays outside, patrolling close to the ship,
+        // until it docks for an FTL jump
         a.idle += dt;
-        goal = destinyWorld({0.0f, -0.6f, 0.0f});
-        if (a.idle > 3.0f && (a.pos - goal).length() < 3.0f) {
-            a.alive = false;
-            m_hangar = std::min(m_hangarCapacity, m_hangar + 1);
-            return;
-        }
+        const float angle = m_time * 0.5f + a.phase;
+        goal = destinyWorld({2.0f + 7.0f * std::cos(angle), 1.5f + std::sin(angle * 1.3f), 7.0f * std::sin(angle)});
+        if (m_jumpCountdown >= 0.0f)
+            goal = destinyWorld({0.0f, -0.6f, 0.0f});           // back to the hangar bay
     } else {
         // Formation on the Destiny's side
         const float angle = a.baseAngle + 0.15f * std::sin(m_time * 0.2f + a.phase);
@@ -1205,10 +1400,12 @@ void BattleView::allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &tar
 {
     const ShipClass &sc = classOf(a);
     const bool big = a.cls == EnemyClass::Mothership;
-    auto fired = [this, &attack](Projectile::Kind kind) {
+    auto fired = [this, &attack, &sc](Projectile::Kind kind) {
         Projectile &p = m_projectiles.back();
         p.kind = kind;
         p.fromAlly = true;
+        p.weapon = Weapon::Ally;
+        p.sprite = kind == Projectile::Kind::Slug || kind == Projectile::Kind::Missile ? -1 : spriteFor(sc.faction);
         p.damage = attack.damage;           // no Destiny technology bonus
     };
     if (attack.kind == "bolt" || attack.kind == "slug") {
@@ -1229,8 +1426,14 @@ void BattleView::allyAttack(Enemy &a, const ShipAttack &attack, const Enemy &tar
         }
         emit sound(SoundCue::EnemyMissile, sc.faction, 0.0f);
     } else if (attack.kind == "beam") {
-        shoot(true, a.pos, target.id, {}, attack.damage, 90.0f, kBeamColor, 6.0f, 0.3f);
-        fired(Projectile::Kind::Beam);
+        Ray ray;
+        ray.fromDestiny = true;
+        ray.sourceAlly = a.id;
+        ray.targetEnemy = target.id;
+        ray.color = sc.faction == "Ori" ? QVector3D(1.0f, 0.85f, 0.55f) : kBeamColor;
+        ray.width = big ? 0.32f : 0.18f;
+        ray.weapon = Weapon::Ally;
+        fireRay(ray, attack.damage);
         emit sound(SoundCue::EnemyBeam, sc.faction, 0.0f);
     } else if (attack.kind == "launch") {
         const int payload = classIndexOf(attack.payload);
@@ -1254,6 +1457,7 @@ void BattleView::hitAlly(Enemy &a, const Projectile &p)
     const bool big = a.cls == EnemyClass::Mothership;
     m_effects.push_back({a.pos, kExplosion, 0.0f, big ? 1.6f : 0.9f, big ? 6.0f : 2.2f});
     emit sound(big ? SoundCue::BigExplosion : SoundCue::Explosion, {}, 0.0f);
+    ++m_stats.alliesLost;
     emit logMessage(a.group == -1 ? tr("Your %1 is shot down").arg(className(a))
                                   : tr("Friendly %1 destroyed").arg(className(a)),
                     LogLevel::Warning);
@@ -1293,6 +1497,772 @@ void BattleView::drawAllies()
         }
         // Engine glow in friendly blue
         drawGlow(a.pos - a.facing * a.radius * 0.95f, a.radius * 0.35f, QVector3D(0.35f, 0.7f, 1.0f), 0.8f);
+    }
+}
+
+// ================================================================
+//  Tactics: subsystem aiming, missiles, evasion, FTL under fire
+// ================================================================
+
+QStringList BattleView::enemySystems()
+{
+    return {"weapons", "shields", "engines", "hangar"};
+}
+
+bool BattleView::aimAt(int enemyIndex, const QString &system)
+{
+    const QString key = system.trimmed().toLower();
+    int index = -1;
+    if (!key.isEmpty() && key != "hull") {
+        index = int(enemySystems().indexOf(key.endsWith('s') || key == "hangar" ? key : key + 's'));
+        if (index < 0) {
+            emit logMessage(tr("Unknown subsystem '%1' (weapons, shields, engines, hangar, hull)").arg(system),
+                            LogLevel::Warning);
+            return false;
+        }
+    }
+    if (!lockTarget(enemyIndex))
+        return false;
+    if (index == SysShields && classOf(*findEnemy(m_lockedId)).faction == QLatin1String("Wraith")) {
+        emit logMessage(tr("T%1 has no shield generator - a Wraith ship relies on its organic hull").arg(enemyIndex + 1),
+                        LogLevel::Warning);
+        return false;
+    }
+    m_aimSystem = index;
+    const Enemy *e = findEnemy(m_lockedId);
+    if (index < 0)
+        emit logMessage(tr("Aiming at the hull of T%1").arg(enemyIndex + 1), LogLevel::Success);
+    else
+        emit logMessage(tr("Aiming at the %1 of T%2 (%3%) - harder to hit")
+                            .arg(tr(qPrintable(enemySystems().at(index))))
+                            .arg(enemyIndex + 1)
+                            .arg(qRound(e->systems[index])),
+                        LogLevel::Success);
+    return true;
+}
+
+void BattleView::setMissileBay(int capacity, int stock)
+{
+    m_missileBay = std::max(0, capacity);
+    m_missiles = std::clamp(stock, 0, m_missileBay);
+}
+
+bool BattleView::fireMissiles(int enemyIndex)
+{
+    if (m_missileBay == 0) {
+        emit logMessage(tr("No missile bay aboard this ship"), LogLevel::Warning);
+        return false;
+    }
+    if (enemyIndex >= 0 && !lockTarget(enemyIndex))
+        return false;
+    if (m_missiles == 0) {
+        emit logMessage(tr("Missile bay empty - resupply on a naquadah-rich planet"), LogLevel::Warning);
+        return false;
+    }
+    const Enemy *target = findEnemy(m_lockedId);
+    if (!target || !target->alive) {
+        target = pickTarget();
+        if (!target) {
+            emit logMessage(tr("Missiles: no target"), LogLevel::Warning);
+            return false;
+        }
+        m_lockedId = target->id;
+    }
+    const int salvo = std::min(2, m_missiles);
+    for (int i = 0; i < salvo; ++i) {
+        shoot(true, destinyWorld({randRange(-2.0f, 1.0f), -0.2f, randRange(-1.0f, 1.0f)}), target->id, {},
+              kPlayerMissileDamage, kMissileSpeed * 1.6f, kMissileExhaust, 0.7f, 0.18f, i * 0.35f);
+        Projectile &p = m_projectiles.back();
+        p.kind = Projectile::Kind::Missile;
+        p.life = 12.0f;
+        p.weapon = Weapon::Missiles;
+        p.aimSystem = m_aimSystem;
+    }
+    m_missiles -= salvo;
+    emit sound(SoundCue::EnemyMissile, {}, 0.0f);
+    if (!m_autoFiring)
+        emit logMessage(tr("%1 missile(s) launched at T%2 (%3 left)").arg(salvo).arg(indexOfId(target->id) + 1).arg(m_missiles),
+                    LogLevel::Success);
+    return true;
+}
+
+void BattleView::setEvasion(bool on)
+{
+    if (on && subsystemHealth("engines") <= 20.0f) {
+        emit logMessage(tr("Engines too damaged for evasive maneuvers"), LogLevel::Warning);
+        return;
+    }
+    m_evading = on;
+    emit logMessage(on ? tr("Evasive maneuvers: enemy fire less accurate, yours too (-%1 power)").arg(kEvasionPower)
+                       : tr("Evasive maneuvers stopped"),
+                    LogLevel::Success);
+}
+
+void BattleView::repairBy(const QString &key, float amount)
+{
+    if (key == "hull") {
+        m_hull = std::min(100.0f, m_hull + amount);
+        if (!m_fires.empty() && amount >= 5.0f)
+            m_fires.erase(m_fires.begin() + QRandomGenerator::global()->bounded(int(m_fires.size())));
+        return;
+    }
+    if (Subsystem *s = subsystem(key)) {
+        s->health = std::min(100.0f, s->health + amount);
+        emit subsystemChanged(s->key, s->health);
+    }
+}
+
+void BattleView::startJumpSequence(float seconds)
+{
+    m_jumpCountdown = std::max(0.0f, seconds);
+    const int out = int(std::count_if(m_allies.begin(), m_allies.end(),
+                                      [](const Enemy &a) { return a.alive && a.group == -1; }));
+    emit logMessage(out > 0 ? tr("FTL drive spooling: %1 s - %2 fighter(s) recalled to the hangar").arg(qRound(seconds)).arg(out)
+                            : tr("FTL drive spooling: %1 s - hold on").arg(qRound(seconds)),
+                    LogLevel::Warning);
+}
+
+void BattleView::abortJumpSequence()
+{
+    if (m_jumpCountdown < 0.0f)
+        return;
+    m_jumpCountdown = -1.0f;
+    emit logMessage(tr("FTL jump aborted"), LogLevel::Info);
+}
+
+int BattleView::dockForJump()
+{
+    int lost = 0, docked = 0;
+    const QVector3D bay = destinyWorld({0.0f, -0.6f, 0.0f});
+    for (Enemy &a : m_allies) {
+        if (!a.alive || a.group != -1)
+            continue;
+        a.alive = false;
+        if ((a.pos - bay).length() > kDockRange)
+            ++lost;                         // too far: left behind
+        else
+            ++docked;
+    }
+    m_hangar = std::min(m_hangarCapacity, m_hangar + docked);
+    m_relaunch = std::min(m_launchedByOrder, docked);
+    m_launchedByOrder = 0;
+    m_allies.erase(std::remove_if(m_allies.begin(), m_allies.end(), [](const Enemy &a) { return !a.alive; }),
+                   m_allies.end());
+    if (lost > 0)
+        emit logMessage(tr("%1 fighter(s) too far from the ship were left behind").arg(lost), LogLevel::Critical);
+    return lost;
+}
+
+void BattleView::relaunchAfterJump()
+{
+    const int count = m_relaunch;
+    m_relaunch = 0;
+    if (count > 0)
+        launchFighters(count);
+}
+
+void BattleView::setObservation(bool on)
+{
+    if (on && !aliveIds().empty()) {
+        emit logMessage(tr("Not with hostile contacts around"), LogLevel::Warning);
+        return;
+    }
+    m_observing = on;
+    update();
+}
+
+// ================================================================
+//  Inside the enemy motherships
+// ================================================================
+
+QString BattleView::layoutOf(const QString &faction)
+{
+    static const QStringList known{"Goa'uld", "Lucian Alliance", "Tau'ri", "Wraith", "Asgard", "Ancients", "Ori"};
+    return known.contains(faction) ? faction : QStringLiteral("generic");
+}
+
+// The AI crew of an enemy ship: fights its fires, seals its breaches,
+// repairs its systems, defends against boarders
+void BattleView::updateEnemyInterior(Enemy &e, float seconds)
+{
+    Interior &in = *e.interior;
+    static const QStringList keys{"weapons", "shields", "engines", "hangar"};
+    for (const Interior::Compartment &c : in.compartments()) {
+        if (c.boarders > 0)
+            in.defend(c.id, nullptr);
+        if (c.vented && c.fire <= 0.0f)
+            in.setSealed(c.id, false, nullptr);
+        else if (c.fire > 0.85f && c.system.isEmpty() && c.boarders == 0)
+            in.vent(c.id, nullptr);
+        else if (c.fire > 0.0f || c.breach || c.leak)
+            in.orderRepair(c.id, nullptr);
+    }
+    const bool organic = classOf(e).faction == QLatin1String("Wraith");     // no shield generator
+    for (int i = 0; i < 4; ++i)
+        if (e.systems[i] < 65.0f && !(organic && i == SysShields))
+            in.orderRepair(keys[i], nullptr);
+    if (in.freeWorkers() == 0)
+        in.rotate();
+
+    const Interior::Effects fx = in.tick(seconds, 100.0f, true);
+    for (const auto &[key, amount] : fx.systemDamage) {
+        const int i = int(keys.indexOf(key));
+        if (i >= 0)
+            damageEnemySystem(e, i, amount / 260.0f * e.maxHp);     // percent -> hull points of kSubsystemDamage
+    }
+    for (const auto &[key, amount] : fx.systemRepair) {
+        const int i = int(keys.indexOf(key));
+        if (i < 0)
+            continue;
+        const bool wasDown = e.systems[i] <= 0.0f;
+        e.systems[i] = std::min(100.0f, e.systems[i] + amount);
+        if (i == SysShields && wasDown) {
+            // Shield generator back online
+            const ShipClass &sc = classOf(e);
+            e.maxShield = float(sc.hull) * shipShieldShare(sc.faction, true) * gameConfig().shipShieldScale;
+        }
+    }
+    if (fx.hullRepair > 0.0f)
+        e.hp = std::min(e.maxHp, e.hp + e.maxHp * fx.hullRepair / 100.0f * 0.5f);
+    // Only the big events of their ship are reported
+    for (const Interior::Message &m : in.takeMessages())
+        if (m.tone >= 2 && m_time - e.lastInteriorLog > 6.0f) {
+            e.lastInteriorLog = m_time;
+            emit logMessage(tr("T%1 %2: %3").arg(indexOfId(e.id) + 1).arg(className(e)).arg(m.text), LogLevel::Success);
+        }
+}
+
+// Enemies come aboard: by teleportation when the player's shields are
+// down (Wraith culling beam, Asgard and Tau'ri beams, Nakai), by rings
+// once one of their fighters latched onto the hull (see updateEnemy)
+void BattleView::enemyBoarding(Enemy &e, float seconds)
+{
+    const QString faction = classOf(e).faction;
+    static const QStringList beams{"Wraith", "Tau'ri", "Asgard", "Nakai"};
+    if (!beams.contains(faction) || shieldProtecting() || e.systems[SysWeapons] <= 0.0f)
+        return;
+    if (randRange(0.0f, 1.0f) < 0.03f * seconds) {
+        emit logMessage(tr("T%1 %2 beams a team aboard - your shields are down!").arg(indexOfId(e.id) + 1).arg(className(e)),
+                        LogLevel::Critical);
+        emit boardingParty(2 + QRandomGenerator::global()->bounded(3), faction, QStringLiteral("beam"));
+    }
+}
+
+std::shared_ptr<Interior> BattleView::enemyInterior(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return nullptr;
+    return findEnemy(ids[enemyIndex])->interior;
+}
+
+QString BattleView::enemyClass(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    return enemyIndex >= 0 && enemyIndex < int(ids.size()) ? className(*findEnemy(ids[enemyIndex])) : QString();
+}
+
+QString BattleView::enemyFaction(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    return enemyIndex >= 0 && enemyIndex < int(ids.size()) ? classOf(*findEnemy(ids[enemyIndex])).faction : QString();
+}
+
+bool BattleView::enemyShieldDown(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return false;
+    return findEnemy(ids[enemyIndex])->shield <= 1.0f;
+}
+
+void BattleView::damageEnemyRoom(int enemyIndex, const QString &room, float damage)
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return;
+    Enemy *e = findEnemy(ids[enemyIndex]);
+    if (!e->interior)
+        return;
+    const int index = e->interior->find(room);
+    if (index < 0)
+        return;
+    const Interior::Compartment &c = e->interior->compartments()[index];
+    e->interior->damageAt(c.rect.center(), damage);
+    e->interior->startFire(index, 0.5f);
+    static const QStringList keys{"weapons", "shields", "engines", "hangar"};
+    const int system = int(keys.indexOf(c.system));
+    if (system >= 0)
+        damageEnemySystem(*e, system, damage / 260.0f * e->maxHp * 2.0f);
+}
+
+bool BattleView::dockShuttle(int enemyIndex, QString *error)
+{
+    const std::vector<int> ids = aliveIds();
+    const int classIndex = classIndexOf(m_hangarClass);
+    QString why;
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        why = tr("no contact T%1").arg(enemyIndex + 1);
+    else if (findEnemy(ids[enemyIndex])->cls != EnemyClass::Mothership)
+        why = tr("only motherships can be docked with");
+    else if (classIndex < 0 || m_hangar <= 0)
+        why = tr("no ship in the hangar");
+    else if (shuttleDocked(enemyIndex))
+        why = tr("a ship is already latched on it");
+    if (!why.isEmpty()) {
+        if (error)
+            *error = why;
+        return false;
+    }
+    Enemy &a = spawnAlly(classIndex, destinyWorld({randRange(-2.0f, 2.0f), -0.6f, randRange(-1.0f, 1.0f)}), -1);
+    a.latchedOn = ids[enemyIndex];
+    a.latchTime = 0;
+    --m_hangar;
+    emit logMessage(tr("%1 on its way to latch onto T%2 - protect it").arg(m_hangarClass).arg(enemyIndex + 1),
+                    LogLevel::Success);
+    return true;
+}
+
+bool BattleView::shuttleDocked(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return false;
+    for (const Enemy &a : m_allies)
+        if (a.alive && a.latchedOn == ids[enemyIndex] && a.latchTime > 0.0f)
+            return true;
+    return false;
+}
+
+float BattleView::enemyDamage() const
+{
+    float sum = 0;
+    int count = 0;
+    for (const Enemy &e : m_enemies)
+        if (e.alive && e.cls == EnemyClass::Mothership) {
+            sum += 1.0f - e.hp / e.maxHp;
+            ++count;
+        }
+    return count > 0 ? sum / float(count) : 0.0f;
+}
+
+void BattleView::setFireSpots(const QList<QVector3D> &spots)
+{
+    m_externalFires = true;
+    m_fires.assign(spots.begin(), spots.end());
+}
+
+bool BattleView::canBoard(int enemyIndex, QString *why) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size())) {
+        if (why) *why = tr("no contact T%1").arg(enemyIndex + 1);
+        return false;
+    }
+    const Enemy *e = findEnemy(ids[enemyIndex]);
+    if (e->cls != EnemyClass::Mothership) {
+        if (why) *why = tr("only motherships can be boarded");
+        return false;
+    }
+    if (e->shield > 1.0f) {
+        if (why) *why = tr("its shield is still up (%1%)").arg(qRound(100.0f * e->shield / std::max(1.0f, e->maxShield)));
+        return false;
+    }
+    if (e->hp > 0.35f * e->maxHp) {
+        if (why) *why = tr("not crippled enough (hull %1%, needs 35%)").arg(qRound(100.0f * e->hp / e->maxHp));
+        return false;
+    }
+    if (e->pos.length() > 45.0f) {
+        if (why) *why = tr("too far for the shuttles");
+        return false;
+    }
+    return true;
+}
+
+QString BattleView::captureEnemy(int enemyIndex)
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return QString();
+    Enemy *e = findEnemy(ids[enemyIndex]);
+    e->alive = false;
+    ++m_kills;
+    ++m_stats.kills;
+    ++m_stats.motherships;
+    if (m_lockedId == e->id)
+        m_lockedId = -1;
+    hyperspaceWindow(e->pos, 1.2f);
+    emit logMessage(tr("T%1 %2 captured - its crew surrendered").arg(enemyIndex + 1).arg(className(*e)), LogLevel::Success);
+    emit enemyDestroyed(true);
+    return classOf(*e).faction;
+}
+
+void BattleView::recordFrame()
+{
+    constexpr int kMaxFrames = 3000;        // 5 minutes
+    if (m_replay.size() >= kMaxFrames)
+        return;
+    ReplayFrame f;
+    f.time = m_stats.seconds;
+    f.hull = m_hull;
+    f.shield = shieldProtecting() ? m_shieldStrength : 0.0f;
+    const QVector3D center = destinyWorld({});
+    const QVector3D bow = destinyWorld({1, 0, 0}) - center;
+    f.ships.append({QPointF(center.x(), center.z()), QPointF(bow.x(), bow.z()), true, 0, m_hull});
+    for (const Enemy &e : m_enemies)
+        if (e.alive)
+            f.ships.append({QPointF(e.pos.x(), e.pos.z()), QPointF(e.facing.x(), e.facing.z()),
+                            e.cls == EnemyClass::Mothership, 1, 100.0f * e.hp / e.maxHp});
+    for (const Enemy &a : m_allies)
+        if (a.alive)
+            f.ships.append({QPointF(a.pos.x(), a.pos.z()), QPointF(a.facing.x(), a.facing.z()),
+                            a.cls == EnemyClass::Mothership, 2, 100.0f * a.hp / a.maxHp});
+    for (const Projectile &p : m_projectiles)
+        if (!p.dead && p.delay <= 0.0f)
+            f.shots.append({QPointF(p.pos.x(), p.pos.z()), p.fromDestiny, p.kind == Projectile::Kind::Missile, false});
+    for (const Ray &r : m_rays) {
+        const QVector3D a = rayStart(r), b = rayEnd(r);
+        for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
+            const QVector3D p = a + (b - a) * t;
+            f.shots.append({QPointF(p.x(), p.z()), r.fromDestiny, false, true});
+        }
+    }
+    f.events = m_replayEvents;
+    m_replayEvents.clear();
+    m_replay << f;
+}
+
+void BattleView::finishBattle()
+{
+    m_inBattle = false;
+    recordFrame();
+    m_lastReplay = m_replay;
+    m_lastReplayFaction = m_stats.faction;
+    m_replay.clear();
+    m_stats.interceptions = m_interceptions - m_stats.interceptions;
+    const int accuracy = m_stats.shots > 0 ? qRound(100.0f * m_stats.hits / m_stats.shots) : 0;
+    emit logMessage(tr("Battle report (%1): %2 s, %3 kill(s), accuracy %4% (%5/%6), damage dealt %7, "
+                       "hull -%8%, shields -%9%")
+                        .arg(m_stats.faction)
+                        .arg(qRound(m_stats.seconds))
+                        .arg(m_stats.kills)
+                        .arg(accuracy)
+                        .arg(m_stats.hits)
+                        .arg(m_stats.shots)
+                        .arg(qRound(m_stats.damageDealt))
+                        .arg(qRound(m_stats.hullLost))
+                        .arg(qRound(m_stats.shieldLost)),
+                    LogLevel::Info);
+    emit battleEnded(m_stats);
+}
+
+// ================================================================
+//  Automatic fire and energy
+// ================================================================
+
+bool BattleView::setAutoFire(const QString &weapon, bool on)
+{
+    const QString w = weapon.trimmed().toLower();
+    if (w == "all") {
+        m_autoMain = on;
+        m_autoPulse = on && m_loadout.pulse;
+        m_autoMissiles = on && m_missileBay > 0;
+        m_autoDrones = on && m_droneBay > 0;
+        if (m_loadout.towers)
+            m_turretsOn = on;
+        if (m_loadout.railguns)
+            m_railgunsOn = on;
+        emit logMessage(on ? tr("Every weapon fires on its own") : tr("Automatic fire off - weapons on your orders only"),
+                        LogLevel::Success);
+        return true;
+    }
+    bool *flag = nullptr;
+    bool carried = true;
+    QString name;
+    if (w.startsWith("main") || w == "attack" || w == "tower") {
+        flag = &m_autoMain;
+        name = QCoreApplication::translate("Balance", m_loadout.mainName);
+    } else if (w.startsWith("pulse")) {
+        flag = &m_autoPulse;
+        carried = m_loadout.pulse;
+        name = tr("pulse weapons");
+    } else if (w.startsWith("missile")) {
+        flag = &m_autoMissiles;
+        carried = m_missileBay > 0;
+        name = tr("missiles");
+    } else if (w.startsWith("drone")) {
+        flag = &m_autoDrones;
+        carried = m_droneBay > 0;
+        name = tr("drones");
+    } else if (w.startsWith("turret") || w.startsWith("tower")) {
+        setTurretsActive(on);
+        return m_loadout.towers;
+    } else if (w.startsWith("railgun")) {
+        setRailgunsActive(on);
+        return m_loadout.railguns;
+    } else {
+        emit logMessage(tr("Unknown weapon '%1' (main, pulse, missiles, drones, towers, railguns, all)").arg(weapon),
+                        LogLevel::Warning);
+        return false;
+    }
+    if (!carried) {
+        emit logMessage(tr("No %1 aboard this ship").arg(name), LogLevel::Warning);
+        return false;
+    }
+    *flag = on;
+    emit logMessage(on ? tr("Automatic fire on: %1").arg(name) : tr("Automatic fire off: %1").arg(name),
+                    LogLevel::Success);
+    return true;
+}
+
+QString BattleView::autoFireReport() const
+{
+    QStringList on, off;
+    auto add = [&on, &off](bool carried, bool active, const QString &name) {
+        if (carried)
+            (active ? on : off) << name;
+    };
+    add(true, m_autoMain, QCoreApplication::translate("Balance", m_loadout.mainName));
+    add(m_loadout.pulse, m_autoPulse, tr("pulse weapons"));
+    add(m_loadout.towers, m_turretsOn, tr("towers"));
+    add(m_loadout.railguns, m_railgunsOn, tr("railguns"));
+    add(m_missileBay > 0, m_autoMissiles, tr("missiles"));
+    add(m_droneBay > 0, m_autoDrones, tr("drones"));
+    return tr("Automatic fire - on: %1 | off: %2 ('auto <weapon> on|off', 'auto all on|off')")
+        .arg(on.isEmpty() ? tr("none") : on.join(", "), off.isEmpty() ? tr("none") : off.join(", "));
+}
+
+// Every weapon set to auto fires as soon as it is ready
+void BattleView::autoFire(float dt)
+{
+    m_autoMissileTimer = std::max(0.0f, m_autoMissileTimer - dt);
+    m_autoDroneTimer = std::max(0.0f, m_autoDroneTimer - dt);
+    if (aliveIds().empty() || m_jumpCountdown >= 0.0f)
+        return;
+    m_autoFiring = true;
+    if (m_autoMain && m_mainCooldown <= 0.0f)
+        fireMainWeapon();
+    if (m_autoPulse && m_loadout.pulse && m_pulseCooldown <= 0.0f)
+        firePulseVolley();
+    // Missiles and drones are limited: kept for the motherships, one salvo at a time
+    auto mothership = [this]() {
+        const std::vector<int> ids = aliveIds();
+        if (const Enemy *locked = findEnemy(m_lockedId); locked && locked->alive && locked->cls == EnemyClass::Mothership)
+            return indexOfId(locked->id);
+        for (size_t i = 0; i < ids.size(); ++i)
+            if (findEnemy(ids[i])->cls == EnemyClass::Mothership)
+                return int(i);
+        return -1;
+    };
+    if (m_autoMissiles && m_missiles > 0 && m_autoMissileTimer <= 0.0f) {
+        const int target = mothership();
+        if (target >= 0 && fireMissiles(target))
+            m_autoMissileTimer = 10.0f;
+    }
+    if (m_autoDrones && m_drones > 0 && m_autoDroneTimer <= 0.0f && freePower() >= kDronePower) {
+        const int target = mothership();
+        if (target >= 0 && fireDrones(target))
+            m_autoDroneTimer = 12.0f;
+    }
+    m_autoFiring = false;
+}
+
+QList<std::pair<QString, int>> BattleView::powerUse() const
+{
+    // Names translated where they are shown (context BattleView)
+    Q_UNUSED(QT_TR_NOOP("main weapon"))
+    Q_UNUSED(QT_TR_NOOP("engines"))
+    Q_UNUSED(QT_TR_NOOP("shields"))
+    Q_UNUSED(QT_TR_NOOP("evasion"))
+    Q_UNUSED(QT_TR_NOOP("fire control"))
+    QList<std::pair<QString, int>> use{{QStringLiteral("main weapon"), kMainTowerPower}, {QStringLiteral("engines"), kEnginePower}};
+    if (m_turretsOn && m_loadout.towers)
+        use.append({QStringLiteral("towers"), kTurretPower});
+    if (m_railgunsOn && m_loadout.railguns)
+        use.append({QStringLiteral("railguns"), kRailgunPower});
+    if (m_shieldOrdered)
+        use.append({QStringLiteral("shields"), kShieldPower});
+    if (m_dronesInFlight > 0)
+        use.append({QStringLiteral("drones"), kDronePower});
+    if (m_evading)
+        use.append({QStringLiteral("evasion"), kEvasionPower});
+    if (autoWeapons() > 0)
+        use.append({QStringLiteral("fire control"), kAutoFirePower * autoWeapons()});
+    return use;
+}
+
+int BattleView::autoWeapons() const
+{
+    return (m_autoMain ? 1 : 0) + (m_autoPulse ? 1 : 0) + (m_autoMissiles ? 1 : 0) + (m_autoDrones ? 1 : 0);
+}
+
+int BattleView::powerTotal() const
+{
+    return std::max(0, kCorePower + m_powerBonus - m_powerLoss);
+}
+
+// ================================================================
+//  Continuous beams
+// ================================================================
+
+void BattleView::fireRay(Ray ray, float damage)
+{
+    ray.damageLeft = damage;
+    const QVector3D from = rayStart(ray);
+    const QVector3D to = rayEnd(ray);
+    const bool fromPlayer = ray.fromDestiny && ray.sourceAlly < 0;
+    const Enemy *target = ray.targetEnemy >= 0 ? findEnemy(ray.targetEnemy) : nullptr;
+    float chance = hitChance(from, to, fromPlayer, target);
+    if (fromPlayer && m_aimSystem >= 0)
+        chance *= kSubsystemAim;
+    if (fromPlayer)
+        ++m_stats.shots;
+    if (randRange(0.0f, 1.0f) > chance) {
+        // Misses: the ray sweeps past its target
+        const QVector3D dir = (to - from).normalized();
+        QVector3D side = QVector3D::crossProduct(dir, {0, 1, 0});
+        if (side.lengthSquared() < 1e-4f)
+            side = {1, 0, 0};
+        ray.missOffset = side.normalized() * randRange(3.0f, 5.0f) * (randRange(0, 1) < 0.5f ? -1.0f : 1.0f);
+    }
+    m_rays.push_back(ray);
+}
+
+QVector3D BattleView::rayStart(const Ray &r) const
+{
+    if (r.sourceEnemy >= 0)
+        if (const Enemy *e = findEnemy(r.sourceEnemy))
+            return e->pos;
+    if (r.sourceAlly >= 0)
+        for (const Enemy &a : m_allies)
+            if (a.id == r.sourceAlly)
+                return a.pos;
+    return destinyWorld(r.sourceLocal);
+}
+
+QVector3D BattleView::rayEnd(const Ray &r) const
+{
+    QVector3D end;
+    if (r.targetEnemy >= 0) {
+        const Enemy *e = findEnemy(r.targetEnemy);
+        end = e ? e->pos : rayStart(r);
+    } else if (r.targetAlly >= 0) {
+        end = rayStart(r);
+        for (const Enemy &a : m_allies)
+            if (a.id == r.targetAlly)
+                end = a.pos;
+    } else {
+        end = destinyWorld(r.aimLocal);
+        // Stops on the player's shield while it holds
+        if (shieldProtecting() && r.missOffset.isNull()) {
+            const QVector3D from = rayStart(r);
+            for (float t = 0.0f; t <= 1.0f; t += 0.02f) {
+                const QVector3D p = from + (end - from) * t;
+                if (insideShield(p))
+                    return p;
+            }
+        }
+    }
+    if (!r.missOffset.isNull()) {
+        const QVector3D from = rayStart(r);
+        end = from + ((end + r.missOffset) - from) * 1.6f;     // goes on into space
+    }
+    return end;
+}
+
+void BattleView::updateRays(float dt)
+{
+    constexpr float kTick = 0.2f;
+    for (Ray &r : m_rays) {
+        r.age += dt;
+        r.tick += dt;
+        // Source or target gone: the beam stops
+        const bool sourceGone = (r.sourceEnemy >= 0 && (!findEnemy(r.sourceEnemy) || !findEnemy(r.sourceEnemy)->alive))
+                             || (r.sourceAlly >= 0 && !findAlly(r.sourceAlly));
+        const Enemy *enemy = r.targetEnemy >= 0 ? findEnemy(r.targetEnemy) : nullptr;
+        Enemy *ally = r.targetAlly >= 0 ? findAlly(r.targetAlly) : nullptr;
+        const bool targetGone = (r.targetEnemy >= 0 && (!enemy || !enemy->alive)) || (r.targetAlly >= 0 && (!ally || !ally->alive));
+        if (sourceGone || targetGone) {
+            r.age = kBeamDuration;
+            continue;
+        }
+        if (r.tick < kTick || !r.missOffset.isNull() || r.damageLeft <= 0.0f)
+            continue;
+        r.tick -= kTick;
+        Projectile hit;
+        hit.kind = Projectile::Kind::Beam;
+        hit.fromDestiny = r.fromDestiny;
+        hit.fromAlly = r.sourceAlly >= 0;
+        hit.weapon = r.weapon;
+        hit.aimSystem = hit.fromDestiny && !hit.fromAlly ? m_aimSystem : -1;
+        const int remaining = int((kBeamDuration - r.age) / kTick + 1e-4f) + 1;
+        hit.damage = r.damageLeft / float(std::max(1, remaining));
+        r.damageLeft -= hit.damage;
+        hit.width = r.width;
+        hit.pos = rayEnd(r);
+        hit.aimLocal = r.aimLocal;
+        if (r.targetEnemy >= 0) {
+            if (Enemy *e = findEnemy(r.targetEnemy)) {
+                const bool counted = hit.fromDestiny && !hit.fromAlly;
+                if (counted && r.age > kTick * 1.5f)
+                    --m_stats.hits;             // one hit per beam, not per tick
+                hitEnemy(*e, hit);
+            }
+        } else if (ally) {
+            hitAlly(*ally, hit);
+        } else if (shieldProtecting()) {
+            Projectile half = hit, through = hit;
+            half.damage *= 1.0f - kBeamShieldPierce;
+            through.damage *= kBeamShieldPierce;
+            hitShield(half);
+            hitHull(through);
+        } else {
+            hitHull(hit);
+        }
+    }
+    m_rays.erase(std::remove_if(m_rays.begin(), m_rays.end(), [](const Ray &r) { return r.age >= kBeamDuration; }),
+                 m_rays.end());
+}
+
+void BattleView::drawRays()
+{
+    for (const Ray &r : m_rays) {
+        const QVector3D from = rayStart(r);
+        const QVector3D to = rayEnd(r);
+        const QVector3D span = to - from;
+        const float length = span.length();
+        if (length < 0.1f)
+            continue;
+        // Bright at the start, fading out at the end
+        const float t = r.age / kBeamDuration;
+        const float strength = t < 0.1f ? t / 0.1f : 1.0f - std::max(0.0f, t - 0.7f) / 0.3f;
+        // The real Asgard beam of the mod: a core and a glow, the texture
+        // repeated along the beam (recolored for the Ori)
+        if (spriteTexture(SpriteBeamCore) && spriteTexture(SpriteBeamGlow)) {
+            const QVector3D middle = from + span * 0.5f;
+            const float tint = r.color == kBeamColor ? 0.0f : 0.9f;
+            const float flicker = 1.0f + 0.15f * std::sin(m_time * 40.0f + r.age * 13.0f);
+            drawSprite(SpriteBeamGlow, middle, span, length, r.width * 5.0f * flicker, r.color, tint, 0.8f * strength,
+                       length / (r.width * 10.0f));
+            drawSprite(SpriteBeamCore, middle, span, length, r.width * 2.2f, r.color, tint, strength,
+                       length / (r.width * 6.0f));
+            drawGlow(from, r.width * 2.5f, r.color, 0.6f * strength);
+            if (r.missOffset.isNull())
+                drawGlow(to, r.width * 3.5f * flicker, r.color, 0.7f * strength);
+            continue;
+        }
+        QMatrix4x4 m;
+        m.translate(from + span * 0.5f);
+        m.rotate(QQuaternion::rotationTo({0, 0, 1}, span / length));
+        QMatrix4x4 core = m, halo = m;
+        const float flicker = 1.0f + 0.15f * std::sin(m_time * 40.0f + r.age * 13.0f);
+        core.scale(r.width * 0.5f * flicker, r.width * 0.5f * flicker, length);
+        halo.scale(r.width * 2.2f, r.width * 2.2f, length);
+        drawMesh(m_box, core, QVector3D(1, 1, 1) * 0.7f + r.color * 0.5f, 1.5f, strength, ModeGlow);
+        drawMesh(m_box, halo, r.color, 1.2f, 0.3f * strength, ModeGlow);
+        drawGlow(from, r.width * 2.5f, r.color, 0.6f * strength);
+        if (r.missOffset.isNull())
+            drawGlow(to, r.width * 3.5f * flicker, r.color, 0.7f * strength);
     }
 }
 
@@ -1338,7 +2308,12 @@ int BattleView::freePower() const
         used += kRailgunPower;
     if (m_shieldOrdered)
         used += kShieldPower;
-    return std::max(0, kCorePower - used);
+    if (m_dronesInFlight > 0)
+        used += kDronePower;                // guidance of the drones in flight
+    if (m_evading)
+        used += kEvasionPower;
+    used += kAutoFirePower * autoWeapons();
+    return std::max(0, kCorePower + m_powerBonus - m_powerLoss - used);
 }
 
 float BattleView::shieldPowerBoost() const
@@ -1358,13 +2333,23 @@ QString BattleView::powerReport() const
     const QString priority = m_priority == PowerPriority::Shields   ? tr("shields")
                            : m_priority == PowerPriority::Weapons ? tr("weapons")
                                                                   : tr("balanced");
-    return tr("Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5) - towers %6, railguns %7")
-        .arg(kCorePower)
-        .arg(freePower())
-        .arg(priority)
-        .arg(shieldPowerBoost(), 0, 'f', 2)
-        .arg(weaponPowerBoost(), 0, 'f', 2)
-        .arg(m_turretsOn ? tr("on") : tr("off"), m_railgunsOn ? tr("on") : tr("off"));
+    QString report = tr("Power %1: free %2 - priority %3 (shield recharge x%4, weapon recharge x%5)")
+                         .arg(kCorePower)
+                         .arg(freePower())
+                         .arg(priority)
+                         .arg(shieldPowerBoost(), 0, 'f', 2)
+                         .arg(weaponPowerBoost(), 0, 'f', 2);
+    if (m_loadout.towers)
+        report += tr(" - towers %1").arg(m_turretsOn ? tr("on") : tr("off"));
+    if (m_loadout.railguns)
+        report += tr(" - railguns %1").arg(m_railgunsOn ? tr("on") : tr("off"));
+    if (!m_hasShield)
+        report += tr(" - no shield");
+    return report
+           + tr(" - evasion %1").arg(m_evading ? tr("on") : tr("off"))
+           + (m_droneBay > 0 ? tr(", drones need %1 free").arg(kDronePower) : QString())
+           + (m_powerLoss > 0 ? tr(" - LEAKS -%1").arg(m_powerLoss) : QString())
+           + (m_powerBonus > 0 ? tr(" - generator +%1").arg(m_powerBonus) : QString());
 }
 
 // Blue-white window of a ship dropping out of (or entering) hyperspace
@@ -1415,6 +2400,23 @@ BattleView::Enemy &BattleView::spawnEnemy(int classIndex, bool fromHyperspace)
         e.pos += QVector3D(e.pos.x(), 0.0f, e.pos.z()).normalized() * 35.0f;
         hyperspaceWindow(e.pos, e.cls == EnemyClass::Mothership ? 1.6f : 0.7f);
     }
+    // Motherships have an inside, run by their crew (not the automated drones)
+    if (e.cls == EnemyClass::Mothership && sc.faction != QLatin1String("Drones")) {
+        e.interior = std::make_shared<Interior>(QStringLiteral("enemy"), layoutOf(sc.faction));
+        e.interior->setCrewCount(40);
+    }
+    // A fleet that fled an earlier battle comes back hurt
+    if (m_incomingDamage > 0.0f && e.cls == EnemyClass::Mothership) {
+        e.hp = std::max(1.0f, e.hp * (1.0f - m_incomingDamage));
+        for (float &system : e.systems)
+            system *= 1.0f - 0.6f * m_incomingDamage;
+        if (e.interior)
+            for (int k = 0; k < 2; ++k) {
+                const auto &rooms = e.interior->compartments();
+                e.interior->damageAt(rooms[QRandomGenerator::global()->bounded(int(rooms.size()))].rect.center(),
+                                     60.0f * m_incomingDamage);
+            }
+    }
     m_enemies.push_back(e);
     return m_enemies.back();
 }
@@ -1423,6 +2425,50 @@ void BattleView::updateEnemy(Enemy &e, float dt)
 {
     e.hitFlash = std::max(0.0f, e.hitFlash - dt * 4.0f);
     regenShield(e, dt);
+    if (e.interior && dt > 0.0f) {
+        e.interiorClock += dt;
+        if (e.interiorClock >= 0.5f) {
+            updateEnemyInterior(e, e.interiorClock);
+            enemyBoarding(e, e.interiorClock);
+            e.interiorClock = 0;
+        }
+    }
+
+    // A fighter latched on the player's hull: its team comes aboard
+    if (e.latchedOn == 0) {
+        e.pos = destinyWorld(e.latchLocal + QVector3D(0.0f, 0.5f, 0.0f));
+        e.latchTime += dt;
+        if (e.latchTime >= 4.0f) {
+            e.latchTime = -20.0f;           // the next party later
+            emit boardingParty(2 + QRandomGenerator::global()->bounded(3), classOf(e).faction, QStringLiteral("rings"));
+        }
+        return;
+    }
+
+    // Latching run: a fighter flies onto the hull to bring a team aboard
+    if (e.latchedOn == 1) {
+        const QVector3D toTarget = destinyWorld(e.latchLocal) - e.pos;
+        const float distance = toTarget.length();
+        if (distance > 1e-3f)
+            e.facing = toTarget / distance;
+        e.pos += e.facing * std::min(distance, kDiveSpeed * 0.8f * dt);
+        if (distance <= 0.9f) {
+            e.latchedOn = 0;
+            e.latchTime = 0;
+            emit logMessage(tr("T%1 %2 latched onto the hull - boarders incoming! (railguns, 'defend <room>')")
+                                .arg(indexOfId(e.id) + 1).arg(className(e)),
+                            LogLevel::Critical);
+        }
+        return;
+    }
+    if (e.cls == EnemyClass::Fighter && dt > 0.0f && !shieldProtecting() && !e.diving
+        && layoutOf(classOf(e).faction) != QLatin1String("generic") && QStringList{"Goa'uld", "Lucian Alliance", "Ori", "Ancients"}.contains(classOf(e).faction)
+        && randRange(0.0f, 1.0f) < 0.02f * dt) {
+        e.latchedOn = 1;                    // on its way (0 once latched)
+        e.latchLocal = randomHullPoint();
+        emit logMessage(tr("T%1 %2 heads for the hull to latch on - shoot it down!").arg(indexOfId(e.id) + 1).arg(className(e)),
+                        LogLevel::Warning);
+    }
 
     // Kamikaze run: straight at the impact point, no more firing
     if (e.diving) {
@@ -1437,13 +2483,33 @@ void BattleView::updateEnemy(Enemy &e, float dt)
     }
 
     const QVector3D previous = e.pos;
-    const float a = e.baseAngle + e.angleAmp * std::sin(m_time * e.angleSpeed + e.phase);
-    QVector3D orbit(e.orbitRadius * std::cos(a), e.height + 0.8f * std::sin(m_time * 0.7f + e.phase),
-                    e.orbitRadius * std::sin(a));
-    // Freshly launched ships fly from their hangar to their orbit
+    // Damaged engines: the ship maneuvers slowly
+    const float engines = 0.25f + 0.75f * e.systems[SysEngines] / 100.0f;
+    // Motherships close in and fall back; a damaged one whose shield is
+    // down retreats for a while to recharge it
+    float radius = e.orbitRadius;
+    if (e.cls == EnemyClass::Mothership) {
+        radius += 7.0f * std::sin(m_time * 0.045f + e.phase);
+        if (dt > 0.0f && e.retreat <= 0.0f && e.hp < 0.4f * e.maxHp && e.maxShield > 0.0f
+            && e.shield < 0.3f * e.maxShield && e.systems[SysEngines] > 10.0f) {
+            e.retreat = 14.0f;
+            emit logMessage(tr("T%1 %2 falls back to recharge its shields").arg(indexOfId(e.id) + 1).arg(className(e)),
+                            LogLevel::Info);
+        }
+        if (e.retreat > 0.0f) {
+            e.retreat -= dt;
+            radius += 16.0f;
+        }
+    }
+    const float a = e.baseAngle + e.angleAmp * std::sin(m_time * e.angleSpeed * engines + e.phase);
+    QVector3D orbit(radius * std::cos(a), e.height + 0.8f * std::sin(m_time * 0.7f + e.phase),
+                    radius * std::sin(a));
+    // Freshly launched ships fly from their hangar to their orbit; the
+    // others move at their own speed between their positions
     const float gap = (orbit - previous).length();
-    if (dt > 0.0f && gap > 2.0f)
-        orbit = previous + (orbit - previous) / gap * std::min(gap, 12.0f * dt);
+    const float maxSpeed = (e.cls == EnemyClass::Mothership ? 4.0f : 12.0f) * engines;
+    if (dt > 0.0f && gap > maxSpeed * dt)
+        orbit = previous + (orbit - previous) / gap * (maxSpeed * dt);
     e.pos = orbit;
 
     const QVector3D motion = e.pos - previous;
@@ -1456,7 +2522,10 @@ void BattleView::updateEnemy(Enemy &e, float dt)
         return;
 
     // Attacks from the ship library: each one has its own cooldown and a
-    // chance to be used when ready
+    // chance to be used when ready. Damaged weapons fire less, a ship
+    // falling back does not fire its main batteries.
+    if (e.systems[SysWeapons] <= 0.0f)
+        return;
     const QList<ShipAttack> &attacks = classOf(e).attacks;
     for (int i = 0; i < attacks.size() && i < int(e.attackTimers.size()); ++i) {
         const ShipAttack &attack = attacks[i];
@@ -1464,11 +2533,28 @@ void BattleView::updateEnemy(Enemy &e, float dt)
         timer -= dt;
         if (timer > 0.0f)
             continue;
-        timer = attack.cooldown * randRange(0.85f, 1.15f);
+        timer = attack.cooldown * randRange(0.85f, 1.15f) / gameConfig().enemyFireRate;
         if (attack.trigger == "damaged" && e.hp > 0.5f * e.maxHp)
             continue;
-        if (randRange(0.0f, 1.0f) > attack.chance || !useAmmo(e, i))
+        if (randRange(0.0f, 1.0f) > attack.chance * (0.4f + 0.6f * e.systems[SysWeapons] / 100.0f))
             continue;
+        if (attack.kind == "launch" && e.systems[SysHangar] <= 0.0f)
+            continue;                       // hangar destroyed: nothing takes off
+        if (attack.kind == "kamikaze" && e.systems[SysEngines] < 30.0f)
+            continue;
+        if (e.retreat > 0.0f && attack.kind != "launch")
+            continue;
+        // Ancient drones draw on the shield of their ship
+        if (attack.kind == "missile" && isDrone(attack)) {
+            const float cost = e.maxShield * kEnemyDroneShieldCost;
+            if (e.maxShield <= 0.0f || e.shield < cost)
+                continue;
+            if (!useAmmo(e, i))
+                continue;
+            e.shield -= cost;
+        } else if (!useAmmo(e, i)) {
+            continue;
+        }
         performAttack(e, attack);
         if (e.diving)
             break;
@@ -1494,6 +2580,7 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
             shoot(false, from, -1, randomHullPoint(), attack.damage, slug ? 45.0f : big ? 22.0f : 28.0f,
                   slug ? kSlug : boltColor(sc.faction), big ? 1.6f : 1.1f, slug ? 0.05f : big ? 0.14f : 0.1f,
                   i * 0.15f);
+            m_projectiles.back().sprite = slug ? -1 : spriteFor(sc.faction);
             aimAtVictim();
             if (i < 3)
                 emit sound(slug ? SoundCue::DestinyRailgun : big ? SoundCue::EnemyHeavyFire : SoundCue::EnemyLightFire,
@@ -1512,9 +2599,13 @@ void BattleView::performAttack(Enemy &e, const ShipAttack &attack)
         if (attack.shots > 1)
             emit logMessage(tr("%1 fires a salvo of %2 missiles").arg(sc.name).arg(attack.shots), LogLevel::Warning);
     } else if (attack.kind == "beam") {
-        shoot(false, e.pos, -1, randomHullPoint(), attack.damage, 90.0f, kBeamColor, 6.0f, 0.3f);
-        m_projectiles.back().kind = Projectile::Kind::Beam;
-        aimAtVictim();
+        Ray ray;
+        ray.sourceEnemy = e.id;
+        ray.aimLocal = randomHullPoint();
+        ray.targetAlly = victim ? victim->id : -1;
+        ray.color = sc.faction == "Ori" ? QVector3D(1.0f, 0.85f, 0.55f) : kBeamColor;
+        ray.width = big ? 0.32f : 0.18f;
+        fireRay(ray, attack.damage);
         emit sound(SoundCue::EnemyBeam, sc.faction, 0.0f);
         emit logMessage(tr("%1: %2 fired").arg(sc.name, DbText::tr(attack.name)), LogLevel::Warning);
     } else if (attack.kind == "kamikaze") {
@@ -1580,12 +2671,65 @@ void BattleView::shoot(bool fromDestiny, const QVector3D &from, int targetId, co
     p.length = length;
     p.width = width;
     p.delay = delay;
+    p.autoFired = m_autoFiring;
+    // The player's energy shots: blue ion bolts (railgun slugs stay plain)
+    if (fromDestiny)
+        p.sprite = m_loadout.mainName && QString::fromLatin1(m_loadout.mainName).contains(QLatin1String("Staff"))
+                       ? int(SpritePlasma) : int(SpriteIon);
 
     QVector3D target = targetId < 0 ? destinyWorld(aimLocal) : from + QVector3D(1, 0, 0);
     if (const Enemy *e = findEnemy(targetId))
         target = e->pos;
     p.vel = (target - from).normalized() * speed;
     m_projectiles.push_back(p);
+}
+
+float BattleView::hitChance(const QVector3D &from, const QVector3D &to, bool fromPlayer, const Enemy *target) const
+{
+    float chance = GameConfig::instance().accuracyAt((to - from).length());
+    if (fromPlayer) {
+        chance *= (0.4f + 0.6f * subsystemHealth("sensors") / 100.0f) * m_accuracyBonus;  // damaged sensors: poor aim
+        if (m_evading)
+            chance *= kEvasionOwnAim;
+    }
+    if (target) {
+        if (target->cls == EnemyClass::Fighter)
+            chance *= 0.9f;
+        // A ship with damaged engines maneuvers badly: easier to hit
+        chance *= 1.0f + 0.3f * (1.0f - target->systems[SysEngines] / 100.0f);
+    } else if (!fromPlayer && m_evading && subsystemHealth("engines") > 20.0f) {
+        chance *= kEvasionDodge;
+    }
+    return std::clamp(chance, 0.05f, 1.0f);
+}
+
+void BattleView::rollAccuracy(Projectile &p, const QVector3D &target, float floor)
+{
+    const bool fromPlayer = p.fromDestiny && !p.fromAlly;
+    const Enemy *enemy = p.fromDestiny && p.targetId >= 0 ? findEnemy(p.targetId) : nullptr;
+    float chance = hitChance(p.pos, target, fromPlayer, enemy);
+    if (fromPlayer && p.aimSystem >= 0)
+        chance *= kSubsystemAim;
+    if (p.autoFired)
+        chance *= kAutoFireAim;
+    chance = std::max(chance, floor);
+    if (fromPlayer)
+        ++m_stats.shots;
+    if (randRange(0.0f, 1.0f) <= chance)
+        return;
+    // Miss: it flies a few meters beside the target and goes on
+    p.miss = true;
+    const QVector3D dir = (target - p.pos).normalized();
+    QVector3D side = QVector3D::crossProduct(dir, {0, 1, 0});
+    if (side.lengthSquared() < 1e-4f)
+        side = {1, 0, 0};
+    side.normalize();
+    const QVector3D up = QVector3D::crossProduct(side, dir).normalized();
+    const float a = randRange(0.0f, 2.0f * float(M_PI));
+    const QVector3D offset = (side * std::cos(a) + up * std::sin(a)) * randRange(2.5f, 5.0f);
+    const float speed = std::max(1.0f, p.vel.length());
+    p.vel = ((target + offset) - p.pos).normalized() * speed;
+    p.life = std::min(p.life, (target - p.pos).length() / speed + 1.2f);
 }
 
 BattleView::Projectile *BattleView::findShot(int id)
@@ -1599,13 +2743,29 @@ BattleView::Projectile *BattleView::findShot(int id)
 void BattleView::fireRailguns(float dt)
 {
     m_railgunTimer -= dt;
-    if (m_railgunTimer > 0.0f)
+    if (m_railgunTimer > 0.0f || m_railgunOverheated || m_railgunAmmo <= 0)
         return;
     const float efficiency = std::max(0.25f, subsystemHealth("weapons") / 100.0f);
     m_railgunTimer = kRailgunDelay / efficiency;
     const float damage = m_railgun.damage / 10.0f * efficiency;
     const QVector3D &turret = m_turrets[QRandomGenerator::global()->bounded(int(m_turrets.size()))];
     const QVector3D from = destinyWorld(turret);
+    // Every slug uses ammunition and heats the guns
+    auto slugFired = [this] {
+        m_projectiles.back().weapon = Weapon::Railgun;
+        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
+        --m_railgunAmmo;
+        m_railgunHeat += kRailgunHeatPerShot;
+        if (m_railgunHeat >= 100.0f) {
+            m_railgunHeat = 100.0f;
+            m_railgunOverheated = true;
+            emit logMessage(tr("Railguns overheated - point defense offline while they cool down"), LogLevel::Critical);
+        }
+        if (m_railgunAmmo == 0)
+            emit logMessage(tr("Railguns out of ammunition - resupply on a mineral-rich planet"), LogLevel::Critical);
+        else if (m_railgunAmmo == kRailgunAmmo / 5)
+            emit logMessage(tr("Railgun ammunition low (%1 rounds)").arg(m_railgunAmmo), LogLevel::Warning);
+    };
 
     // 1. Ships on a kamikaze run
     const Enemy *diver = nullptr;
@@ -1619,7 +2779,7 @@ void BattleView::fireRailguns(float dt)
         shoot(true, from, diver->id, {}, damage, kSlugSpeed, kSlug, 1.2f, 0.05f);
         m_projectiles.back().kind = Projectile::Kind::Slug;
         m_projectiles.back().life = 1.5f;
-        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
+        slugFired();
         return;
     }
 
@@ -1646,7 +2806,7 @@ void BattleView::fireRailguns(float dt)
         slug.targetShot = missileId;
         slug.life = 1.5f;
         slug.vel = (missilePos - from).normalized() * kSlugSpeed;
-        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
+        slugFired();
         return;
     }
 
@@ -1666,7 +2826,7 @@ void BattleView::fireRailguns(float dt)
         shoot(true, from, target->id, {}, damage, kSlugSpeed, kSlug, 1.2f, 0.05f);
         m_projectiles.back().kind = Projectile::Kind::Slug;
         m_projectiles.back().life = 1.5f;
-        emit sound(SoundCue::DestinyRailgun, {}, 0.0f);
+        slugFired();
     }
 }
 
@@ -1686,6 +2846,32 @@ void BattleView::updateProjectiles(float dt)
         p.life -= dt;
         if (p.life <= 0.0f) {
             p.dead = true;
+            continue;
+        }
+
+        // Hit chance, rolled once when the shot leaves its gun
+        if (!p.rolled) {
+            p.rolled = true;
+            QVector3D aim;
+            bool known = true;
+            if (p.targetShot >= 0)
+                known = false;                  // railgun slug on a missile: own rules
+            else if (p.targetAlly >= 0) {
+                const Enemy *ally = findAlly(p.targetAlly);
+                known = ally != nullptr;
+                if (ally)
+                    aim = ally->pos;
+            } else if (p.targetId < 0)
+                aim = destinyWorld(p.aimLocal);
+            else if (const Enemy *e = findEnemy(p.targetId))
+                aim = e->pos;
+            else
+                known = false;
+            if (known)
+                rollAccuracy(p, aim, p.drone ? 0.92f : p.kind == Projectile::Kind::Missile ? 0.8f : 0.0f);
+        }
+        if (p.miss) {
+            p.pos += p.vel * dt;                // flies past, no impact
             continue;
         }
 
@@ -1786,9 +2972,31 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     float damage = p.damage;
     if (p.kind == Projectile::Kind::Slug)
         damage *= e.cls == EnemyClass::Fighter ? kSlugVsFighter : kSlugVsMothership;
+    const bool fromPlayer = p.fromDestiny && !p.fromAlly;
+    if (fromPlayer)
+        ++m_stats.hits;
+    damage = adaptedDamage(e, p.weapon, damage);
     damage = absorbByShield(e, p, damage);
     if (damage <= 0.0f)
         return;
+    // Aimed at a subsystem: it takes the blow, the hull less of it.
+    // Any other hit may still damage one at random.
+    if (p.aimSystem >= 0) {
+        damageEnemySystem(e, p.aimSystem, damage);
+        damage *= kSubsystemHullShare;
+    } else if (randRange(0.0f, 1.0f) < 0.25f) {
+        damageEnemySystem(e, QRandomGenerator::global()->bounded(4), damage * 0.4f);
+    }
+    // Inside the ship: the room under the hit (the aimed system, or any)
+    if (e.interior && (p.aimSystem >= 0 || randRange(0.0f, 1.0f) < 0.5f)) {
+        const auto &rooms = e.interior->compartments();
+        int room = p.aimSystem >= 0 ? e.interior->compartmentOfSystem(enemySystems().at(p.aimSystem)) : -1;
+        if (room < 0)
+            room = QRandomGenerator::global()->bounded(int(rooms.size()));
+        e.interior->damageAt(rooms[room].rect.center(), damage / std::max(1.0f, e.maxHp) * 120.0f);
+    }
+    if (fromPlayer)
+        m_stats.damageDealt += std::min(damage, std::max(0.0f, e.hp));
     e.hp -= damage;
     e.hitFlash = 1.0f;
     m_effects.push_back({p.pos, kExplosion, 0.0f, 0.35f, 0.5f + p.width * 2.0f});
@@ -1799,6 +3007,9 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     const int index = indexOfId(e.id);
     e.alive = false;
     ++m_kills;
+    ++m_stats.kills;
+    if (e.cls == EnemyClass::Mothership)
+        ++m_stats.motherships;
     const bool big = e.cls == EnemyClass::Mothership;
     m_effects.push_back({e.pos, kExplosion, 0.0f, big ? 1.6f : 0.9f, big ? 6.0f : 2.2f});
     m_effects.push_back({e.pos, QVector3D(1.0f, 0.9f, 0.7f), 0.0f, big ? 0.6f : 0.35f, big ? 3.0f : 1.2f});
@@ -1809,14 +3020,61 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
     emit enemyDestroyed(big);
 }
 
+// Damage to a subsystem of an enemy ship (percent of its hull max)
+void BattleView::damageEnemySystem(Enemy &e, int system, float hullDamage)
+{
+    if (system < 0 || system > 3)
+        return;
+    float &health = e.systems[system];
+    const float before = health;
+    health = std::max(0.0f, health - hullDamage / std::max(1.0f, e.maxHp) * kSubsystemDamage);
+    if (before > 0.0f && health <= 0.0f) {
+        static const char *names[4] = {QT_TR_NOOP("weapons"), QT_TR_NOOP("shields"), QT_TR_NOOP("engines"),
+                                       QT_TR_NOOP("hangar")};
+        emit logMessage(tr("T%1 %2: %3 knocked out").arg(indexOfId(e.id) + 1).arg(className(e)).arg(tr(names[system])),
+                        LogLevel::Success);
+        if (system == SysShields) {
+            e.shield = 0.0f;
+            e.maxShield = 0.0f;         // no more shield for this battle
+        }
+    }
+}
+
+// Command drones learn: after many hits of the same weapon, their
+// shields resist it
+float BattleView::adaptedDamage(const Enemy &e, Weapon weapon, float damage)
+{
+    if (classOf(e).faction != QLatin1String("Drones") || weapon == Weapon::None || weapon == Weapon::Ally)
+        return damage;
+    const int key = int(weapon);
+    const int hits = ++m_weaponHits[key];
+    if (m_adaptedWeapon != key && hits >= kAdaptAfterHits) {
+        int best = key;
+        for (const auto &[w, count] : m_weaponHits)
+            if (count > m_weaponHits[best])
+                best = w;
+        if (best == key) {
+            m_adaptedWeapon = key;
+            static const char *names[] = {"", QT_TR_NOOP("main weapon"), QT_TR_NOOP("pulse weapons"),
+                                          QT_TR_NOOP("towers"), QT_TR_NOOP("railguns"), QT_TR_NOOP("drones"),
+                                          QT_TR_NOOP("missiles"), ""};
+            emit logMessage(tr("The drones adapted their shields to your %1 - switch weapons").arg(tr(names[key])),
+                            LogLevel::Critical);
+        }
+    }
+    return m_adaptedWeapon == key ? damage * kAdaptedDamage : damage;
+}
+
 // Hull and shield of a ship that enters the battle (Balance: scales
 // and shield per faction)
 void BattleView::setupShip(Enemy &ship)
 {
     const ShipClass &sc = m_classes[ship.classIndex];
-    ship.hp = ship.maxHp = std::max(1.0f, float(sc.hull) * kShipHullScale);
+    // Wraith ships have no shield but a very thick organic hull
+    const float organic = sc.faction == QLatin1String("Wraith") ? kWraithHullScale : 1.0f;
+    ship.hp = ship.maxHp = std::max(1.0f, float(sc.hull) * gameConfig().shipHullScale * organic);
     ship.shield = ship.maxShield
-        = float(sc.hull) * shipShieldShare(sc.faction, ship.cls == EnemyClass::Mothership) * kShipShieldScale;
+        = float(sc.hull) * shipShieldShare(sc.faction, ship.cls == EnemyClass::Mothership) * gameConfig().shipShieldScale;
     ship.ammo.clear();
     for (const ShipAttack &attack : sc.attacks)
         ship.ammo.push_back(attack.kind != "missile" ? -1 : isDrone(attack) ? kDroneSalvos : kMissileSalvos);
@@ -1907,7 +3165,8 @@ void BattleView::regenShield(Enemy &ship, float dt)
 {
     ship.shieldFlash = std::max(0.0f, ship.shieldFlash - dt * 2.0f);
     if (ship.maxShield > 0.0f && m_time - ship.lastHit > kShipShieldDelay)
-        ship.shield = std::min(ship.maxShield, ship.shield + ship.maxShield * kShipShieldRegen * dt);
+        ship.shield = std::min(ship.maxShield, ship.shield + ship.maxShield * kShipShieldRegen * dt
+                                                                 * ship.systems[SysShields] / 100.0f);
 }
 
 // Bubble of a ship shield, visible while it takes hits: the shield model
@@ -1933,7 +3192,9 @@ void BattleView::drawShipShield(const Enemy &ship, const QMatrix4x4 &model)
 void BattleView::hitShield(const Projectile &p)
 {
     const float absorb = 1.0f / std::max(0.4f, subsystemHealth("shields") / 100.0f);
-    m_shieldStrength = std::max(0.0f, m_shieldStrength - p.damage * absorb * kDamageToPlayerScale);
+    const float shieldBefore = m_shieldStrength;
+    m_shieldStrength = std::max(0.0f, m_shieldStrength - p.damage * absorb * gameConfig().damageToPlayer);
+    m_stats.shieldLost += shieldBefore - m_shieldStrength;
     m_shieldFlash = 1.0f;
     m_lastShieldHit = m_time;
     m_effects.push_back({p.pos, kShieldColor, 0.0f, 0.3f, 0.9f});
@@ -1942,6 +3203,7 @@ void BattleView::hitShield(const Projectile &p)
 
     if (m_shieldStrength <= 0.0f && !m_shieldCollapsed) {
         m_shieldCollapsed = true;
+        emit sound(SoundCue::AlertShields, {}, 0.0f);
         emit logMessage(tr("Shields collapsed!"), LogLevel::Critical);
     }
 }
@@ -1949,7 +3211,9 @@ void BattleView::hitShield(const Projectile &p)
 void BattleView::hitHull(const Projectile &p)
 {
     const float before = m_hull;
-    m_hull = std::max(0.0f, m_hull - p.damage * kDamageToPlayerScale);
+    m_hull = std::max(0.0f, m_hull - p.damage * gameConfig().damageToPlayer * m_armor);
+    m_stats.hullLost += before - m_hull;
+    m_shake = std::min(1.0f, m_shake + p.damage / 40.0f);
     const bool missile = p.kind == Projectile::Kind::Missile;
     m_effects.push_back({p.pos, kExplosion, 0.0f, missile ? 0.8f : 0.45f, missile ? 2.2f : 0.9f});
     emit sound(missile ? SoundCue::Explosion : SoundCue::HullHit, {}, 0.0f);
@@ -1959,9 +3223,12 @@ void BattleView::hitHull(const Projectile &p)
     }
     damageSubsystemNear(p.aimLocal, p.damage * 1.6f);
     m_hits.push_back({p.aimLocal, {m_time, false}});
-    if (m_fires.size() < kMaxFires && randRange(0, 1) < 0.35f)
+    if (!m_externalFires && m_fires.size() < kMaxFires && randRange(0, 1) < 0.35f)
         m_fires.push_back(p.aimLocal);
+    emit hullHit(p.aimLocal, p.damage * gameConfig().damageToPlayer);
 
+    if (before > 25.0f && m_hull <= 25.0f)
+        emit sound(SoundCue::AlertHull, {}, 0.0f);
     for (float threshold : {75.0f, 50.0f, 25.0f}) {
         if (before > threshold && m_hull <= threshold)
             emit logMessage(tr("Hull integrity %1%").arg(qRound(m_hull)),
@@ -2040,7 +3307,25 @@ WeaponReadiness BattleView::weaponReadiness() const
     w.incomingMissiles = int(std::count_if(m_projectiles.begin(), m_projectiles.end(), [](const Projectile &p) {
         return !p.dead && !p.fromDestiny && p.kind == Projectile::Kind::Missile;
     }));
+    w.autoMain = m_autoMain;
+    w.autoPulse = m_autoPulse;
+    w.autoMissiles = m_autoMissiles;
+    w.autoDrones = m_autoDrones;
+    w.powerTotal = powerTotal();
+    w.powerUse = powerUse();
+    w.railgunHeat = m_railgunHeat;
+    w.railgunOverheated = m_railgunOverheated;
+    w.railgunAmmo = m_railgunAmmo;
+    w.railgunAmmoMax = kRailgunAmmo;
+    w.missiles = m_missiles;
+    w.missilesMax = m_missileBay;
+    w.evading = m_evading;
+    w.ftlCountdown = m_jumpCountdown;
+    if (m_aimSystem >= 0)
+        w.aimSystem = enemySystems().at(m_aimSystem);
     if (const Enemy *e = findEnemy(m_lockedId); e && e->alive) {
+        w.accuracy = 100.0f * hitChance(destinyWorld(kMainTowerLocal), e->pos, true, e)
+                   * (m_aimSystem >= 0 ? kSubsystemAim : 1.0f);
         w.hasTarget = true;
         w.targetIndex = indexOfId(e->id);
         w.targetClass = className(*e);
@@ -2198,6 +3483,29 @@ void BattleView::initializeGL()
     }
     upload(m_ring, prism(octagon, 0.45f));
 
+    // Quad for the shot sprites: x across, y along the shot (head at +0.5),
+    // normal +z, uv (head at v = 0, the top of the texture)
+    {
+        const float quad[] = {
+            -0.5f, -0.5f, 0, 0, 0, 1, 0, 1,   0.5f, -0.5f, 0, 0, 0, 1, 1, 1,   0.5f, 0.5f, 0, 0, 0, 1, 1, 0,
+            -0.5f, -0.5f, 0, 0, 0, 1, 0, 1,   0.5f, 0.5f, 0, 0, 0, 1, 1, 0,   -0.5f, 0.5f, 0, 0, 0, 1, 0, 0,
+        };
+        m_quadVao.create();
+        m_quadVao.bind();
+        m_quadVbo.create();
+        m_quadVbo.bind();
+        m_quadVbo.allocate(quad, int(sizeof(quad)));
+        const int stride = 8 * sizeof(float);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(6 * sizeof(float)));
+        m_quadVao.release();
+        m_quadVbo.release();
+    }
+
     // Starfield: points on a large sphere, drawn without camera translation
     std::vector<float> stars;
     m_starCount = 2500;
@@ -2251,13 +3559,20 @@ void BattleView::resizeGL(int w, int h)
 
 void BattleView::updateCamera()
 {
-    const float yaw = qDegreesToRadians(m_yawOffset + 28.0f * std::sin(m_time * 0.07f));
-    const float pitch = qDegreesToRadians(m_pitch);
-    const QVector3D target(0.8f, 0.5f, 0.0f);
+    // Observation deck: a slow orbit far around the ship
+    const float yaw = m_observing ? qDegreesToRadians(m_time * 4.0f)
+                                  : qDegreesToRadians(m_yawOffset + 28.0f * std::sin(m_time * 0.07f));
+    const float pitch = qDegreesToRadians(m_observing ? 8.0f + 6.0f * std::sin(m_time * 0.05f) : m_pitch);
+    QVector3D target(0.8f, 0.5f, 0.0f);
+    // Heavy hits shake the camera
+    if (m_shake > 0.0f)
+        target += QVector3D(std::sin(m_time * 53.0f), std::sin(m_time * 47.0f + 1.0f), std::sin(m_time * 59.0f + 2.0f))
+                * 0.35f * m_shake;
+    const float distance = m_observing ? 34.0f : m_distance;
 
-    m_eye = target + m_distance * QVector3D(std::cos(pitch) * std::sin(yaw),
-                                            std::sin(pitch),
-                                            std::cos(pitch) * std::cos(yaw));
+    m_eye = target + distance * QVector3D(std::cos(pitch) * std::sin(yaw),
+                                          std::sin(pitch),
+                                          std::cos(pitch) * std::cos(yaw));
     m_view.setToIdentity();
     m_view.lookAt(m_eye, target, {0, 1, 0});
     m_viewProj = m_projection * m_view;
@@ -2310,6 +3625,8 @@ void BattleView::paintGL()
     m_lit.setUniformValue("uLightDir", kLightDir);
     m_lit.setUniformValue("uCamPos", m_eye);
     m_lit.setUniformValue("uTime", m_time);
+    m_lit.setUniformValue("uUvScale", QVector2D(1.0f, 1.0f));
+    m_lit.setUniformValue("uTint", 0.0f);
 
     QMatrix4x4 planet;
     planet.translate(30.0f, -48.0f, -175.0f);
@@ -2400,6 +3717,91 @@ void BattleView::drawMesh(Mesh &mesh, const QMatrix4x4 &model, const QVector3D &
     mesh.vao.bind();
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
     mesh.vao.release();
+}
+
+// ================================================================
+//  Shot sprites (textures of the mod)
+// ================================================================
+
+int BattleView::spriteFor(const QString &faction)
+{
+    if (faction == "Goa'uld" || faction == "Lucian Alliance")
+        return SpritePlasma;
+    if (faction == "Wraith")
+        return SpriteWraith;
+    if (faction == "Asgard")
+        return SpriteAsgardLaser;
+    if (faction == "Ancients")
+        return SpriteAncientLaser;
+    if (faction == "Tau'ri")
+        return SpriteNone;                  // kinetic: the plain shapes
+    return SpritePlasma;                    // others: the plasma, recolored
+}
+
+GLuint BattleView::spriteTexture(int sprite)
+{
+    if (sprite < 0 || sprite >= SpriteCount)
+        return 0;
+    if (!m_spritesTried[sprite]) {
+        m_spritesTried[sprite] = true;
+        static const char *names[SpriteCount] = {"goauld_plasmabolt", "wraith_plasma", "asgard_ionbolt",
+                                                 "asgard_laser_medium_glow", "anicents_laser_medium_glow",
+                                                 "asgard_beam_core", "asgard_beam_glow"};
+        const QString path = Assets::modFile(QStringLiteral("textures/%1.dds").arg(QLatin1String(names[sprite])));
+        const QImage image = path.isEmpty() ? QImage() : DdsTexture::load(path, 256).convertToFormat(QImage::Format_RGBA8888);
+        if (!image.isNull()) {
+            glGenTextures(1, &m_sprites[sprite]);
+            glBindTexture(GL_TEXTURE_2D, m_sprites[sprite]);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         image.constBits());
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            const bool beam = sprite == SpriteBeamCore || sprite == SpriteBeamGlow;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, beam ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+    return m_sprites[sprite];
+}
+
+// A textured strip along `direction`, turned to face the camera
+void BattleView::drawSprite(int sprite, const QVector3D &center, const QVector3D &direction, float length, float width,
+                            const QVector3D &tint, float tintAmount, float alpha, float uvRepeat)
+{
+    const GLuint texture = spriteTexture(sprite);
+    if (!texture || direction.lengthSquared() < 1e-8f)
+        return;
+    const QVector3D along = direction.normalized();
+    QVector3D across = QVector3D::crossProduct(along, (m_eye - center).normalized());
+    if (across.lengthSquared() < 1e-6f)
+        across = QVector3D::crossProduct(along, {0, 1, 0});
+    across.normalize();
+    const QVector3D normal = QVector3D::crossProduct(across, along).normalized();
+    QMatrix4x4 m;
+    m.setColumn(0, QVector4D(across * width, 0));
+    m.setColumn(1, QVector4D(along * length, 0));
+    m.setColumn(2, QVector4D(normal, 0));
+    m.setColumn(3, QVector4D(center, 1));
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    m_lit.setUniformValue("uTexture", 0);
+    m_lit.setUniformValue("uTextured", 0);
+    m_lit.setUniformValue("uModel", m);
+    m_lit.setUniformValue("uNormalMat", m.normalMatrix());
+    m_lit.setUniformValue("uColor", tint);
+    m_lit.setUniformValue("uTint", tintAmount);
+    m_lit.setUniformValue("uEmissive", 1.6f);
+    m_lit.setUniformValue("uAlpha", alpha);
+    m_lit.setUniformValue("uUvScale", QVector2D(1.0f, uvRepeat));
+    m_lit.setUniformValue("uMode", int(ModeSprite));
+    m_quadVao.bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    m_quadVao.release();
+    m_lit.setUniformValue("uUvScale", QVector2D(1.0f, 1.0f));
+    m_lit.setUniformValue("uTint", 0.0f);
 }
 
 void BattleView::drawGlow(const QVector3D &pos, float radius, const QVector3D &color, float alpha)
@@ -2821,12 +4223,24 @@ void BattleView::drawEffects()
             drawGlow(p.pos - p.vel.normalized() * p.length * 1.4f, flicker * 1.8f, p.color, 0.2f);
             continue;
         }
+        // Texture of the mod when there is one, the plain bolt otherwise
+        if (p.sprite >= 0 && p.kind != Projectile::Kind::Slug && spriteTexture(p.sprite)) {
+            const QVector3D dir = p.vel.normalized();
+            const float length = std::max(1.2f, p.length * 1.7f);
+            const float width = std::max(p.width * 7.0f, length * 0.32f);
+            // The plasma of the other factions (drones, Nakai, Ursini...) takes their color
+            const bool recolor = p.sprite == SpritePlasma && !p.fromDestiny && p.color != kEnemyBolt;
+            drawSprite(p.sprite, p.pos - dir * length * 0.35f, dir, length, width, p.color, recolor ? 0.85f : 0.0f, 1.0f);
+            continue;
+        }
         QMatrix4x4 halo = core;
         core.scale(p.width, p.width, p.length);
         halo.scale(p.width * 3.0f, p.width * 3.0f, p.length * 1.2f);
         drawMesh(m_box, core, QVector3D(1, 1, 1) * 0.6f + p.color * 0.6f, 1.3f, 1.0f, ModeGlow);
         drawMesh(m_box, halo, p.color, 1.2f, 0.25f, ModeGlow);
     }
+
+    drawRays();
 
     // Explosions / impacts
     for (const Effect &fx : m_effects) {
@@ -2876,6 +4290,26 @@ void BattleView::drawOverlay()
     font.setPixelSize(12);
     font.setBold(true);
     p.setFont(font);
+
+    // Red alert: pulsing red light at the edges (low hull, fires, boarders)
+    if (m_hull < 30.0f || m_redAlert) {
+        const float pulse = 0.5f + 0.5f * std::sin(m_time * 4.0f);
+        QRadialGradient glow(rect().center(), std::max(width(), height()) * 0.75);
+        glow.setColorAt(0.55, QColor(255, 0, 0, 0));
+        glow.setColorAt(1.0, QColor(255, 20, 10, int(40 + 70 * pulse)));
+        p.fillRect(rect(), glow);
+    }
+    if (m_observing) {
+        p.setPen(QColor(200, 220, 255, 200));
+        QFont big = font;
+        big.setPixelSize(16);
+        big.setLetterSpacing(QFont::AbsoluteSpacing, 4);
+        p.setFont(big);
+        p.drawText(QRectF(0, height() - 60, width(), 24), Qt::AlignCenter, tr("OBSERVATION DECK"));
+        p.setFont(font);
+        p.drawText(QRectF(0, height() - 36, width(), 20), Qt::AlignCenter, tr("the crew rests its eyes - 'observe off' to go back"));
+        return;
+    }
 
     // --- Enemy reticles + health bars
     const QColor red(255, 70, 60);
@@ -2974,14 +4408,23 @@ void BattleView::drawOverlay()
         m.scale(13.5f);
         const QFont before = p.font();
         QFont small = before;
-        small.setPointSizeF(before.pointSizeF() * 0.85);
+        small.setPixelSize(std::max(8, qRound(before.pixelSize() * 0.85)));
         p.setFont(small);
         for (auto it = groups.cbegin(); it != groups.cend(); ++it) {
             QPointF a;
             if (!project(m.map(it->first / float(it->second)), &a))
                 continue;
             const QString &kind = it.key();
-            const QString label = kind == "main" ? QCoreApplication::translate("Balance", m_loadout.mainName)
+            // Only the weapons this ship really carries
+            const bool mainIsBeam = QString::fromLatin1(m_loadout.mainName).contains(QLatin1String("beam"), Qt::CaseInsensitive);
+            const bool carried = kind == "main" || (kind == "beam" && mainIsBeam)
+                              || (kind == "pulse" && m_loadout.pulse) || (kind == "turret" && m_loadout.towers)
+                              || (kind.contains("drone") && m_droneBay > 0)
+                              || (kind.contains("missile") && m_missileBay > 0)
+                              || (kind.contains("railgun") && m_loadout.railguns);
+            if (!carried)
+                continue;
+            const QString label = kind == "main" || kind == "beam" ? QCoreApplication::translate("Balance", m_loadout.mainName)
                                 : kind == "pulse"               ? tr("Pulse")
                                 : kind == "turret"              ? tr("Towers")
                                 : kind == "beam"                ? tr("Beam")
@@ -3027,14 +4470,39 @@ void BattleView::drawOverlay()
     }
 
     // --- Status block (top left)
-    const QRectF panel(12, 12, 270, 62);
+    const QRectF panel(12, 12, 270, 88);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 150));
     p.drawRoundedRect(panel, 4, 4);
     drawStatusBar(p, QRectF(22, 18, 250, 22), tr("HULL"), m_hull, healthColor(m_hull), QString());
     const QString shieldSuffix = m_shieldCollapsed ? tr(" DOWN") : (m_shieldOrdered ? QString() : tr(" OFF"));
-    drawStatusBar(p, QRectF(22, 44, 250, 22), tr("SHIELD"), m_shieldStrength,
-                  shieldProtecting() ? QColor(90, 170, 255) : QColor(110, 110, 110), shieldSuffix);
+    if (m_hasShield)
+        drawStatusBar(p, QRectF(22, 44, 250, 22), tr("SHIELD"), m_shieldStrength,
+                      shieldProtecting() ? QColor(90, 170, 255) : QColor(110, 110, 110), shieldSuffix);
+    else {
+        // No shield: the organic hull heals itself
+        p.setPen(QColor(190, 150, 230));
+        p.drawText(QRectF(22, 44, 250, 22), Qt::AlignVCenter,
+                   tr("ORGANIC HULL - heals %1%/s").arg(double(m_loadout.hullRegen), 0, 'f', 1));
+    }
+
+    // Energy left once every active system took its share
+    {
+        const int total = powerTotal();
+        const int free = freePower();
+        const QRectF row(22, 70, 250, 22);
+        p.setPen(QColor(220, 220, 210));
+        p.drawText(QRectF(row.left(), row.top(), 64, row.height()), Qt::AlignVCenter, tr("POWER"));
+        const QRectF bar(row.left() + 66, row.center().y() - 4, row.width() - 130, 8);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60, 200));
+        p.drawRect(bar);
+        p.setBrush(free >= kDronePower ? QColor(240, 200, 60) : free > 0 ? QColor(200, 150, 60) : QColor(150, 80, 60));
+        p.drawRect(QRectF(bar.left(), bar.top(), total > 0 ? bar.width() * free / total : 0.0, bar.height()));
+        p.setPen(QColor(220, 220, 210));
+        p.drawText(QRectF(bar.right() + 6, row.top(), 64, row.height()), Qt::AlignVCenter,
+                   tr("%1/%2").arg(free).arg(total));
+    }
 
     // --- Contacts (top right) and hint (bottom left)
     p.setPen(ids.empty() ? QColor(70, 230, 100) : red);

@@ -2,8 +2,10 @@
 #include "src/db/dbtext.h"
 
 #include <QCoreApplication>
+#include <QHash>
 #include <QFontDatabase>
 #include <QPainter>
+#include "src/Menu/uipalette.h"
 #include <QPainterPath>
 #include <QTimer>
 #include <QtMath>
@@ -20,9 +22,7 @@ const QColor kCritical(255, 70, 60);
 
 QColor healthColor(float pct)
 {
-    if (pct >= 70) return kOk;
-    if (pct >= 35) return kCharging;
-    return kCritical;
+    return UiPalette::health(pct, 70.0f - 0.01f, 35.0f - 0.01f);
 }
 } // namespace
 
@@ -131,14 +131,35 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
     const QString mainName = w.mainName.isEmpty()
         ? tr("MAIN TOWER")
         : QCoreApplication::translate("Balance", w.mainName.toLatin1().constData()).toUpper();
-    cooldown(mainName, tr("attack <n> / maintower"), w.mainCooldown, w.mainMax, tr("READY"));
+    cooldown(mainName, w.autoMain ? tr("automatic fire ('auto main off')") : tr("attack <n> / maintower - 'auto main on'"),
+             w.mainCooldown, w.mainMax, w.autoMain ? tr("AUTO") : tr("READY"));
     if (w.hasPulse)
-        cooldown(tr("PULSE"), tr("pulseweapon"), w.pulseCooldown, w.pulseMax, tr("READY"));
+        cooldown(tr("PULSE"), w.autoPulse ? tr("automatic fire ('auto pulse off')") : tr("pulseweapon - 'auto pulse on'"),
+                 w.pulseCooldown, w.pulseMax, w.autoPulse ? tr("AUTO") : tr("READY"));
     if (w.hasTowers)
         cooldown(tr("TOWERS"),
                  w.turretsOn ? tr("auto-fire %1% - burst: secondarytower").arg(qRound(w.efficiency))
                              : tr("auto-fire OFF ('turrets on') - burst: secondarytower"),
                  w.burstCooldown, w.burstMax, w.turretsOn ? tr("AUTO") : tr("OFF"));
+
+    // Tactics: aimed subsystem, hit chance, evasion, FTL countdown
+    {
+        QStringList parts;
+        if (w.hasTarget)
+            parts << tr("AIM T%1 %2 - HIT %3%").arg(w.targetIndex + 1)
+                         .arg(w.aimSystem.isEmpty() ? tr("hull") : QCoreApplication::translate("BattleView", qPrintable(w.aimSystem)))
+                         .arg(qRound(w.accuracy));
+        if (w.evading)
+            parts << tr("EVADING");
+        if (w.ftlCountdown >= 0.0f)
+            parts << tr("FTL %1 s").arg(w.ftlCountdown, 0, 'f', 0);
+        if (!parts.isEmpty()) {
+            p.setFont(small);
+            p.setPen(w.ftlCountdown >= 0.0f ? kCharging : kText);
+            p.drawText(QRectF(left, y, right - left, smallLine), Qt::AlignLeft | Qt::AlignVCenter, parts.join("  "));
+            y += smallLine + 4;
+        }
+    }
 
     // Railguns: point defense
     if (w.hasRailguns) {
@@ -150,30 +171,61 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(60, 60, 60));
         p.drawRect(bar);
-        p.setBrush(healthColor(w.efficiency));
-        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * std::clamp(w.efficiency, 0.0f, 100.0f) / 100, bar.height()));
+        // Bar = heat of the guns (overheated at 100%)
+        p.setBrush(w.railgunOverheated ? kCritical : healthColor(100.0f - w.railgunHeat));
+        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * std::clamp(w.railgunHeat, 0.0f, 100.0f) / 100, bar.height()));
         const bool alarm = w.incomingMissiles > 0;
-        p.setPen(!w.railgunsOn ? kCritical : alarm && (m_frame / 3) % 2 == 0 ? kCritical : kOk);
+        const bool down = !w.railgunsOn || w.railgunOverheated || w.railgunAmmo <= 0;
+        p.setPen(down ? kCritical : alarm && (m_frame / 3) % 2 == 0 ? kCritical : kOk);
         p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
-                   !w.railgunsOn ? tr("OFF") : alarm ? tr("%1 MSL").arg(w.incomingMissiles) : tr("PD ON"));
+                   !w.railgunsOn ? tr("OFF") : w.railgunOverheated ? tr("HOT") : w.railgunAmmo <= 0 ? tr("EMPTY")
+                   : alarm ? tr("%1 MSL").arg(w.incomingMissiles) : tr("PD ON"));
     }
     y += line;
     p.setFont(small);
     p.setPen(kDim);
     p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
-               tr("point defense %1 km - %2 missiles shot down - vs fighters x2.5")
-                   .arg(qRound(w.railgunReach * 10)).arg(w.interceptions));
+               tr("heat %1% - %2/%3 slugs - %4 missiles shot down")
+                   .arg(qRound(w.railgunHeat)).arg(w.railgunAmmo).arg(w.railgunAmmoMax).arg(w.interceptions));
     y += smallLine + 4;
     }
 
-    // Energy: power left for the shields / weapon recharge
-    p.setFont(small);
-    p.setPen(w.freePower > 10 ? kOk : kDim);
-    p.drawText(QRectF(left, y, right - left, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
-               tr("POWER free %1 - priority %2 ('power shields|weapons|balanced')")
-                   .arg(w.freePower)
-                   .arg(w.priority == "shields" ? tr("shields") : w.priority == "weapons" ? tr("weapons") : tr("balanced")));
-    y += smallLine + 4;
+    // Energy: a bar split between the systems that draw power, the rest free
+    {
+        p.setFont(font);
+        p.setPen(kText);
+        p.drawText(QRectF(left, y, labelWidth, line), Qt::AlignLeft | Qt::AlignVCenter, tr("POWER"));
+        const QRectF bar(barLeft, y + line / 2 - 5, barWidth, 10);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60));
+        p.drawRect(bar);
+        static const QHash<QString, QColor> colors{
+            {"main weapon", QColor(120, 200, 255)}, {"engines", QColor(150, 150, 150)}, {"towers", QColor(90, 160, 230)},
+            {"railguns", QColor(230, 220, 160)},    {"shields", QColor(70, 130, 255)},  {"drones", QColor(255, 210, 90)},
+            {"evasion", QColor(200, 120, 255)}};
+        const double total = std::max(1, w.powerTotal);
+        double x = bar.left();
+        QStringList legend;
+        for (const auto &[name, power] : w.powerUse) {
+            const double width = std::min(bar.right() - x, bar.width() * power / total);
+            p.setBrush(colors.value(name, kDim));
+            p.drawRect(QRectF(x, bar.top(), std::max(0.0, width - 1), bar.height()));
+            x += width;
+            legend << QStringLiteral("%1 %2").arg(QCoreApplication::translate("BattleView", name.toUtf8().constData())).arg(power);
+        }
+        p.setPen(w.freePower >= 20 ? kOk : w.freePower > 0 ? kCharging : kCritical);
+        p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
+                   QStringLiteral("%1/%2").arg(w.freePower).arg(w.powerTotal));
+        y += line;
+        p.setFont(small);
+        p.setPen(kDim);
+        p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
+                   tr("%1 - free %2 (%3)")
+                       .arg(legend.join(", "))
+                       .arg(w.freePower)
+                       .arg(w.priority == "shields" ? tr("shields") : w.priority == "weapons" ? tr("weapons") : tr("balanced")));
+        y += smallLine + 4;
+    }
 
     // Hangar: fighters to launch ('launch'), friendly ships in the battle
     if (w.dronesMax > 0) {
@@ -188,13 +240,28 @@ void WeaponStatusWidget::paintEvent(QPaintEvent *)
         p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * w.drones / std::max(1, w.dronesMax), bar.height()));
         p.setPen(w.drones > 0 ? kOk : kCharging);
         p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
-                   QStringLiteral("%1/%2").arg(w.drones).arg(w.dronesMax));
+                   QStringLiteral("%1/%2%3").arg(w.drones).arg(w.dronesMax).arg(w.autoDrones ? tr(" A") : QString()));
         y += line;
         p.setFont(small);
         p.setPen(kDim);
         p.drawText(QRectF(left + 8, y - 2, right - left - 8, smallLine), Qt::AlignLeft | Qt::AlignVCenter,
-                   tr("drones <n> - salvo through the shields, rebuilt out of battle"));
+                   tr("drones <n> - through the shields, needs free power, Ancient caches only"));
         y += smallLine + 4;
+    }
+    if (w.missilesMax > 0) {
+        p.setFont(font);
+        p.setPen(kText);
+        p.drawText(QRectF(left, y, labelWidth, line), Qt::AlignLeft | Qt::AlignVCenter, tr("MISSILES"));
+        const QRectF bar(barLeft, y + line / 2 - 4, barWidth, 8);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(60, 60, 60));
+        p.drawRect(bar);
+        p.setBrush(QColor(255, 140, 80));
+        p.drawRect(QRectF(bar.left(), bar.top(), bar.width() * w.missiles / std::max(1, w.missilesMax), bar.height()));
+        p.setPen(w.missiles > 0 ? kOk : kCharging);
+        p.drawText(QRectF(bar.right() + 8, y, stateWidth, line), Qt::AlignLeft | Qt::AlignVCenter,
+                   QStringLiteral("%1/%2%3").arg(w.missiles).arg(w.missilesMax).arg(w.autoMissiles ? tr(" A") : QString()));
+        y += line + 2;
     }
     if (w.hangarMax > 0 || w.allies > 0) {
         p.setFont(font);

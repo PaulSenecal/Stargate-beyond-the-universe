@@ -18,6 +18,7 @@ class QMediaPlayer;
 //   - Title  : title screen
 //   - Calm   : exploration, no enemy around
 //   - Battle : enemy wave (tracks depend on the enemy faction)
+//   - Danger : the battle turns bad (hull low): darker tracks
 //  At the end of a track, another one of the same mood follows.
 //  Volume (0-100) is kept in the settings, apart from the effects.
 // ================================================================
@@ -27,7 +28,7 @@ class MusicPlayer : public QObject
     Q_OBJECT
 
 public:
-    enum class Mood { None, Title, Calm, Battle };
+    enum class Mood { None, Title, Calm, Battle, Danger };
 
     explicit MusicPlayer(QObject *parent = nullptr);
 

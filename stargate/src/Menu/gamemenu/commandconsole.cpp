@@ -4,6 +4,7 @@
 #include <QCompleter>
 #include <QFontDatabase>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
 #include <QPainterPath>
@@ -11,6 +12,8 @@
 #include <QStringListModel>
 #include <QTextEdit>
 #include <QVBoxLayout>
+
+#include "src/Menu/uipalette.h"
 
 namespace {
 const QColor kPanel(75, 70, 50);
@@ -27,7 +30,7 @@ CommandConsole::CommandConsole(QWidget *parent)
     setMinimumHeight(170);
 
     QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    mono.setPixelSize(17);
+    mono.setPixelSize(UiPalette::scaled(17));
 
     m_log->setReadOnly(true);
     m_log->setFont(mono);
@@ -42,10 +45,10 @@ CommandConsole::CommandConsole(QWidget *parent)
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }");
 
     QFont inputFont = mono;
-    inputFont.setPixelSize(19);
+    inputFont.setPixelSize(UiPalette::scaled(19));
     inputFont.setBold(true);
     m_input->setFont(inputFont);
-    m_input->setFixedHeight(34);
+    m_input->setFixedHeight(UiPalette::scaled(34));
     m_input->setFrame(false);
     m_input->setPlaceholderText(tr("Type a command — Tab completes, 'help' for the list"));
     m_input->setStyleSheet("QLineEdit { background: transparent; color: #111; }");
@@ -60,11 +63,22 @@ CommandConsole::CommandConsole(QWidget *parent)
         "QListView::item:selected { background: #e2bf3e; color: #111; }");
     m_input->setCompleter(m_completer);
 
+    // Live hint: the words that can follow what is typed
+    m_hint = new QLabel(this);
+    QFont hintFont = mono;
+    hintFont.setPixelSize(UiPalette::scaled(13));
+    m_hint->setFont(hintFont);
+    m_hint->setStyleSheet("QLabel { color: #b9b08a; }");
+    m_hint->setTextFormat(Qt::RichText);
+
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(56, 22, 110, 12);
-    layout->setSpacing(18);
+    layout->setSpacing(8);
     layout->addWidget(m_log, 1);
+    layout->addWidget(m_hint);
+    layout->addSpacing(6);
     layout->addWidget(m_input);
+    connect(m_input, &QLineEdit::textEdited, this, &CommandConsole::updateHint);
 
     connect(m_input, &QLineEdit::returnPressed, this, &CommandConsole::submit);
 }
@@ -76,9 +90,9 @@ void CommandConsole::appendLine(const QString &text, Tone tone)
     switch (tone) {
     case Tone::Echo:     color = "#a9a28a"; prefix = QStringLiteral("&gt; "); break;
     case Tone::Info:     color = "#e8e2c8"; break;
-    case Tone::Success:  color = "#8be07a"; break;
+    case Tone::Success:  color = gameConfig().colorBlind ? "#6ab8ff" : "#8be07a"; break;
     case Tone::Warning:  color = "#f2c94c"; break;
-    case Tone::Critical: color = "#ff5a48"; break;
+    case Tone::Critical: color = gameConfig().colorBlind ? "#ff9a1a" : "#ff5a48"; break;
     }
     // Follow new lines only when the reader is already at the bottom:
     // if they scrolled up to read, keep their position
@@ -89,6 +103,55 @@ void CommandConsole::appendLine(const QString &text, Tone tone)
     m_log->append(QStringLiteral("<span style=\"color:%1\">%2%3</span>")
                       .arg(color, prefix, text.toHtmlEscaped()));
     bar->setValue(atBottom ? bar->maximum() : position);
+    emit lineAppended(text, tone);
+}
+
+void CommandConsole::appendHeading(const QString &title)
+{
+    m_log->append(QStringLiteral("<br><span style=\"color:#e2bf3e; font-weight:bold;\">&#9632; %1</span>")
+                      .arg(title.toUpper().toHtmlEscaped()));
+    QScrollBar *bar = m_log->verticalScrollBar();
+    bar->setValue(bar->maximum());
+    emit lineAppended(title.toUpper(), Tone::Info);
+}
+
+void CommandConsole::appendEntry(const QString &syntax, const QString &description)
+{
+    // Commands aligned in a column (fixed width font)
+    QString padded = syntax.toHtmlEscaped();
+    for (int i = int(syntax.size()); i < 30; ++i)
+        padded += QStringLiteral("&nbsp;");
+    m_log->append(QStringLiteral("&nbsp;&nbsp;<span style=\"color:#7fd4ff; font-weight:bold;\">%1</span> "
+                                 "<span style=\"color:#c9c3a8;\">%2</span>")
+                      .arg(padded, description.toHtmlEscaped()));
+    QScrollBar *bar = m_log->verticalScrollBar();
+    bar->setValue(bar->maximum());
+    emit lineAppended(QStringLiteral("  %1  %2").arg(syntax, description), Tone::Info);
+}
+
+void CommandConsole::updateHint()
+{
+    const QString text = m_input->text();
+    if (!m_completionProvider || text.trimmed().isEmpty()) {
+        m_hint->clear();
+        return;
+    }
+    const QStringList candidates = m_completionProvider(text);
+    QStringList words;
+    for (const QString &c : candidates) {
+        const QString word = c.section(' ', -1);
+        if (!word.isEmpty() && !words.contains(word))
+            words << word;
+    }
+    if (words.isEmpty()) {
+        m_hint->clear();
+        return;
+    }
+    const int shown = std::min(int(words.size()), 10);
+    QString line = tr("Tab &#8594; ") + words.mid(0, shown).join(QStringLiteral("&nbsp;&nbsp;"));
+    if (words.size() > shown)
+        line += tr("&nbsp;&nbsp;(+%1)").arg(words.size() - shown);
+    m_hint->setText(line);
 }
 
 void CommandConsole::clearLog()
@@ -115,6 +178,7 @@ void CommandConsole::submit()
         m_history.append(command);
     m_historyPos = -1;
     m_input->clear();
+    m_hint->clear();
     // A new command: go back to the bottom to read its result
     m_log->verticalScrollBar()->setValue(m_log->verticalScrollBar()->maximum());
     emit commandEntered(command);
@@ -138,6 +202,7 @@ void CommandConsole::completeWithTab()
     if (candidates.size() == 1) {
         m_input->setText(candidates.first() + ' ');
         m_lastTabText.clear();
+        updateHint();
         return;
     }
 
@@ -152,6 +217,7 @@ void CommandConsole::completeWithTab()
     if (common.size() > text.size()) {
         m_input->setText(common);
         m_lastTabText = common;
+        updateHint();
         return;
     }
 

@@ -183,6 +183,29 @@ SoundSystem::Samples shieldZap(int rate, float startHz, quint32 seed)
     return std::make_shared<const std::vector<float>>(std::move(s));
 }
 
+// Alarm: `beeps` tones alternating between two pitches (a klaxon when
+// they are close, a falling siren when `slide`)
+SoundSystem::Samples alarm(int rate, float hzA, float hzB, int beeps, float beepSeconds, bool slide)
+{
+    std::vector<float> s(size_t(rate * beepSeconds * beeps));
+    float phase = 0;
+    for (size_t i = 0; i < s.size(); ++i) {
+        const float t = float(i) / float(rate);
+        const int beep = int(t / beepSeconds);
+        const float local = t - beep * beepSeconds;
+        float hz = beep % 2 == 0 ? hzA : hzB;
+        if (slide)
+            hz = hzA + (hzB - hzA) * (t / (beepSeconds * beeps));
+        phase += hz / float(rate);
+        // A slightly square tone, with short fades to avoid clicks
+        const float tone = std::sin(kTwoPi * phase) + 0.3f * std::sin(3.0f * kTwoPi * phase);
+        const float gate = slide ? 1.0f : std::min({1.0f, local / 0.01f, (beepSeconds * 0.8f - local) / 0.01f});
+        s[i] = tone * std::max(0.0f, gate);
+    }
+    normalize(s, 0.5f);
+    return std::make_shared<const std::vector<float>>(std::move(s));
+}
+
 } // namespace
 
 // ================================================================
@@ -334,6 +357,12 @@ void SoundSystem::addSynthSounds()
     add(SoundCue::HullHit, 0.55f, 0.08f,
         {explosion(r, 0.5f, 0.07f, 0.2f, 110, 31), explosion(r, 0.5f, 0.08f, 0.18f, 95, 32)});
     add(SoundCue::ShieldHit, 0.3f, 0.1f, {shieldZap(r, 1400, 41), shieldZap(r, 1200, 42), shieldZap(r, 1600, 43)});
+    // Ship alerts: a few seconds apart at most
+    add(SoundCue::AlertShields, 0.45f, 4.0f, {alarm(r, 880, 220, 1, 0.9f, true)});
+    add(SoundCue::AlertHull, 0.4f, 6.0f, {alarm(r, 1200, 1200, 6, 0.12f, false)});
+    add(SoundCue::AlertFire, 0.35f, 8.0f, {alarm(r, 660, 990, 4, 0.18f, false)});
+    add(SoundCue::AlertBoarders, 0.4f, 8.0f, {alarm(r, 520, 440, 4, 0.35f, false)});
+    add(SoundCue::Notice, 0.3f, 1.0f, {alarm(r, 1320, 1760, 2, 0.12f, false)});
 }
 
 void SoundSystem::addModSound(SoundCue cue, const QString &faction, const QStringList &files, float gain,

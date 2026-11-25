@@ -79,6 +79,24 @@ inline float shipShieldShare(const QString &faction, bool mothership)
         return 0.25f;                           // Ha'tak récupérés, mal entretenus
     return 0.0f;                                // Wraith (coque organique), Drones
 }
+// Vaisseaux wraith : pas de bouclier, mais une coque organique très épaisse.
+// 1.35 = 35 % de points de coque en plus pour les ruches, croiseurs et Darts.
+constexpr float kWraithHullScale = 1.35f;
+
+// Ton vaisseau amiral : a-t-il un bouclier ? (la ruche wraith n'en a pas)
+inline bool flagshipShield(const QString &faction)
+{
+    return faction != "Wraith";
+}
+
+// Dégâts reçus par ton vaisseau amiral selon sa coque (1.0 = normal).
+// Ruche wraith : 0.3 = elle encaisse ~3 fois plus de tirs, pour compenser
+// l'absence de bouclier (et elle se régénère, voir hullRegen plus bas).
+inline float flagshipArmor(const QString &faction)
+{
+    return faction == "Wraith" ? 0.3f : 1.0f;
+}
+
 // Missiles et drones : munitions limitées (nombre de salves par vaisseau).
 // Les drones des Anciens traversent les boucliers : arme très forte, donc rare.
 constexpr int kMissileSalvos = 6;
@@ -87,7 +105,8 @@ constexpr int kDroneSalvos = 3;
 constexpr int kPlayerDroneSalvos = 4;           // salves en réserve
 constexpr int kPlayerDronesPerSalvo = 6;        // drones par salve
 constexpr float kPlayerDroneDamage = 35.0f;     // dégâts par drone (traversent les boucliers)
-constexpr float kPlayerDroneRefill = 30.0f;     // secondes pour recharger une salve, hors combat
+// Les drones ne se rechargent plus seuls : on en trouve dans les caches des Anciens
+// (campagne) ou sur tes mondes avec un site ancien (conquête).
 constexpr float kShipShieldRegen = 0.05f;       // part du bouclier rechargée par seconde…
 constexpr float kShipShieldDelay = 4.0f;        // …après tant de secondes sans être touché
 
@@ -118,7 +137,7 @@ inline FlagshipLoadout flagshipLoadout(const QString &faction)
     if (faction == "Lucian Alliance")   // Ha'tak récupéré, moins bien armé
         return {QT_TRANSLATE_NOOP("Balance", "Staff cannons"), 120.0f, false, true, false, 8, 0, 0.0f};
     if (faction == "Wraith")            // Ruche : nuées de Darts, coque organique qui se régénère
-        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.4f};
+        return {QT_TRANSLATE_NOOP("Balance", "Energy cannons"), 130.0f, false, true, false, 12, 0, 0.8f};
     if (faction == "Asgard")            // O'Neill : rayons très puissants, peu de chasseurs
         return {QT_TRANSLATE_NOOP("Balance", "Asgard beam"), 230.0f, true, false, false, 2, 0, 0.0f};
     if (faction == "Ancients")          // Aurora : armes à énergie et drones
@@ -127,6 +146,19 @@ inline FlagshipLoadout flagshipLoadout(const QString &faction)
         return {QT_TRANSLATE_NOOP("Balance", "Ori beam"), 240.0f, false, true, false, 4, 0, 0.0f};
     // Destiny
     return {QT_TRANSLATE_NOOP("Balance", "Main tower"), 160.0f, true, true, true, 4, 0, 0.0f};
+}
+
+// Missiles de ton vaisseau ('missiles <n>') selon le vaisseau amiral
+// ("" = Destiny, campagne). 0 = pas de baie à missiles.
+inline int flagshipMissiles(const QString &faction)
+{
+    if (faction.isEmpty())
+        return 6;                               // baie à missiles du Destiny
+    if (faction == "Tau'ri")
+        return 8;                               // BC-304
+    if (faction == "Lucian Alliance")
+        return 4;
+    return 0;
 }
 
 // ----------------------------------------------------------------
@@ -151,6 +183,34 @@ constexpr int kEnginePower = 15;
 constexpr int kTurretPower = 15;
 constexpr int kRailgunPower = 15;
 constexpr int kShieldPower = 25;
+constexpr int kDronePower = 20;             // guidage des drones : il faut ce surplus pour lancer une salve
+constexpr int kEvasionPower = 15;           // manœuvres d'évitement ('evade on')
+constexpr int kAutoFirePower = 5;           // tir automatique : par arme confiée à l'ordinateur ('auto ...')
+constexpr float kAutoFireAim = 0.9f;        // …dont les tirs sont un peu moins précis (x0.9)
+
+// ----------------------------------------------------------------
+//  6b. TACTIQUE : précision, rayons, railguns, missiles, saut FTL
+//  (la précision selon la distance se règle dans config.json)
+// ----------------------------------------------------------------
+
+constexpr float kEvasionDodge = 0.7f;       // 'evade on' : précision ennemie x0.7…
+constexpr float kEvasionOwnAim = 0.85f;     // …mais la tienne aussi un peu (x0.85)
+constexpr float kSubsystemAim = 0.8f;       // viser un sous-système ennemi : précision x0.8
+constexpr float kSubsystemHullShare = 0.7f; // …et la coque ne prend que 70 % des dégâts
+constexpr float kSubsystemDamage = 260.0f;  // % de sous-système perdu par point de coque max
+constexpr float kBeamDuration = 0.9f;       // durée d'un rayon continu (secondes)
+constexpr int kRailgunAmmo = 900;           // obus de railgun (rechargés sur les planètes minérales)
+constexpr float kRailgunHeatPerShot = 4.0f; // chaleur par obus (surchauffe à 100)
+constexpr float kRailgunCooling = 8.0f;     // refroidissement par seconde (tir continu : surchauffe en ~20 s)
+constexpr float kRailgunRestart = 35.0f;    // les railguns repartent sous cette chaleur
+
+constexpr float kPlayerMissileDamage = 120.0f;
+constexpr float kAdaptAfterHits = 15.0f;    // drones de commande : s'adaptent après tant de coups…
+constexpr float kAdaptedDamage = 0.5f;      // …de ton arme la plus utilisée (dégâts x0.5)
+constexpr float kFtlSpoolUnderFire = 10.0f; // secondes pour charger le saut FTL en combat
+constexpr float kFtlSpoolDocking = 5.0f;    // …ou pour faire rentrer les chasseurs sortis
+constexpr float kDockRange = 30.0f;         // chasseurs plus loin au moment du saut : abandonnés
+constexpr float kEnemyDroneShieldCost = 0.25f; // une salve de drones ennemie vide 25 % du bouclier
 
 // ----------------------------------------------------------------
 //  7. CONQUETE
@@ -178,6 +238,19 @@ constexpr double kConversionChance = 0.03;      // conversion ori, par voisin ne
 constexpr double kPactChance = 0.06;            // deux IA s'allient contre un ennemi fort
 constexpr double kPactEndChance = 0.25;         // la menace disparaît : le pacte se dissout
 constexpr double kBetrayalChance = 0.04;        // l'allié devenu bien plus fort trahit l'autre
+// Espionnage et sabotage par les équipes de porte ('spy', 'sabotage')
+constexpr double kSpyCost = 15.0;               // naquadah par mission d'espionnage
+constexpr double kSabotageCost = 40.0;          // naquadah par sabotage
+constexpr double kGateTeamCooldown = 45.0;      // secondes avant qu'une équipe reparte
+constexpr int kGateRange = 2;                   // portée : à tant de couloirs de tes mondes
+constexpr double kSabotageChance = 0.6;         // chance de base, -8 % par niveau de défense
+constexpr double kYardSabotage = 120.0;         // chantier naval arrêté (secondes)
+constexpr double kMineSabotage = 150.0;         // revenus coupés (secondes)
+constexpr double kAiSabotageChance = 0.03;      // une IA sabote un de tes mondes, par période
+// Événements galactiques (invasion wraith, peste, Ancien élevé, tempête)
+constexpr double kGalacticPeriod = 150.0;       // secondes entre deux tirages
+constexpr double kGalacticChance = 0.5;         // chance qu'un événement arrive à chaque tirage
+constexpr double kUnderdogBoost = 1.3;          // chantiers des factions avec 2 mondes ou moins
 constexpr int kMaxBattleMotherships = 4;        // limites de la bataille 3D (12 contacts)
 constexpr int kMaxBattleFighters = 8;
 

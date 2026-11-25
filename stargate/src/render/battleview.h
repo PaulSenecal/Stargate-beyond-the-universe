@@ -22,6 +22,7 @@
 #include "meshbuilder.h"
 #include "planetlook.h"
 #include "src/audio/soundcue.h"
+#include "src/core/interior.h"
 #include "src/core/shipclass.h"
 
 class QPainter;
@@ -79,6 +80,43 @@ struct WeaponReadiness {
     float railgunReach = 0;
     int interceptions = 0;
     int incomingMissiles = 0;
+    float railgunHeat = 0;              // 0..100, overheated at 100
+    bool railgunOverheated = false;
+    int railgunAmmo = 0, railgunAmmoMax = 0;
+    int missiles = 0, missilesMax = 0;  // the player's missiles
+    // Tactics
+    QString aimSystem;                  // enemy subsystem aimed at ("" = hull)
+    bool evading = false;
+    float accuracy = 100;               // percent, on the current target
+    float ftlCountdown = -1;            // seconds before the FTL jump, -1 = none
+    // Automatic fire of the other weapons ('auto ...')
+    bool autoMain = false, autoPulse = false, autoMissiles = false, autoDrones = false;
+    // Energy: total of the core and what each active system draws
+    int powerTotal = 100;
+    QList<std::pair<QString, int>> powerUse;    // untranslated names (context BattleView)
+};
+
+// One moment of a recorded battle, seen from above (world x, z)
+struct ReplayFrame {
+    struct Ship { QPointF pos; QPointF facing; bool mothership; int side; float health; };  // side: 0 you, 1 enemy, 2 ally
+    struct Shot { QPointF pos; bool friendly; bool missile; bool beam; };
+    float time = 0;
+    float hull = 100, shield = 100;
+    QList<Ship> ships;
+    QList<Shot> shots;
+    QStringList events;         // log lines of that moment
+};
+
+// Statistics of one battle (summary at the end, achievements)
+struct BattleStats {
+    float seconds = 0;
+    int shots = 0, hits = 0;
+    int kills = 0, motherships = 0;
+    float damageDealt = 0;
+    float hullLost = 0, shieldLost = 0;
+    int interceptions = 0;
+    int alliesLost = 0;
+    QString faction;
 };
 
 // A recent impact on the Destiny, in ship-local coordinates
@@ -104,8 +142,28 @@ public:
     bool firePulseVolley();
     bool fireSecondaryBurst();
     void setShieldActive(bool active);
+    // Flagship without shield (Wraith hive) and how much its hull resists
+    // (damage taken x armor)
+    void setShipEquipment(bool shield, float armor);
+    bool hasShield() const { return m_hasShield; }
     bool lockTarget(int enemyIndex);
+    // Aims at a subsystem of an enemy: weapons, shields, engines, hangar
+    // ("" or "hull" = the hull). Harder to hit, but disables it.
+    bool aimAt(int enemyIndex, const QString &system);
+    static QStringList enemySystems();
+    bool fireMissiles(int enemyIndex = -1);     // the player's missile bay
+    void setEvasion(bool on);                   // evasive maneuvers (engines, power)
+    // Automatic fire: main, pulse, missiles, drones (also towers, railguns),
+    // or all. False when the ship has no such weapon.
+    bool setAutoFire(const QString &weapon, bool on);
+    QString autoFireReport() const;
+    // Energy drawn by each active system (name, power)
+    QList<std::pair<QString, int>> powerUse() const;
+    int powerTotal() const;
+    bool evading() const { return m_evading; }
     bool repairSubsystem(const QString &name);
+    // Repairs a system by `amount` percent (crew repair jobs)
+    void repairBy(const QString &key, float amount);
 
     // --- Ship systems: engines, shields, weapons, lifesupport (+ hull)
     // Normalizes a typed name ("engine", "Life Support"…) to a system
@@ -114,6 +172,64 @@ public:
     static QStringList systemKeys();
     void setSubsystemHealth(const QString &key, float health);
     float systemHealth(const QString &key) const;   // also accepts "hull"
+
+    // --- Supplies (finite): railgun slugs, missiles, drone salvos.
+    // They are only restocked on planets (campaign) or worlds (conquest).
+    int railgunAmmo() const { return m_railgunAmmo; }
+    void setRailgunAmmo(int ammo) { m_railgunAmmo = std::clamp(ammo, 0, kRailgunAmmoMax()); }
+    static int kRailgunAmmoMax() { return Balance::kRailgunAmmo; }
+    int missiles() const { return m_missiles; }
+    int missileCapacity() const { return m_missileBay; }
+    void setMissileBay(int capacity, int stock);
+    int drones() const { return m_drones; }
+    int droneCapacity() const { return m_droneBay; }
+    void setDrones(int salvos) { m_drones = std::clamp(salvos, 0, m_droneBay); }
+
+    // --- FTL jump under fire: the drive spools for `seconds`, hangar
+    // fighters fly back; jumpReady() when it is time to jump
+    void startJumpSequence(float seconds);
+    void abortJumpSequence();
+    bool jumpPending() const { return m_jumpCountdown >= 0.0f; }
+    // Hangar fighters left too far: lost at the jump. Returns how many.
+    int dockForJump();
+    // Fighters launched by order before a jump take off again after it
+    void relaunchAfterJump();
+    const BattleStats &battleStats() const { return m_stats; }
+    // Replay of the last finished battle (10 frames per second)
+    const QList<ReplayFrame> &lastReplay() const { return m_lastReplay; }
+    QString lastReplayFaction() const { return m_lastReplayFaction; }
+
+    // --- Interior of the ship (campaign)
+    void setPowerLoss(int power) { m_powerLoss = std::max(0, power); }  // leaking conduits
+    void setPowerBonus(int power) { m_powerBonus = std::max(0, power); } // naquadah generator
+    void setAccuracyBonus(float factor) { m_accuracyBonus = factor; }   // sensor suite, Eli
+    // Red alert lights (fires, boarders aboard) on top of the low hull alarm
+    void setRedAlert(bool on) { m_redAlert = on; }
+    // Observation deck: a slow wide view of the ship, no tactical HUD
+    void setObservation(bool on);
+    bool observing() const { return m_observing; }
+    // Burning compartments shown on the hull (replaces the random fires)
+    void setFireSpots(const QList<QVector3D> &spots);
+    // Boarding a crippled enemy mothership (shield down, hull < 35%)
+    bool canBoard(int enemyIndex, QString *why) const;
+    // The boarded ship is taken: it leaves the battle. Returns its faction.
+    QString captureEnemy(int enemyIndex);
+
+    // --- Inside the enemy motherships (conquest and campaign)
+    std::shared_ptr<Interior> enemyInterior(int enemyIndex) const;
+    QString enemyClass(int enemyIndex) const;
+    QString enemyFaction(int enemyIndex) const;
+    bool enemyShieldDown(int enemyIndex) const;
+    // A team or a fire in a room of an enemy ship damages the system there
+    void damageEnemyRoom(int enemyIndex, const QString &room, float damage);
+    // A hangar fighter flies to an enemy ship and latches on it: a team
+    // can then go aboard through it
+    bool dockShuttle(int enemyIndex, QString *error);
+    bool shuttleDocked(int enemyIndex) const;
+    // Damage of the enemy motherships still alive (0..1), and damage they
+    // start with (a fleet that fled comes back hurt)
+    float enemyDamage() const;
+    void setIncomingDamage(float damage) { m_incomingDamage = std::clamp(damage, 0.0f, 0.9f); }
 
     // Advances the battle by `seconds` at 60 steps per second, without
     // rendering (balance measurements, tests)
@@ -219,6 +335,11 @@ signals:
     void enemyDestroyed(bool mothership);
     void sectorCleared();               // last enemy destroyed (no auto waves)
     void hullBreached();                // hull reached 0 (emergency repairs follow)
+    void jumpReady();                   // the FTL drive is spooled (startJumpSequence)
+    void hullHit(const QVector3D &local, float damage);    // ship-local impact (interior damage)
+    // Enemies come aboard: via = "rings" (a ship latched or close), "beam"
+    void boardingParty(int strength, const QString &faction, const QString &via);
+    void battleEnded(const BattleStats &stats);     // last enemy of a battle destroyed
     // delay: seconds before the sound starts (salvos)
     void sound(SoundCue cue, const QString &faction, float delay);
 
@@ -231,7 +352,14 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
-    enum ShaderMode { ModeHull = 0, ModePlanet = 1, ModeShield = 2, ModeGlow = 3 };
+    enum ShaderMode { ModeHull = 0, ModePlanet = 1, ModeShield = 2, ModeGlow = 3, ModeSprite = 4 };
+    // Textures of the shots, from the mod (0 = missing: plain shapes)
+    enum Sprite { SpriteNone = -1, SpritePlasma, SpriteWraith, SpriteIon, SpriteAsgardLaser, SpriteAncientLaser,
+                  SpriteBeamCore, SpriteBeamGlow, SpriteCount };
+    static int spriteFor(const QString &faction);
+    GLuint spriteTexture(int sprite);
+    void drawSprite(int sprite, const QVector3D &center, const QVector3D &direction, float length, float width,
+                    const QVector3D &tint, float tintAmount, float alpha, float uvRepeat = 1.0f);
     enum class EnemyClass { Mothership, Fighter };
 
     struct Mesh {
@@ -284,7 +412,20 @@ private:
         int targetId = -1;          // enemy it attacks
         QVector3D vel;
         float idle = 0;             // seconds without enemy (hangar fighters land)
+        // Subsystems of the ship (percent): weapons, shields, engines, hangar
+        float systems[4] = {100, 100, 100, 100};
+        float retreat = 0;          // seconds left falling back to recharge (motherships)
+        // Motherships: the inside of the ship, run by the AI (see Interior)
+        std::shared_ptr<Interior> interior;
+        float interiorClock = 0, lastInteriorLog = -100;
+        // Fighters: latched on a ship to bring a team over (rings, airlock)
+        int latchedOn = -1;         // enemy id (friendly fighter) or 0 = the player's ship
+        float latchTime = 0;        // seconds latched
+        QVector3D latchLocal;       // where on the player's hull
     };
+    enum EnemySystem { SysWeapons = 0, SysShields = 1, SysEngines = 2, SysHangar = 3 };
+    // Which weapon fired a shot (adaptive drones, statistics)
+    enum class Weapon { None, Main, Pulse, Towers, Railgun, Drones, Missiles, Ally };
 
     struct Projectile {
         enum class Kind { Bolt, Missile, Slug, Beam };
@@ -297,6 +438,12 @@ private:
         int targetAlly = -1;        // enemy shot at a friendly ship
         bool fromAlly = false;
         bool drone = false;         // Ancient drone: goes through the shields
+        bool miss = false;          // flies past its target (distance, sensors, evasion)
+        bool rolled = false;        // hit chance already rolled
+        int sprite = -1;            // Sprite of the mod for this shot (-1 = plain shape)
+        bool autoFired = false;     // fired by the automatic fire control
+        int aimSystem = -1;         // enemy subsystem aimed at (EnemySystem)
+        Weapon weapon = Weapon::None;
         QVector3D pos, vel;
         QVector3D aimLocal;         // aim point on the Destiny hull (local space)
         QVector3D color;
@@ -306,6 +453,21 @@ private:
     struct Effect {
         QVector3D pos, color;
         float age = 0, duration = 0.5f, maxRadius = 1;
+    };
+
+    // Continuous beam (Asgard, Ori…): a ray from its ship to the target
+    // for kBeamDuration, its damage delivered in ticks
+    struct Ray {
+        int sourceEnemy = -1, sourceAlly = -1;  // -1 / -1 = the player's ship
+        QVector3D sourceLocal;                  // on the player's ship
+        int targetEnemy = -1, targetAlly = -1;  // -1 / -1 = the player's ship
+        QVector3D aimLocal;
+        QVector3D missOffset;                   // non-zero: it misses
+        QVector3D color;
+        float width = 0.3f, age = 0, damageLeft = 0, tick = 0;
+        bool fromDestiny = false;
+        Weapon weapon = Weapon::None;
+        QString faction;            // look of the beam
     };
 
     struct Subsystem {
@@ -344,6 +506,17 @@ private:
     void shoot(bool fromDestiny, const QVector3D &from, int targetId, const QVector3D &aimLocal,
                float damage, float speed, const QVector3D &color, float length, float width,
                float delay = 0.0f);
+    // Rolls the hit chance of the last shot (distance, sensors, evasion…)
+    void rollAccuracy(Projectile &p, const QVector3D &target, float floor = 0.0f);
+    float hitChance(const QVector3D &from, const QVector3D &to, bool fromPlayer, const Enemy *target) const;
+    void fireRay(Ray ray, float damage);
+    void updateRays(float dt);
+    void drawRays();
+    QVector3D rayStart(const Ray &r) const;
+    QVector3D rayEnd(const Ray &r) const;
+    float adaptedDamage(const Enemy &e, Weapon weapon, float damage);
+    void damageEnemySystem(Enemy &e, int system, float hullDamage);
+    void finishBattle();
 
     // Helpers
     std::vector<int> aliveIds() const;
@@ -401,6 +574,11 @@ private:
     QOpenGLShaderProgram m_stars;
     Mesh m_box, m_sphere, m_spire, m_spireRidge, m_fan, m_fanPlate, m_hub;
     Mesh m_ring, m_pyramid, m_fighter;
+    // Quad with texture coordinates for the shot sprites
+    QOpenGLVertexArrayObject m_quadVao;
+    QOpenGLBuffer m_quadVbo;
+    GLuint m_sprites[SpriteCount] = {};
+    bool m_spritesTried[SpriteCount] = {};
     QOpenGLVertexArrayObject m_starVao;
     QOpenGLBuffer m_starVbo;
     int m_starCount = 0;
@@ -481,6 +659,46 @@ private:
     int m_nextShotId = 1;
     int m_interceptions = 0;
     float m_lastMissileLog = -100;
+    // Tactics
+    std::vector<Ray> m_rays;
+    int m_aimSystem = -1;                   // subsystem aimed on the locked target
+    bool m_evading = false;
+    float m_evadeBlend = 0;                 // 0..1, smooth start of the maneuvers
+    float m_railgunHeat = 0;
+    bool m_railgunOverheated = false;
+    int m_railgunAmmo = Balance::kRailgunAmmo;
+    int m_missiles = 0, m_missileBay = 0;
+    int m_dronesInFlight = 0;
+    float m_jumpCountdown = -1;
+    int m_relaunch = 0;                     // fighters to launch again after a jump
+    int m_launchedByOrder = 0;
+    std::map<int, int> m_weaponHits;        // Weapon -> hits on the drones this battle
+    int m_adaptedWeapon = -1;               // weapon the drones resist (-1 = none)
+    BattleStats m_stats;
+    bool m_inBattle = false;
+    int m_powerLoss = 0, m_powerBonus = 0;
+    float m_accuracyBonus = 1.0f;
+    bool m_externalFires = false;
+    bool m_redAlert = false;
+    bool m_autoMain = false, m_autoPulse = false, m_autoMissiles = false, m_autoDrones = false;
+    bool m_autoFiring = false;              // the shots below come from the auto-fire: no log line
+    float m_autoMissileTimer = 0, m_autoDroneTimer = 0;
+    void autoFire(float dt);
+    int autoWeapons() const;
+    bool m_hasShield = true;
+    float m_armor = 1.0f;
+    float m_incomingDamage = 0;
+    void updateEnemyInterior(Enemy &e, float dt);
+    void enemyBoarding(Enemy &e, float dt);
+    static QString layoutOf(const QString &faction);
+    QList<ReplayFrame> m_replay, m_lastReplay;
+    QString m_lastReplayFaction;
+    float m_replayClock = 0;
+    QStringList m_replayEvents;
+    void recordFrame();
+    bool m_observing = false;
+    float m_shake = 0;                      // camera shake after heavy hits
+    float m_shedLogged = -100;
 };
 
 #endif // BATTLEVIEW_H

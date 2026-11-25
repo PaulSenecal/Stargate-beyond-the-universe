@@ -35,7 +35,8 @@ void DestinyRoute::generateRoute(int galaxies)
 {
     m_route.clear();
     for (int g = 0; g < galaxies; ++g) {
-        QRandomGenerator rng(quint64(g) * 0xF00D5EEDu);   // deterministic per galaxy
+        const quint32 universe = PlanetGenerator::universeSeed();
+        QRandomGenerator rng(quint64(g) * 0xF00D5EEDu ^ (universe == 0 ? 0 : quint64(universe) * 0x2545F491u));
         const int stops = 5 + int(rng.bounded(20u));
         for (int s = 0; s < stops; ++s) {
             RouteStop stop;
@@ -101,6 +102,22 @@ bool DestinyRoute::canJump(QString *reason) const
     return why.isEmpty();
 }
 
+void DestinyRoute::addPower(double delta)
+{
+    m_state.power = std::clamp(m_state.power + delta, 0.05, 1.0);
+}
+
+void DestinyRoute::addFtlCharge(double delta)
+{
+    m_state.ftlCharge = std::clamp(m_state.ftlCharge + delta, 0.0, 1.0);
+}
+
+bool DestinyRoute::hasUsableStar() const
+{
+    const RouteStop &stop = currentStop();
+    return (stop.galaxy * 131 + stop.sequence * 17) % 10 < 4;   // 4 systems out of 10
+}
+
 bool DestinyRoute::jump(GameEvent *event, QString *reason)
 {
     if (!canJump(reason))
@@ -149,6 +166,8 @@ bool DestinyRoute::dial(int variant, QString *error)
         why = tr("the team is already there");
     else if (m_state.teamPlanet >= 0)
         why = tr("a team is already deployed - recall it with 'stargate destiny'");
+    else if (!PlanetGenerator::generate(currentStop().galaxy, currentStop().sequence, variant).hasGate)
+        why = tr("no Stargate on this planet - fly the Puddle Jumper ('jumper <address>')");
 
     if (!why.isEmpty()) {
         if (error)
@@ -156,7 +175,32 @@ bool DestinyRoute::dial(int variant, QString *error)
         return false;
     }
     m_state.teamPlanet = variant;
+    m_byShuttle = false;
     return true;
+}
+
+bool DestinyRoute::flyTo(int variant, QString *error)
+{
+    QString why;
+    if (variant < 0 || variant >= currentStop().numVariants)
+        why = tr("no such planet in this system (see 'scansector')");
+    else if (m_state.teamPlanet >= 0)
+        why = tr("a team is already deployed - recall it with 'stargate destiny'");
+    if (!why.isEmpty()) {
+        if (error)
+            *error = why;
+        return false;
+    }
+    m_state.teamPlanet = variant;
+    m_byShuttle = true;
+    return true;
+}
+
+void DestinyRoute::setUniverseSeed(quint32 seed)
+{
+    PlanetGenerator::setUniverseSeed(seed);
+    generateRoute(int(kGalaxyNames.size()));
+    m_index = std::clamp(m_index, 0, int(m_route.size()) - 1);
 }
 
 bool DestinyRoute::recallTeam(QString *error)
@@ -167,6 +211,7 @@ bool DestinyRoute::recallTeam(QString *error)
         return false;
     }
     m_state.teamPlanet = -1;
+    m_byShuttle = false;
     return true;
 }
 
@@ -226,7 +271,9 @@ void DestinyRoute::tick(double hours)
     if (m_state.gateRemaining <= 0.0) {
         m_state.gateRemaining = 0.0;
         m_state.gateOpen = false;
-        if (m_state.teamPlanet >= 0) {
+        if (m_state.teamPlanet >= 0 && m_byShuttle) {
+            emit notice(tr("Gate window closed - the team will come back with the Puddle Jumper"), Severity::Neutral);
+        } else if (m_state.teamPlanet >= 0) {
             m_state.teamPlanet = -1;
             changeCrew(-kCrewLostWithGate);
             emit notice(tr("Gate window closed - team stranded on the surface! %1 crew lost")

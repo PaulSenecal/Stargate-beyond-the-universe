@@ -67,6 +67,14 @@ void ConquestEndScreen::showResult(bool victory, const QString &faction, const Q
     raise();
 }
 
+void ConquestEndScreen::showCustom(bool victory, const QString &heading, const QString &subtitle,
+                                   const QStringList &summary)
+{
+    showResult(victory, QString(), summary);
+    m_heading->setText(heading);
+    m_subtitle->setText(subtitle);
+}
+
 void ConquestEndScreen::paintEvent(QPaintEvent *)
 {
     QPainter p(this);

@@ -172,6 +172,11 @@ public:
     void setPowerLoss(int power) { m_powerLoss = std::max(0, power); }  // leaking conduits
     void setPowerBonus(int power) { m_powerBonus = std::max(0, power); } // naquadah generator
     void setAccuracyBonus(float factor) { m_accuracyBonus = factor; }   // sensor suite, Eli
+    // Red alert lights (fires, boarders aboard) on top of the low hull alarm
+    void setRedAlert(bool on) { m_redAlert = on; }
+    // Observation deck: a slow wide view of the ship, no tactical HUD
+    void setObservation(bool on);
+    bool observing() const { return m_observing; }
     // Burning compartments shown on the hull (replaces the random fires)
     void setFireSpots(const QList<QVector3D> &spots);
     // Boarding a crippled enemy mothership (shield down, hull < 35%)
@@ -603,6 +608,10 @@ private:
     int m_powerLoss = 0, m_powerBonus = 0;
     float m_accuracyBonus = 1.0f;
     bool m_externalFires = false;
+    bool m_redAlert = false;
+    bool m_observing = false;
+    float m_shake = 0;                      // camera shake after heavy hits
+    float m_shedLogged = -100;
 };
 
 #endif // BATTLEVIEW_H

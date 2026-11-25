@@ -42,6 +42,7 @@ SOURCES += \
     src/core/commandmanager.cpp \
     src/core/language.cpp \
     src/core/destinystate.cpp \
+    src/core/campaignlife.cpp \
     src/core/gameconfig.cpp \
     src/core/interior.cpp \
     src/core/questsystem.cpp \
@@ -98,6 +99,7 @@ HEADERS += \
     src/core/assets.h \
     src/core/balance.h \
     src/core/gameconfig.h \
+    src/core/campaignlife.h \
     src/core/interior.h \
     src/Menu/uipalette.h \
     src/core/shipclass.h \

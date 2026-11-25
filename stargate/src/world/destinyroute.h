@@ -66,6 +66,13 @@ public:
 
     // --- Gate
     bool dial(int variant, QString *error);
+    // Puddle Jumper flight to a planet of the system (gate or not): no
+    // gate window needed, the team comes back by the same way
+    bool flyTo(int variant, QString *error);
+    bool teamByShuttle() const { return m_byShuttle; }
+    void setTeamByShuttle(bool shuttle) { m_byShuttle = shuttle && m_state.teamPlanet >= 0; }
+    // Universe seed (see PlanetGenerator): regenerates the route
+    void setUniverseSeed(quint32 seed);
     bool recallTeam(QString *error);
     bool hasCollected(int variant) const { return m_collected.contains(variant); }
     void markCollected(int variant) { m_collected.insert(variant); }
@@ -97,6 +104,7 @@ private:
     QSet<int> m_collected;
     bool m_chargeAnnounced = true;
     bool m_closingWarned = false;
+    bool m_byShuttle = false;
 };
 
 #endif // DESTINYROUTE_H

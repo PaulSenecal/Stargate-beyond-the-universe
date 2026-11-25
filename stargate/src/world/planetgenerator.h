@@ -15,6 +15,10 @@ class PlanetGenerator
 {
 public:
     static Planet generate(int galaxy, int sequence, int variant);
+    // Seed of the whole universe (0 = the classic one): the same seed
+    // always gives the same planets, to replay or compare a journey
+    static void setUniverseSeed(quint32 seed);
+    static quint32 universeSeed();
 
 private:
     static quint64 makeSeed(int galaxy, int sequence, int variant);

@@ -20,6 +20,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QQuaternion>
+#include <QRadialGradient>
 #include <QRandomGenerator>
 #include <QTimer>
 #include <QVector4D>
@@ -278,6 +279,8 @@ QVector3D boltColor(const QString &faction)
     if (faction == "Wraith") return {0.8f, 0.45f, 1.0f};
     if (faction == "Drones") return {1.0f, 0.3f, 0.25f};
     if (faction == "Tau'ri") return {1.0f, 0.95f, 0.7f};
+    if (faction == "Nakai") return {0.55f, 1.0f, 0.35f};
+    if (faction == "Ursini") return {0.85f, 0.6f, 1.0f};
     return kEnemyBolt;
 }
 
@@ -878,6 +881,33 @@ void BattleView::step(float dt)
         }
     }
 
+    // Not enough power (leaks, drones, evasion): the lowest priorities are shed
+    {
+        int need = kMainTowerPower + kEnginePower + (m_turretsOn && m_loadout.towers ? kTurretPower : 0)
+                 + (m_railgunsOn && m_loadout.railguns ? kRailgunPower : 0) + (m_shieldOrdered ? kShieldPower : 0)
+                 + (m_dronesInFlight > 0 ? kDronePower : 0) + (m_evading ? kEvasionPower : 0);
+        const int available = kCorePower + m_powerBonus - m_powerLoss;
+        QStringList shed;
+        if (need > available && m_turretsOn && m_loadout.towers) {
+            m_turretsOn = false;
+            need -= kTurretPower;
+            shed << tr("auto-turrets");
+        }
+        if (need > available && m_evading) {
+            m_evading = false;
+            need -= kEvasionPower;
+            shed << tr("evasive maneuvers");
+        }
+        if (need > available && m_railgunsOn && m_loadout.railguns) {
+            m_railgunsOn = false;
+            need -= kRailgunPower;
+            shed << tr("railguns");
+        }
+        if (!shed.isEmpty())
+            emit logMessage(tr("Power shortage (%1 available) - shed: %2").arg(available).arg(shed.join(", ")),
+                            LogLevel::Critical);
+    }
+
     if (m_railgunsOn)
         fireRailguns(dt);
 
@@ -886,6 +916,9 @@ void BattleView::step(float dt)
     m_pulseCooldown = std::max(0.0f, m_pulseCooldown - recharge);
     m_secondaryCooldown = std::max(0.0f, m_secondaryCooldown - recharge);
     m_shieldFlash = std::max(0.0f, m_shieldFlash - dt * 2.0f);
+    m_shake = std::max(0.0f, m_shake - dt * 2.5f);
+    if (m_observing && !aliveIds().empty())
+        setObservation(false);              // contacts: back to the tactical view
 
     // Organic hull (Wraith): it heals itself, even in battle
     if (m_loadout.hullRegen > 0.0f && m_hull > 0.0f)
@@ -1543,6 +1576,16 @@ void BattleView::relaunchAfterJump()
     m_relaunch = 0;
     if (count > 0)
         launchFighters(count);
+}
+
+void BattleView::setObservation(bool on)
+{
+    if (on && !aliveIds().empty()) {
+        emit logMessage(tr("Not with hostile contacts around"), LogLevel::Warning);
+        return;
+    }
+    m_observing = on;
+    update();
 }
 
 void BattleView::setFireSpots(const QList<QVector3D> &spots)
@@ -2625,6 +2668,7 @@ void BattleView::hitHull(const Projectile &p)
     const float before = m_hull;
     m_hull = std::max(0.0f, m_hull - p.damage * gameConfig().damageToPlayer);
     m_stats.hullLost += before - m_hull;
+    m_shake = std::min(1.0f, m_shake + p.damage / 40.0f);
     const bool missile = p.kind == Projectile::Kind::Missile;
     m_effects.push_back({p.pos, kExplosion, 0.0f, missile ? 0.8f : 0.45f, missile ? 2.2f : 0.9f});
     emit sound(missile ? SoundCue::Explosion : SoundCue::HullHit, {}, 0.0f);
@@ -2939,13 +2983,20 @@ void BattleView::resizeGL(int w, int h)
 
 void BattleView::updateCamera()
 {
-    const float yaw = qDegreesToRadians(m_yawOffset + 28.0f * std::sin(m_time * 0.07f));
-    const float pitch = qDegreesToRadians(m_pitch);
-    const QVector3D target(0.8f, 0.5f, 0.0f);
+    // Observation deck: a slow orbit far around the ship
+    const float yaw = m_observing ? qDegreesToRadians(m_time * 4.0f)
+                                  : qDegreesToRadians(m_yawOffset + 28.0f * std::sin(m_time * 0.07f));
+    const float pitch = qDegreesToRadians(m_observing ? 8.0f + 6.0f * std::sin(m_time * 0.05f) : m_pitch);
+    QVector3D target(0.8f, 0.5f, 0.0f);
+    // Heavy hits shake the camera
+    if (m_shake > 0.0f)
+        target += QVector3D(std::sin(m_time * 53.0f), std::sin(m_time * 47.0f + 1.0f), std::sin(m_time * 59.0f + 2.0f))
+                * 0.35f * m_shake;
+    const float distance = m_observing ? 34.0f : m_distance;
 
-    m_eye = target + m_distance * QVector3D(std::cos(pitch) * std::sin(yaw),
-                                            std::sin(pitch),
-                                            std::cos(pitch) * std::cos(yaw));
+    m_eye = target + distance * QVector3D(std::cos(pitch) * std::sin(yaw),
+                                          std::sin(pitch),
+                                          std::cos(pitch) * std::cos(yaw));
     m_view.setToIdentity();
     m_view.lookAt(m_eye, target, {0, 1, 0});
     m_viewProj = m_projection * m_view;
@@ -3566,6 +3617,26 @@ void BattleView::drawOverlay()
     font.setPixelSize(12);
     font.setBold(true);
     p.setFont(font);
+
+    // Red alert: pulsing red light at the edges (low hull, fires, boarders)
+    if (m_hull < 30.0f || m_redAlert) {
+        const float pulse = 0.5f + 0.5f * std::sin(m_time * 4.0f);
+        QRadialGradient glow(rect().center(), std::max(width(), height()) * 0.75);
+        glow.setColorAt(0.55, QColor(255, 0, 0, 0));
+        glow.setColorAt(1.0, QColor(255, 20, 10, int(40 + 70 * pulse)));
+        p.fillRect(rect(), glow);
+    }
+    if (m_observing) {
+        p.setPen(QColor(200, 220, 255, 200));
+        QFont big = font;
+        big.setPixelSize(16);
+        big.setLetterSpacing(QFont::AbsoluteSpacing, 4);
+        p.setFont(big);
+        p.drawText(QRectF(0, height() - 60, width(), 24), Qt::AlignCenter, tr("OBSERVATION DECK"));
+        p.setFont(font);
+        p.drawText(QRectF(0, height() - 36, width(), 20), Qt::AlignCenter, tr("the crew rests its eyes - 'observe off' to go back"));
+        return;
+    }
 
     // --- Enemy reticles + health bars
     const QColor red(255, 70, 60);

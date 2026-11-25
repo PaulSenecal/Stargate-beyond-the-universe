@@ -75,6 +75,7 @@ QStringList MusicPlayer::tracksFor(Mood mood, const QString &faction) const
     switch (mood) {
     case Mood::Title: names = kTitle; break;
     case Mood::Calm: names = kCalm; break;
+    case Mood::Danger: names = QStringList{"SGA_WraithLair", "SGU_AwaitingTheAttack", "SGU_AHeavyBurden"}; break;
     case Mood::Battle:
         names = faction == "Wraith" ? kBattleWraith
               : faction == "Goa'uld" || faction == "Lucian Alliance" ? kBattleGoauld

@@ -48,6 +48,8 @@ struct Planet {
     QString gateAddress() const;
     QString classificationName() const;
     bool isAncientSite() const { return !ancientName.isEmpty(); }
+    // Some planets have no Stargate: only the Puddle Jumper reaches them
+    bool hasGate = true;
 };
 
 #endif // PLANET_H

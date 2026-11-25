@@ -318,6 +318,11 @@ BattleView::BattleView(QWidget *parent)
 
     step(0.0f);
     spawnWave(false);
+    // The log of a battle goes into its replay
+    connect(this, &BattleView::logMessage, this, [this](const QString &text, LogLevel) {
+        if (m_inBattle && m_replayEvents.size() < 6)
+            m_replayEvents << text;
+    });
 
     connect(m_timer, &QTimer::timeout, this, [this] {
         const float dt = std::min(0.05f, float(m_clock.restart()) / 1000.0f) * gameConfig().gameSpeed;
@@ -828,10 +833,17 @@ void BattleView::step(float dt)
             m_stats = BattleStats();
             m_stats.faction = m_waveFaction;
             m_stats.interceptions = m_interceptions;    // baseline
+            m_replay.clear();
+            m_replayClock = 0;
             m_weaponHits.clear();
             m_adaptedWeapon = -1;
         }
         m_stats.seconds += dt;
+        m_replayClock += dt;
+        if (m_replayClock >= 0.1f) {
+            m_replayClock = 0;
+            recordFrame();
+        }
     } else if (m_inBattle) {
         finishBattle();
     }
@@ -1639,9 +1651,48 @@ QString BattleView::captureEnemy(int enemyIndex)
     return classOf(*e).faction;
 }
 
+void BattleView::recordFrame()
+{
+    constexpr int kMaxFrames = 3000;        // 5 minutes
+    if (m_replay.size() >= kMaxFrames)
+        return;
+    ReplayFrame f;
+    f.time = m_stats.seconds;
+    f.hull = m_hull;
+    f.shield = shieldProtecting() ? m_shieldStrength : 0.0f;
+    const QVector3D center = destinyWorld({});
+    const QVector3D bow = destinyWorld({1, 0, 0}) - center;
+    f.ships.append({QPointF(center.x(), center.z()), QPointF(bow.x(), bow.z()), true, 0, m_hull});
+    for (const Enemy &e : m_enemies)
+        if (e.alive)
+            f.ships.append({QPointF(e.pos.x(), e.pos.z()), QPointF(e.facing.x(), e.facing.z()),
+                            e.cls == EnemyClass::Mothership, 1, 100.0f * e.hp / e.maxHp});
+    for (const Enemy &a : m_allies)
+        if (a.alive)
+            f.ships.append({QPointF(a.pos.x(), a.pos.z()), QPointF(a.facing.x(), a.facing.z()),
+                            a.cls == EnemyClass::Mothership, 2, 100.0f * a.hp / a.maxHp});
+    for (const Projectile &p : m_projectiles)
+        if (!p.dead && p.delay <= 0.0f)
+            f.shots.append({QPointF(p.pos.x(), p.pos.z()), p.fromDestiny, p.kind == Projectile::Kind::Missile, false});
+    for (const Ray &r : m_rays) {
+        const QVector3D a = rayStart(r), b = rayEnd(r);
+        for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
+            const QVector3D p = a + (b - a) * t;
+            f.shots.append({QPointF(p.x(), p.z()), r.fromDestiny, false, true});
+        }
+    }
+    f.events = m_replayEvents;
+    m_replayEvents.clear();
+    m_replay << f;
+}
+
 void BattleView::finishBattle()
 {
     m_inBattle = false;
+    recordFrame();
+    m_lastReplay = m_replay;
+    m_lastReplayFaction = m_stats.faction;
+    m_replay.clear();
     m_stats.interceptions = m_interceptions - m_stats.interceptions;
     const int accuracy = m_stats.shots > 0 ? qRound(100.0f * m_stats.hits / m_stats.shots) : 0;
     emit logMessage(tr("Battle report (%1): %2 s, %3 kill(s), accuracy %4% (%5/%6), damage dealt %7, "
@@ -2659,6 +2710,7 @@ void BattleView::hitShield(const Projectile &p)
 
     if (m_shieldStrength <= 0.0f && !m_shieldCollapsed) {
         m_shieldCollapsed = true;
+        emit sound(SoundCue::AlertShields, {}, 0.0f);
         emit logMessage(tr("Shields collapsed!"), LogLevel::Critical);
     }
 }
@@ -2682,6 +2734,8 @@ void BattleView::hitHull(const Projectile &p)
         m_fires.push_back(p.aimLocal);
     emit hullHit(p.aimLocal, p.damage * gameConfig().damageToPlayer);
 
+    if (before > 25.0f && m_hull <= 25.0f)
+        emit sound(SoundCue::AlertHull, {}, 0.0f);
     for (float threshold : {75.0f, 50.0f, 25.0f}) {
         if (before > threshold && m_hull <= threshold)
             emit logMessage(tr("Hull integrity %1%").arg(qRound(m_hull)),

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "src/Menu/setting/settingspanel.h"
 #include "src/core/gameconfig.h"
+#include "src/core/modloader.h"
 #include "src/core/language.h"
 #include "src/db/databasemanager.h"
 
@@ -25,6 +26,9 @@ int main(int argc, char *argv[])
 
     // Difficulty, game speed, accessibility: config.json next to the saves
     GameConfig::instance().load();
+    // Mods: JSON files in the "mods" folder next to the saves
+    ModLoader::instance().load();
+    GameConfig::instance().applyOverrides(ModLoader::instance().config());
 
     // Player save database (copied from the template on first launch).
     // The game still runs without it, with default values.

@@ -16,6 +16,7 @@
 #include "routemapwidget.h"
 #include "radarwidget.h"
 #include "shiplibrarydialog.h"
+#include "replaydialog.h"
 #include "shipplandialog.h"
 #include "shipstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
@@ -25,6 +26,7 @@
 #include "weaponstatuswidget.h"
 #include "src/core/commandmanager.h"
 #include "src/core/gameconfig.h"
+#include "src/core/modloader.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
 #include "src/db/repositories/questrepository.h"
@@ -58,6 +60,8 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
     , m_autosaveTimer(new QTimer(this))
 {
     m_quests = new QuestSystem(this);
+    for (const ModLoader::Event &e : ModLoader::instance().events())
+        m_life.addCustomChoice(e.id, e.title, e.text, e.options, e.outcomes);
     setAutoFillBackground(true);
     QPalette pal = palette();
     pal.setColor(QPalette::Window, QColor(6, 6, 8));
@@ -174,7 +178,7 @@ GameMenu::GameMenu(SoundSystem *sound, QWidget *parent)
               << "target" << "missiles" << "drones" << "evade" << "ftl" << "star"
               << "plan" << "crew" << "jobs" << "cancel" << "seal" << "unseal" << "vent" << "unlock" << "install"
               << "blueprints" << "defend" << "board" << "choose" << "stones" << "kino" << "jumper" << "salvage"
-              << "observe" << "stats" << "achievements" << "seed";
+              << "observe" << "stats" << "achievements" << "seed" << "mods" << "replay";
         words.removeDuplicates();
         words.sort();
         m_console->setCompletions(words);
@@ -842,6 +846,30 @@ bool GameMenu::lifeCommand(const QString &first, const QStringList &words)
         m_console->appendLine(tr("%1/%2 achievements").arg(count).arg(CampaignLife::achievements().size()));
         return true;
     }
+    if (first == "replay") {
+        if (m_battle->lastReplay().isEmpty()) {
+            m_console->appendLine(tr("No battle to replay yet"), CommandConsole::Tone::Warning);
+            return true;
+        }
+        auto *dialog = findChild<ReplayDialog *>();
+        if (!dialog)
+            dialog = new ReplayDialog(this);
+        dialog->setReplay(m_battle->lastReplay(), m_battle->lastReplayFaction());
+        dialog->show();
+        dialog->raise();
+        return true;
+    }
+    if (first == "mods") {
+        const ModLoader &mods = ModLoader::instance();
+        m_console->appendLine(tr("Mods folder: %1").arg(mods.folder()));
+        if (mods.loaded().isEmpty())
+            m_console->appendLine(tr("No mod loaded - put JSON files there (see rcs/mods/example_mod.json)"));
+        for (const QString &name : mods.loaded())
+            m_console->appendLine(name, CommandConsole::Tone::Success);
+        for (const QString &error : mods.errors())
+            m_console->appendLine(error, CommandConsole::Tone::Warning);
+        return true;
+    }
     if (first == "seed") {
         m_console->appendLine(tr("Universe seed: %1 (0 = classic). Set \"seed\" in config.json for the next new journey.")
                                   .arg(PlanetGenerator::universeSeed()));
@@ -859,6 +887,8 @@ void GameMenu::showChoice()
     for (int i = 0; i < c->options.size(); ++i)
         m_console->appendLine(QStringLiteral("   %1. %2").arg(i + 1).arg(c->options[i]), CommandConsole::Tone::Warning);
     m_console->appendLine(tr("Type 'choose <n>' (90 s, then the crew decides alone)"));
+    if (m_sound)
+        m_sound->play(SoundCue::Notice, {}, 0.0f);
     m_choiceTimer = 90.0;
 }
 
@@ -942,11 +972,14 @@ void GameMenu::announceAchievements()
 {
     for (const QString &id : m_life.takeUnlocked())
         for (const CampaignLife::Achievement &a : CampaignLife::achievements())
-            if (a.id == id)
+            if (a.id == id) {
+                if (m_sound)
+                    m_sound->play(SoundCue::Notice, {}, 0.0f);
                 m_console->appendLine(tr("ACHIEVEMENT UNLOCKED: %1 - %2")
                                           .arg(QCoreApplication::translate("CampaignLife", a.title.toUtf8().constData()),
                                                QCoreApplication::translate("CampaignLife", a.description.toUtf8().constData())),
                                       CommandConsole::Tone::Success);
+            }
 }
 
 void GameMenu::onBattleEnded(const BattleStats &stats)
@@ -1128,7 +1161,7 @@ void GameMenu::showHelp()
                              "board <n> (crippled mothership)"));
     m_console->appendLine(tr("Journey: choose <n> (decisions), stones (Earth, once a day), kino <address> (scout), "
                              "jumper <address> (planets without gate), salvage (wrecks), observe (deck), stats, achievements"));
-    m_console->appendLine(tr("Details: help <topic> (repair, target, seal, crew, ftl, energy, explore)"));
+    m_console->appendLine(tr("Details: help <topic> (repair, target, seal, crew, ftl, energy, explore) - replay (last battle), mods"));
     m_console->appendLine(tr("Repairs use resources (showressource); <n> = target number shown as T1, T2…"));
 }
 
@@ -1282,7 +1315,7 @@ void GameMenu::loadSave()
     m_battle->setWeaponProfiles(weapons);
 
     if (ShipLibraryRepository::migrate()) {
-        const QList<ShipClass> library = ShipLibraryRepository::all();
+        const QList<ShipClass> library = ModLoader::instance().merged(ShipLibraryRepository::all());
         if (!library.isEmpty()) {
             m_library = library;
             m_battle->setShipClasses(m_library);
@@ -1429,6 +1462,16 @@ void GameMenu::simulate()
     for (const Interior::Compartment &c : m_interior.compartments())
         alert = alert || c.fire > 0.3f;
     m_battle->setRedAlert(alert);
+    // Alarms when a new fire breaks out or boarders come aboard
+    int fires = 0;
+    for (const Interior::Compartment &c : m_interior.compartments())
+        fires += c.fire > 0.0f ? 1 : 0;
+    if (m_sound && fires > m_lastFires)
+        m_sound->play(SoundCue::AlertFire, {}, 0.0f);
+    if (m_sound && m_interior.boarders() > m_lastBoarders)
+        m_sound->play(SoundCue::AlertBoarders, {}, 0.0f);
+    m_lastFires = fires;
+    m_lastBoarders = m_interior.boarders();
     // Statistics of the interior
     int opened = 0;
     for (const Interior::Compartment &c : m_interior.compartments())

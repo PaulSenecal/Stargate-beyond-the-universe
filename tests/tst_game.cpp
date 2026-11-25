@@ -20,6 +20,7 @@
 #include "src/core/balance.h"
 #include "src/core/gameconfig.h"
 #include "src/core/campaignlife.h"
+#include "src/core/modloader.h"
 #include "src/core/interior.h"
 #include "src/core/questsystem.h"
 #include "src/db/databasemanager.h"
@@ -1487,6 +1488,76 @@ private slots:
 };
 
 // ================================================================
+//  Mods: JSON files with ships, events and settings
+// ================================================================
+
+class ModTest : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void exampleModLoads()
+    {
+        QTemporaryDir dir;
+        QVERIFY(QFile::copy(EXAMPLE_MOD, dir.filePath("example.json")));
+        QFile broken(dir.filePath("broken.json"));
+        QVERIFY(broken.open(QIODevice::WriteOnly));
+        broken.write("{ not json");
+        broken.close();
+        ModLoader &mods = ModLoader::instance();
+        mods.load(dir.path());
+        QCOMPARE(mods.loaded().size(), 1);
+        QCOMPARE(mods.errors().size(), 1);                  // the broken file, the game goes on
+        QCOMPARE(mods.ships().size(), 2);
+        QCOMPARE(mods.events().size(), 1);
+        QCOMPARE(mods.config().value("shipHullScale").toDouble(), 1.2);
+
+        // Ships join the library; a launch payload exists
+        const QList<ShipClass> library = mods.merged(ShipClass::fallbackRoster());
+        QCOMPARE(library.size(), 4);
+        const auto warship = std::find_if(library.begin(), library.end(),
+                                          [](const ShipClass &c) { return c.name == "Aschen Warship"; });
+        QVERIFY(warship != library.end() && warship->isMothership() && warship->hostile);
+        QCOMPARE(warship->attacks.last().payload, QStringLiteral("Aschen Interceptor"));
+
+        // The event plays like the built-in ones
+        CampaignLife life;
+        life.setGlobalStore(false);
+        const ModLoader::Event &e = mods.events().first();
+        life.addCustomChoice(e.id, e.title, e.text, e.options, e.outcomes);
+        QVERIFY(life.startChoice("travellers"));
+        Outcome o;
+        QVERIFY(life.choose(0, &o));
+        QCOMPARE(o.tone, 1);
+        QCOMPARE(o.resources.size(), 2);
+        mods.load(dir.filePath("missing"));                 // nothing there: no mod
+        QVERIFY(mods.loaded().isEmpty());
+    }
+
+    void badShipsAreRejected()
+    {
+        ShipClass ship;
+        QString error;
+        QVERIFY(!ModLoader::parseShip(QJsonObject{{"name", "X"}}, &ship, &error));      // no faction
+        QVERIFY(!ModLoader::parseShip(QJsonObject{{"name", "X"}, {"faction", "Y"},
+                                                  {"attacks", QJsonArray{QJsonObject{{"kind", "laser"}}}}},
+                                      &ship, &error));
+        QVERIFY(error.contains("laser"));
+    }
+
+    void configOverrides()
+    {
+        QTemporaryDir dir;
+        GameConfig::instance().setPath(dir.filePath("config.json"));
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Normal);
+        GameConfig::instance().applyOverrides(QJsonObject{{"shipHullScale", 3.0}, {"damageToPlayer", -5.0}});
+        QCOMPARE(gameConfig().shipHullScale, 3.0f);
+        QCOMPARE(gameConfig().damageToPlayer, 0.0f);         // clamped
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty::Normal);
+    }
+};
+
+// ================================================================
 
 int main(int argc, char *argv[])
 {
@@ -1518,6 +1589,10 @@ int main(int argc, char *argv[])
     }
     {
         CampaignLifeTest t;
+        failures += QTest::qExec(&t, argc, argv);
+    }
+    {
+        ModTest t;
         failures += QTest::qExec(&t, argc, argv);
     }
     return failures;

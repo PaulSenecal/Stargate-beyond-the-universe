@@ -1,6 +1,7 @@
 #include "conquestscreen.h"
 #include "src/core/balance.h"
 #include "src/core/gameconfig.h"
+#include "src/core/modloader.h"
 
 #include <QDir>
 #include <QEvent>
@@ -22,6 +23,7 @@
 #include "galaxymapwidget.h"
 #include "src/Menu/gamemenu/commandconsole.h"
 #include "src/Menu/gamemenu/radarwidget.h"
+#include "src/Menu/gamemenu/replaydialog.h"
 #include "src/Menu/gamemenu/shipstatuswidget.h"
 #include "src/Menu/gamemenu/weaponstatuswidget.h"
 #include "src/Menu/pause/pausemenu.h"
@@ -127,7 +129,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     // --- Battle view: no survival waves, fleets come from the planets
     m_battle->setAutoWaves(false);
     if (ShipLibraryRepository::migrate()) {
-        const QList<ShipClass> library = ShipLibraryRepository::all();
+        const QList<ShipClass> library = ModLoader::instance().merged(ShipLibraryRepository::all());
         if (!library.isEmpty())
             m_battle->setShipClasses(library);
     }
@@ -182,7 +184,7 @@ ConquestScreen::ConquestScreen(SoundSystem *sound, const ConquestGame::Setup &se
     m_console->setCompletions({"help", "goto", "planets", "status", "info", "fortify", "repair", "hud", "fleets",
                                "send", "build", "fighter", "mothership", "engage", "research", "ally", "break",
                                "diplomacy", "launch", "drones", "turrets", "railguns", "power", "attack", "target",
-                               "missiles", "evade", "spy", "sabotage",
+                               "missiles", "evade", "spy", "sabotage", "replay",
                                "maintower", "pulseweapon", "secondarytower", "shield", "scan", "menu", "clear"});
     connect(m_console, &CommandConsole::commandEntered, this, &ConquestScreen::onCommand);
 
@@ -643,6 +645,17 @@ void ConquestScreen::onCommand(const QString &command)
         m_battle->fireDrones(arg.isEmpty() ? -1 : arg.toInt() - 1);
     } else if (name == "launch") {
         m_battle->launchFighters(arg.isEmpty() ? -1 : std::max(1, arg.toInt()));
+    } else if (name == "replay") {
+        if (m_battle->lastReplay().isEmpty()) {
+            warn(tr("No battle to replay yet"));
+        } else {
+            auto *dialog = findChild<ReplayDialog *>();
+            if (!dialog)
+                dialog = new ReplayDialog(this);
+            dialog->setReplay(m_battle->lastReplay(), m_battle->lastReplayFaction());
+            dialog->show();
+            dialog->raise();
+        }
     } else if (name == "spy") {
         const int id = planetArg();
         QStringList report;
@@ -747,6 +760,7 @@ void ConquestScreen::showHelp()
         tr("Gate teams (%1 lanes from your worlds): spy <planet> (%2 naquadah), sabotage yard|defense|mine <planet> (%3)")
             .arg(Balance::kGateRange).arg(Balance::kSpyCost).arg(Balance::kSabotageCost),
         tr("Galactic events may strike anyone: starving Wraith, plague, Ascended gifts, hyperspace storms"),
+        tr("replay: watch the last 3D battle again from above"),
         tr("Display: hud on|off (radar, ship and weapon panels), or the HUD button"),
         tr("Neutral worlds join you after a stay in orbit; enemy worlds are taken by destroying their fleet."),
         tr("Win by taking every planet of the enemy factions. Menu: Esc or 'menu'."),

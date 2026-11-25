@@ -90,6 +90,17 @@ struct WeaponReadiness {
     float ftlCountdown = -1;            // seconds before the FTL jump, -1 = none
 };
 
+// One moment of a recorded battle, seen from above (world x, z)
+struct ReplayFrame {
+    struct Ship { QPointF pos; QPointF facing; bool mothership; int side; float health; };  // side: 0 you, 1 enemy, 2 ally
+    struct Shot { QPointF pos; bool friendly; bool missile; bool beam; };
+    float time = 0;
+    float hull = 100, shield = 100;
+    QList<Ship> ships;
+    QList<Shot> shots;
+    QStringList events;         // log lines of that moment
+};
+
 // Statistics of one battle (summary at the end, achievements)
 struct BattleStats {
     float seconds = 0;
@@ -167,6 +178,9 @@ public:
     // Fighters launched by order before a jump take off again after it
     void relaunchAfterJump();
     const BattleStats &battleStats() const { return m_stats; }
+    // Replay of the last finished battle (10 frames per second)
+    const QList<ReplayFrame> &lastReplay() const { return m_lastReplay; }
+    QString lastReplayFaction() const { return m_lastReplayFaction; }
 
     // --- Interior of the ship (campaign)
     void setPowerLoss(int power) { m_powerLoss = std::max(0, power); }  // leaking conduits
@@ -609,6 +623,11 @@ private:
     float m_accuracyBonus = 1.0f;
     bool m_externalFires = false;
     bool m_redAlert = false;
+    QList<ReplayFrame> m_replay, m_lastReplay;
+    QString m_lastReplayFaction;
+    float m_replayClock = 0;
+    QStringList m_replayEvents;
+    void recordFrame();
     bool m_observing = false;
     float m_shake = 0;                      // camera shake after heavy hits
     float m_shedLogged = -100;

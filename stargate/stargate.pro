@@ -27,6 +27,7 @@ SOURCES += \
     src/Menu/gamemenu/routemapwidget.cpp \
     src/Menu/gamemenu/shiplibrarydialog.cpp \
     src/Menu/gamemenu/shipplandialog.cpp \
+    src/Menu/gamemenu/replaydialog.cpp \
     src/Menu/gamemenu/shipstatuswidget.cpp \
     src/Menu/gamemenu/weaponstatuswidget.cpp \
     src/Menu/mainmenu/titlescreen.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
     src/core/destinystate.cpp \
     src/core/campaignlife.cpp \
     src/core/gameconfig.cpp \
+    src/core/modloader.cpp \
     src/core/interior.cpp \
     src/core/questsystem.cpp \
     src/db/databasemanager.cpp \
@@ -78,6 +80,7 @@ HEADERS += \
     src/Menu/gamemenu/routemapwidget.h \
     src/Menu/gamemenu/shiplibrarydialog.h \
     src/Menu/gamemenu/shipplandialog.h \
+    src/Menu/gamemenu/replaydialog.h \
     src/Menu/gamemenu/shipstatuswidget.h \
     src/Menu/gamemenu/weaponstatuswidget.h \
     src/Menu/mainmenu/titlescreen.h \
@@ -99,6 +102,7 @@ HEADERS += \
     src/core/assets.h \
     src/core/balance.h \
     src/core/gameconfig.h \
+    src/core/modloader.h \
     src/core/campaignlife.h \
     src/core/interior.h \
     src/Menu/uipalette.h \

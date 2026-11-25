@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "src/Menu/setting/settingspanel.h"
+#include "src/core/gameconfig.h"
 #include "src/core/language.h"
 #include "src/db/databasemanager.h"
 
@@ -21,6 +22,9 @@ int main(int argc, char *argv[])
 
     // Interface language: saved choice, else the system language
     Language::apply(Language::current());
+
+    // Difficulty, game speed, accessibility: config.json next to the saves
+    GameConfig::instance().load();
 
     // Player save database (copied from the template on first launch).
     // The game still runs without it, with default values.

@@ -1,5 +1,6 @@
 #include "saverepository.h"
 
+#include <QJsonDocument>
 #include <QStringList>
 #include <QVariant>
 #include <QtMath>
@@ -8,7 +9,8 @@
 
 bool SaveRepository::ensureSchema()
 {
-    return DatabaseManager::instance().exec(
+    DatabaseManager &db = DatabaseManager::instance();
+    const bool ok = db.exec(
         "CREATE TABLE IF NOT EXISTS Session_State ("
         "  session_id     INTEGER PRIMARY KEY REFERENCES Session(id),"
         "  route_index    INTEGER NOT NULL DEFAULT 0,"
@@ -25,6 +27,15 @@ bool SaveRepository::ensureSchema()
         "  shield_on      BOOLEAN NOT NULL DEFAULT 1,"
         "  updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP"
         ")");
+    if (!ok)
+        return false;
+    // Column added later: JSON of the newer game systems
+    QSqlQuery columns = db.query("PRAGMA table_info(Session_State)");
+    bool hasExtra = false;
+    if (columns.exec())
+        while (columns.next())
+            hasExtra = hasExtra || columns.value(1).toString() == QLatin1String("extra");
+    return hasExtra || db.exec("ALTER TABLE Session_State ADD COLUMN extra TEXT NOT NULL DEFAULT '{}'");
 }
 
 int SaveRepository::autosaveSession(int shipId)
@@ -65,7 +76,8 @@ std::optional<GameSave> SaveRepository::load(int sessionId)
 {
     QSqlQuery q = DatabaseManager::instance().query(
         "SELECT st.route_index, se.game_time, st.crew, st.power, st.ftl_charge, st.gate_open, "
-        "       st.gate_remaining, st.gate_total, st.team_planet, st.collected, st.hull, st.shield, st.shield_on "
+        "       st.gate_remaining, st.gate_total, st.team_planet, st.collected, st.hull, st.shield, st.shield_on, "
+        "       st.extra "
         "FROM Session_State st JOIN Session se ON se.id = st.session_id "
         "WHERE st.session_id = :session");
     q.bindValue(":session", sessionId);
@@ -87,6 +99,7 @@ std::optional<GameSave> SaveRepository::load(int sessionId)
     s.hull = q.value(10).toFloat();
     s.shield = q.value(11).toFloat();
     s.shieldOn = q.value(12).toBool();
+    s.extra = QJsonDocument::fromJson(q.value(13).toString().toUtf8()).object();
     return s;
 }
 
@@ -108,14 +121,15 @@ bool SaveRepository::save(int sessionId, const GameSave &s, const QString &galax
 
     QSqlQuery state = db.query(
         "INSERT INTO Session_State (session_id, route_index, crew, power, ftl_charge, gate_open, "
-        "  gate_remaining, gate_total, team_planet, collected, hull, shield, shield_on, updated_at) "
+        "  gate_remaining, gate_total, team_planet, collected, hull, shield, shield_on, extra, updated_at) "
         "VALUES (:session, :index, :crew, :power, :ftl, :gateOpen, :gateRemaining, :gateTotal, "
-        "  :team, :collected, :hull, :shield, :shieldOn, CURRENT_TIMESTAMP) "
+        "  :team, :collected, :hull, :shield, :shieldOn, :extra, CURRENT_TIMESTAMP) "
         "ON CONFLICT (session_id) DO UPDATE SET route_index = excluded.route_index, crew = excluded.crew, "
         "  power = excluded.power, ftl_charge = excluded.ftl_charge, gate_open = excluded.gate_open, "
         "  gate_remaining = excluded.gate_remaining, gate_total = excluded.gate_total, "
         "  team_planet = excluded.team_planet, collected = excluded.collected, hull = excluded.hull, "
-        "  shield = excluded.shield, shield_on = excluded.shield_on, updated_at = CURRENT_TIMESTAMP");
+        "  shield = excluded.shield, shield_on = excluded.shield_on, extra = excluded.extra, "
+        "  updated_at = CURRENT_TIMESTAMP");
     state.bindValue(":session", sessionId);
     state.bindValue(":index", s.routeIndex);
     state.bindValue(":crew", s.crew);
@@ -130,6 +144,7 @@ bool SaveRepository::save(int sessionId, const GameSave &s, const QString &galax
     state.bindValue(":hull", double(s.hull));
     state.bindValue(":shield", double(s.shield));
     state.bindValue(":shieldOn", s.shieldOn);
+    state.bindValue(":extra", QString::fromUtf8(QJsonDocument(s.extra).toJson(QJsonDocument::Compact)));
 
     QSqlQuery slot = db.query(
         "UPDATE Save_Slot SET last_saved_at = CURRENT_TIMESTAMP "

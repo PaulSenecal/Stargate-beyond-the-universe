@@ -73,6 +73,11 @@ public:
     // --- Simulation
     void tick(double hours);
     void changeCrew(int delta);
+    // Energy from outside (dive into a star…), clamped to 0..1
+    void addPower(double delta);
+    void addFtlCharge(double delta);
+    // Some systems have a star the Destiny can dive into to recharge
+    bool hasUsableStar() const;
     const RouteState &state() const { return m_state; }
 
     // --- Save / restore

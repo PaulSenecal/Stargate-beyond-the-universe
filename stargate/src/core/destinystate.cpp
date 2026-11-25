@@ -39,6 +39,17 @@ bool DestinyState::load(const QString &username)
                 ResourceRepository::addByName(m_shipId, "water", 250 - water);
         }
     }
+    if (m_shipId >= 0) {
+        // Ships created before the sensors: install them
+        DatabaseManager &db = DatabaseManager::instance();
+        QSqlQuery install = db.query(
+            "INSERT INTO Component_Ship (component_id, ship_id, current_hp, status) "
+            "SELECT c.id, :ship, c.max_hp, 'OPERATIONAL' FROM Component c WHERE c.name = 'Sensor Array' "
+            "AND NOT EXISTS (SELECT 1 FROM Component_Ship cs WHERE cs.ship_id = :ship2 AND cs.component_id = c.id)");
+        install.bindValue(":ship", m_shipId);
+        install.bindValue(":ship2", m_shipId);
+        install.exec();
+    }
     m_components = m_shipId >= 0 ? ShipRepository::components(m_shipId) : QList<ShipComponent>();
     return m_shipId >= 0;
 }
@@ -53,6 +64,15 @@ void DestinyState::migrateSupplies()
     db.exec("UPDATE Component SET reach = 22 WHERE name = 'Railgun' AND reach IS NULL");
     db.exec("UPDATE Component SET reach = 45 WHERE name = 'Energy Cannon' AND reach IS NULL");
     db.exec("UPDATE Component SET reach = 60 WHERE name = 'Missile Bay' AND reach IS NULL");
+    // Sensors (aim of the weapons), added later: component and repair cost
+    QSqlQuery has = db.query("SELECT COUNT(*) FROM Component WHERE name = 'Sensor Array'");
+    if (has.exec() && has.next() && has.value(0).toInt() == 0) {
+        db.exec("INSERT INTO Component (name, category, max_hp, energy_cost) VALUES ('Sensor Array', 'SYSTEM', 120, 10)");
+        db.exec("INSERT OR IGNORE INTO Component_Repair_Cost (component_id, resource_id, quantity) "
+                "SELECT c.id, r.id, 3 FROM Component c, Resource r WHERE c.name = 'Sensor Array' AND r.name = 'minerals'");
+        db.exec("INSERT OR IGNORE INTO Component_Repair_Cost (component_id, resource_id, quantity) "
+                "SELECT c.id, r.id, 1 FROM Component c, Resource r WHERE c.name = 'Sensor Array' AND r.name = 'crystal'");
+    }
 }
 
 QList<int> DestinyState::componentIndexes(const QString &key) const
@@ -63,6 +83,7 @@ QList<int> DestinyState::componentIndexes(const QString &key) const
         const bool match = (key == "engines" && c.name == "Sublight Engine")
                         || (key == "shields" && c.name == "Shield Generator")
                         || (key == "lifesupport" && c.name == "Life Support")
+                        || (key == "sensors" && c.name == "Sensor Array")
                         || (key == "weapons" && c.category == "WEAPON");
         if (match)
             indexes.append(i);

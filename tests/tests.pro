@@ -20,6 +20,7 @@ SOURCES += \
     $$GAME/src/conquest/conquestgame.cpp \
     $$GAME/src/core/commandmanager.cpp \
     $$GAME/src/core/destinystate.cpp \
+    $$GAME/src/core/gameconfig.cpp \
     $$GAME/src/core/questsystem.cpp \
     $$GAME/src/db/databasemanager.cpp \
     $$GAME/src/db/repositories/componentrepository.cpp \

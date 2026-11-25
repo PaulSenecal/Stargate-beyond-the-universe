@@ -101,6 +101,22 @@ bool DestinyRoute::canJump(QString *reason) const
     return why.isEmpty();
 }
 
+void DestinyRoute::addPower(double delta)
+{
+    m_state.power = std::clamp(m_state.power + delta, 0.05, 1.0);
+}
+
+void DestinyRoute::addFtlCharge(double delta)
+{
+    m_state.ftlCharge = std::clamp(m_state.ftlCharge + delta, 0.0, 1.0);
+}
+
+bool DestinyRoute::hasUsableStar() const
+{
+    const RouteStop &stop = currentStop();
+    return (stop.galaxy * 131 + stop.sequence * 17) % 10 < 4;   // 4 systems out of 10
+}
+
 bool DestinyRoute::jump(GameEvent *event, QString *reason)
 {
     if (!canJump(reason))

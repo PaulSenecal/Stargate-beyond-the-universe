@@ -47,6 +47,11 @@ private:
     QComboBox *m_language = nullptr;
     QComboBox *m_textures = nullptr;
     QCheckBox *m_assist = nullptr;
+    QComboBox *m_difficulty = nullptr;
+    QSlider *m_speed = nullptr;
+    QLabel *m_speedValue = nullptr;
+    QComboBox *m_textSize = nullptr;
+    QCheckBox *m_colorBlind = nullptr;
     QLabel *m_soundStatus = nullptr;
     int m_lastVolume = 70;
     int m_lastMusic = 40;

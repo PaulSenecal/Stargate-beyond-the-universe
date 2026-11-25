@@ -2,6 +2,8 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -12,6 +14,7 @@
 
 #include "src/audio/musicplayer.h"
 #include "src/audio/soundsystem.h"
+#include "src/core/gameconfig.h"
 #include "src/core/language.h"
 #include "src/render/battleview.h"
 #include "src/render/ddstexture.h"
@@ -88,6 +91,66 @@ SettingsPanel::SettingsPanel(SoundSystem *sound, QWidget *parent)
     grid->addWidget(m_assist, 10, 0, 1, 2);
     connect(m_assist, &QCheckBox::toggled, this, [](bool on) { BattleView::setAssistSetting(on); });
 
+    // --- Gameplay: difficulty and speed (saved in config.json, see GameConfig)
+    auto *difficultyTitle = new QLabel(tr("Difficulty"), this);
+    difficultyTitle->setObjectName("field");
+    m_difficulty = new QComboBox(this);
+    m_difficulty->addItem(tr("Easy - long battles, less damage"), int(GameConfig::Difficulty::Easy));
+    m_difficulty->addItem(tr("Normal"), int(GameConfig::Difficulty::Normal));
+    m_difficulty->addItem(tr("Hard"), int(GameConfig::Difficulty::Hard));
+    m_difficulty->addItem(tr("Custom (config file)"), int(GameConfig::Difficulty::Custom));
+    auto *openConfig = new QPushButton(tr("Config file"), this);
+    openConfig->setToolTip(tr("Opens config.json: with the Custom difficulty, every battle value can be tuned there"));
+    auto *difficultyRow = new QHBoxLayout;
+    difficultyRow->addWidget(difficultyTitle);
+    difficultyRow->addWidget(m_difficulty);
+    difficultyRow->addWidget(openConfig);
+    difficultyRow->addStretch(1);
+    grid->addLayout(difficultyRow, 11, 0, 1, 2);
+    auto *speedTitle = new QLabel(tr("Game speed (lower = more time to type orders)"), this);
+    speedTitle->setObjectName("field");
+    m_speed = new QSlider(Qt::Horizontal, this);
+    m_speed->setRange(25, 200);
+    m_speed->setPageStep(25);
+    m_speedValue = new QLabel(this);
+    grid->addWidget(speedTitle, 12, 0, 1, 2);
+    grid->addWidget(m_speed, 13, 0);
+    grid->addWidget(m_speedValue, 13, 1);
+
+    // --- Accessibility
+    auto *textTitle = new QLabel(tr("Console text size"), this);
+    textTitle->setObjectName("field");
+    m_textSize = new QComboBox(this);
+    m_textSize->addItem(tr("Small"), 0.85);
+    m_textSize->addItem(tr("Normal"), 1.0);
+    m_textSize->addItem(tr("Large"), 1.25);
+    m_textSize->addItem(tr("Very large"), 1.5);
+    m_textSize->setToolTip(tr("Applied to the console when a game starts"));
+    auto *textRow = new QHBoxLayout;
+    textRow->addWidget(textTitle);
+    textRow->addWidget(m_textSize);
+    textRow->addStretch(1);
+    grid->addLayout(textRow, 14, 0, 1, 2);
+    m_colorBlind = new QCheckBox(tr("Colour-blind palette (blue / orange instead of green / red)"), this);
+    grid->addWidget(m_colorBlind, 15, 0, 1, 2);
+
+    connect(m_difficulty, &QComboBox::currentIndexChanged, this, [this] {
+        GameConfig::instance().setDifficulty(GameConfig::Difficulty(m_difficulty->currentData().toInt()));
+        refresh();
+    });
+    connect(openConfig, &QPushButton::clicked, this, [] {
+        GameConfig::instance().save();
+        QDesktopServices::openUrl(QUrl::fromLocalFile(GameConfig::instance().path()));
+    });
+    connect(m_speed, &QSlider::valueChanged, this, [this](int value) {
+        GameConfig::instance().setGameSpeed(float(value) / 100.0f);
+        m_speedValue->setText(QStringLiteral("%1%").arg(value));
+    });
+    connect(m_textSize, &QComboBox::currentIndexChanged, this, [this] {
+        GameConfig::instance().setTextScale(float(m_textSize->currentData().toDouble()));
+    });
+    connect(m_colorBlind, &QCheckBox::toggled, this, [](bool on) { GameConfig::instance().setColorBlind(on); });
+
     auto *back = new QPushButton(tr("Back"), this);
 
     auto *layout = new QVBoxLayout(this);
@@ -145,7 +208,18 @@ void SettingsPanel::refresh()
     MusicPlayer *music = m_sound ? m_sound->music() : nullptr;
     const int musicVolume = music ? music->volume() : 0;
     const QSignalBlocker blockVolume(m_volume), blockMute(m_mute), blockScreen(m_fullScreen),
-        blockLanguage(m_language), blockMusic(m_music), blockTextures(m_textures), blockAssist(m_assist);
+        blockLanguage(m_language), blockMusic(m_music), blockTextures(m_textures), blockAssist(m_assist),
+        blockDifficulty(m_difficulty), blockSpeed(m_speed), blockText(m_textSize), blockColor(m_colorBlind);
+    const GameConfig::Values &config = GameConfig::instance().values();
+    m_difficulty->setCurrentIndex(std::max(0, m_difficulty->findData(int(config.difficulty))));
+    m_speed->setValue(qRound(config.gameSpeed * 100.0f));
+    m_speedValue->setText(QStringLiteral("%1%").arg(qRound(config.gameSpeed * 100.0f)));
+    int textIndex = 1;
+    for (int i = 0; i < m_textSize->count(); ++i)
+        if (std::abs(m_textSize->itemData(i).toDouble() - config.textScale) < 0.05)
+            textIndex = i;
+    m_textSize->setCurrentIndex(textIndex);
+    m_colorBlind->setChecked(config.colorBlind);
     m_assist->setChecked(BattleView::assistSetting());
     m_textures->setCurrentIndex(std::max(0, m_textures->findData(DdsTexture::qualitySetting())));
     if (musicVolume > 0)

@@ -22,6 +22,7 @@
 //      shields     -> Shield Generator
 //      weapons     -> every WEAPON component
 //      lifesupport -> Life Support
+//      sensors     -> Sensor Array (added to older saves)
 //  The hull has no table yet: its repair uses a fixed cost.
 // ================================================================
 

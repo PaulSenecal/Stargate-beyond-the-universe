@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QPointF>
 #include <functional>
+#include <memory>
 
 class Interior;
 class QLabel;
@@ -58,7 +59,9 @@ class ShipPlanDialog : public QDialog
 
 public:
     using HealthProvider = std::function<QHash<QString, float>()>;
-    ShipPlanDialog(const Interior *interior, HealthProvider health, QWidget *parent = nullptr);
+    // The interior is shared: an enemy ship's plan stays readable after it is destroyed
+    ShipPlanDialog(std::shared_ptr<const Interior> interior, HealthProvider health, const QString &title,
+                   QWidget *parent = nullptr);
 
     // Details of a compartment, also used by the console
     static QStringList describe(const Interior &interior, int index);
@@ -66,7 +69,7 @@ public:
 private:
     void refresh();
 
-    const Interior *m_interior = nullptr;
+    std::shared_ptr<const Interior> m_interior;
     HealthProvider m_healthProvider;
     ShipPlanView *m_view = nullptr;
     QLabel *m_details = nullptr;

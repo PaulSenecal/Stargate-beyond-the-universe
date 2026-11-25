@@ -976,6 +976,10 @@ void ConquestGame::tick(double seconds)
         m_eventClock -= kEventPeriod;
         factionEvents();
     }
+    // Damaged fleets are repaired on their own worlds (faster at a shipyard)
+    for (Fleet &f : m_fleets)
+        if (f.damage > 0.0 && !f.moving() && m_planets[f.at].owner == f.owner)
+            f.damage = std::max(0.0, f.damage - (m_planets[f.at].hasShipyard() ? 0.02 : 0.006) * seconds);
     produce(seconds);
     moveFleets(seconds);
     mergeFleets();
@@ -1173,10 +1177,69 @@ void ConquestGame::battleWon()
     checkVictory();
 }
 
-void ConquestGame::battleLost()
+double ConquestGame::battleDamage() const
+{
+    double damage = 0;
+    if (!inBattle())
+        return 0;
+    for (const Fleet &f : m_fleets)
+        if (f.owner == m_battleOwner && f.at == m_battlePlanet)
+            damage = std::max(damage, f.damage);
+    return damage;
+}
+
+void ConquestGame::addCapturedShip()
+{
+    const int at = m_at;
+    auto it = std::find_if(m_fleets.begin(), m_fleets.end(),
+                           [this, at](const Fleet &f) { return f.owner == m_player && f.at == at && !f.moving(); });
+    if (it != m_fleets.end()) {
+        ++it->motherships;
+    } else {
+        Fleet fleet;
+        fleet.id = m_nextFleetId++;
+        fleet.owner = m_player;
+        fleet.motherships = 1;
+        fleet.at = at;
+        fleet.damage = 0.5;                 // taken in a fight
+        fleet.think = 2.0;
+        m_fleets << fleet;
+    }
+    emit message(tr("The captured mothership joins your fleet at %1").arg(m_planets[at].name), Tone::Success);
+}
+
+bool ConquestGame::spend(double naquadah, double trinium, QString *missing)
+{
+    Faction &me = m_factions[m_player];
+    QStringList lacking;
+    if (me.naquadah < naquadah)
+        lacking << tr("%1 naquadah (have %2)").arg(qRound(naquadah)).arg(qRound(me.naquadah));
+    if (me.trinium < trinium)
+        lacking << tr("%1 trinium (have %2)").arg(qRound(trinium)).arg(qRound(me.trinium));
+    if (!lacking.isEmpty()) {
+        if (missing)
+            *missing = lacking.join(", ");
+        return false;
+    }
+    me.naquadah -= naquadah;
+    me.trinium -= trinium;
+    return true;
+}
+
+void ConquestGame::gain(double naquadah, double trinium)
+{
+    m_factions[m_player].naquadah += std::max(0.0, naquadah);
+    m_factions[m_player].trinium += std::max(0.0, trinium);
+}
+
+void ConquestGame::battleLost(double enemyDamage)
 {
     if (!inBattle())
         return;
+    // The enemy fleets keep the damage they took
+    for (Fleet &f : m_fleets)
+        if (f.owner == m_battleOwner && f.at == m_battlePlanet)
+            f.damage = std::clamp(std::max(f.damage, enemyDamage), 0.0, 0.9);
     const QString planet = m_planets[m_battlePlanet].name;
     m_battlePlanet = m_battleOwner = -1;
     m_route.clear();
@@ -2111,7 +2174,8 @@ QJsonObject ConquestGame::toJson() const
             route.append(r);
         fleets.append(QJsonObject{{"id", f.id}, {"owner", f.owner}, {"motherships", f.motherships},
                                   {"fighters", f.fighters}, {"at", f.at}, {"route", route}, {"leg", f.leg},
-                                  {"target", f.target}, {"ordered", f.ordered}, {"think", f.think}});
+                                  {"target", f.target}, {"ordered", f.ordered}, {"think", f.think},
+                                  {"damage", f.damage}});
     }
     QJsonArray route;
     for (int r : m_route)
@@ -2215,6 +2279,7 @@ bool ConquestGame::fromJson(const QJsonObject &json)
         f.target = valid(o.value("target").toInt(-1)) ? o.value("target").toInt() : -1;
         f.ordered = o.value("ordered").toBool();
         f.think = o.value("think").toDouble();
+        f.damage = std::clamp(o.value("damage").toDouble(), 0.0, 0.9);
         nextFleet = std::max(nextFleet, f.id + 1);
         fleets << f;
     }

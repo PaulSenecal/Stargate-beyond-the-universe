@@ -270,16 +270,17 @@ void ShipPlanView::mouseReleaseEvent(QMouseEvent *event)
 //  ShipPlanDialog
 // ================================================================
 
-ShipPlanDialog::ShipPlanDialog(const Interior *interior, HealthProvider health, QWidget *parent)
+ShipPlanDialog::ShipPlanDialog(std::shared_ptr<const Interior> interior, HealthProvider health, const QString &title,
+                               QWidget *parent)
     : QDialog(parent)
-    , m_interior(interior)
+    , m_interior(std::move(interior))
     , m_healthProvider(std::move(health))
-    , m_view(new ShipPlanView(interior, this))
+    , m_view(new ShipPlanView(m_interior.get(), this))
     , m_details(new QLabel(this))
     , m_summary(new QLabel(this))
     , m_timer(new QTimer(this))
 {
-    setWindowTitle(tr("Destiny - ship plan"));
+    setWindowTitle(title.isEmpty() ? tr("Destiny - ship plan") : title);
     setStyleSheet("QDialog { background: #0e1014; } QLabel { color: #e8e2c8; }");
     resize(1100, 640);
     QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);

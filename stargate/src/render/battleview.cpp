@@ -1254,6 +1254,31 @@ void BattleView::updateAlly(Enemy &a, float dt)
 {
     a.hitFlash = std::max(0.0f, a.hitFlash - dt * 4.0f);
     regenShield(a, dt);
+    // Shuttle sent to latch onto an enemy ship (a way in for a team)
+    if (a.latchedOn > 0) {
+        const Enemy *target = findEnemy(a.latchedOn);
+        if (!target || !target->alive) {
+            a.latchedOn = -1;               // nothing left to latch on: back to normal duty
+        } else {
+            const QVector3D spot = target->pos + QVector3D(0.0f, target->radius * 0.5f, 0.0f);
+            const QVector3D toSpot = spot - a.pos;
+            const float distance = toSpot.length();
+            if (a.latchTime > 0.0f || distance < 2.0f) {
+                if (a.latchTime <= 0.0f)
+                    emit logMessage(tr("%1 latched onto T%2 - 'board %2' or 'sabotage %2 <room>'")
+                                        .arg(className(a)).arg(indexOfId(target->id) + 1),
+                                    LogLevel::Success);
+                a.latchTime += dt;
+                a.pos = spot;
+                a.vel = QVector3D();
+            } else {
+                a.vel = toSpot / distance * kAllyFighterSpeed;
+                a.pos += a.vel * dt;
+                a.facing = toSpot / distance;
+            }
+            return;
+        }
+    }
     Enemy *target = findEnemy(a.targetId);
     if (!target || !target->alive) {
         target = nearestEnemy(a.pos, a.cls == EnemyClass::Fighter);
@@ -1461,13 +1486,13 @@ bool BattleView::aimAt(int enemyIndex, const QString &system)
     m_aimSystem = index;
     const Enemy *e = findEnemy(m_lockedId);
     if (index < 0)
-        emit logMessage(tr("Aiming at the hull of T%1").arg(enemyIndex + 1), LogLevel::Info);
+        emit logMessage(tr("Aiming at the hull of T%1").arg(enemyIndex + 1), LogLevel::Success);
     else
         emit logMessage(tr("Aiming at the %1 of T%2 (%3%) - harder to hit")
                             .arg(tr(qPrintable(enemySystems().at(index))))
                             .arg(enemyIndex + 1)
                             .arg(qRound(e->systems[index])),
-                        LogLevel::Info);
+                        LogLevel::Success);
     return true;
 }
 
@@ -1524,7 +1549,7 @@ void BattleView::setEvasion(bool on)
     m_evading = on;
     emit logMessage(on ? tr("Evasive maneuvers: enemy fire less accurate, yours too (-%1 power)").arg(kEvasionPower)
                        : tr("Evasive maneuvers stopped"),
-                    LogLevel::Info);
+                    LogLevel::Success);
 }
 
 void BattleView::repairBy(const QString &key, float amount)
@@ -1598,6 +1623,180 @@ void BattleView::setObservation(bool on)
     }
     m_observing = on;
     update();
+}
+
+// ================================================================
+//  Inside the enemy motherships
+// ================================================================
+
+QString BattleView::layoutOf(const QString &faction)
+{
+    static const QStringList known{"Goa'uld", "Lucian Alliance", "Tau'ri", "Wraith", "Asgard", "Ancients", "Ori"};
+    return known.contains(faction) ? faction : QStringLiteral("generic");
+}
+
+// The AI crew of an enemy ship: fights its fires, seals its breaches,
+// repairs its systems, defends against boarders
+void BattleView::updateEnemyInterior(Enemy &e, float seconds)
+{
+    Interior &in = *e.interior;
+    static const QStringList keys{"weapons", "shields", "engines", "hangar"};
+    for (const Interior::Compartment &c : in.compartments()) {
+        if (c.boarders > 0)
+            in.defend(c.id, nullptr);
+        if (c.vented && c.fire <= 0.0f)
+            in.setSealed(c.id, false, nullptr);
+        else if (c.fire > 0.85f && c.system.isEmpty() && c.boarders == 0)
+            in.vent(c.id, nullptr);
+        else if (c.fire > 0.0f || c.breach || c.leak)
+            in.orderRepair(c.id, nullptr);
+    }
+    for (int i = 0; i < 4; ++i)
+        if (e.systems[i] < 65.0f)
+            in.orderRepair(keys[i], nullptr);
+    if (in.freeWorkers() == 0)
+        in.rotate();
+
+    const Interior::Effects fx = in.tick(seconds, 100.0f, true);
+    for (const auto &[key, amount] : fx.systemDamage) {
+        const int i = int(keys.indexOf(key));
+        if (i >= 0)
+            damageEnemySystem(e, i, amount / 260.0f * e.maxHp);     // percent -> hull points of kSubsystemDamage
+    }
+    for (const auto &[key, amount] : fx.systemRepair) {
+        const int i = int(keys.indexOf(key));
+        if (i < 0)
+            continue;
+        const bool wasDown = e.systems[i] <= 0.0f;
+        e.systems[i] = std::min(100.0f, e.systems[i] + amount);
+        if (i == SysShields && wasDown) {
+            // Shield generator back online
+            const ShipClass &sc = classOf(e);
+            e.maxShield = float(sc.hull) * shipShieldShare(sc.faction, true) * gameConfig().shipShieldScale;
+        }
+    }
+    if (fx.hullRepair > 0.0f)
+        e.hp = std::min(e.maxHp, e.hp + e.maxHp * fx.hullRepair / 100.0f * 0.5f);
+    // Only the big events of their ship are reported
+    for (const Interior::Message &m : in.takeMessages())
+        if (m.tone >= 2 && m_time - e.lastInteriorLog > 6.0f) {
+            e.lastInteriorLog = m_time;
+            emit logMessage(tr("T%1 %2: %3").arg(indexOfId(e.id) + 1).arg(className(e)).arg(m.text), LogLevel::Success);
+        }
+}
+
+// Enemies come aboard: by teleportation when the player's shields are
+// down (Wraith culling beam, Asgard and Tau'ri beams, Nakai), by rings
+// once one of their fighters latched onto the hull (see updateEnemy)
+void BattleView::enemyBoarding(Enemy &e, float seconds)
+{
+    const QString faction = classOf(e).faction;
+    static const QStringList beams{"Wraith", "Tau'ri", "Asgard", "Nakai"};
+    if (!beams.contains(faction) || shieldProtecting() || e.systems[SysWeapons] <= 0.0f)
+        return;
+    if (randRange(0.0f, 1.0f) < 0.03f * seconds) {
+        emit logMessage(tr("T%1 %2 beams a team aboard - your shields are down!").arg(indexOfId(e.id) + 1).arg(className(e)),
+                        LogLevel::Critical);
+        emit boardingParty(2 + QRandomGenerator::global()->bounded(3), faction, QStringLiteral("beam"));
+    }
+}
+
+std::shared_ptr<Interior> BattleView::enemyInterior(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return nullptr;
+    return findEnemy(ids[enemyIndex])->interior;
+}
+
+QString BattleView::enemyClass(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    return enemyIndex >= 0 && enemyIndex < int(ids.size()) ? className(*findEnemy(ids[enemyIndex])) : QString();
+}
+
+QString BattleView::enemyFaction(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    return enemyIndex >= 0 && enemyIndex < int(ids.size()) ? classOf(*findEnemy(ids[enemyIndex])).faction : QString();
+}
+
+bool BattleView::enemyShieldDown(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return false;
+    return findEnemy(ids[enemyIndex])->shield <= 1.0f;
+}
+
+void BattleView::damageEnemyRoom(int enemyIndex, const QString &room, float damage)
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return;
+    Enemy *e = findEnemy(ids[enemyIndex]);
+    if (!e->interior)
+        return;
+    const int index = e->interior->find(room);
+    if (index < 0)
+        return;
+    const Interior::Compartment &c = e->interior->compartments()[index];
+    e->interior->damageAt(c.rect.center(), damage);
+    e->interior->startFire(index, 0.5f);
+    static const QStringList keys{"weapons", "shields", "engines", "hangar"};
+    const int system = int(keys.indexOf(c.system));
+    if (system >= 0)
+        damageEnemySystem(*e, system, damage / 260.0f * e->maxHp * 2.0f);
+}
+
+bool BattleView::dockShuttle(int enemyIndex, QString *error)
+{
+    const std::vector<int> ids = aliveIds();
+    const int classIndex = classIndexOf(m_hangarClass);
+    QString why;
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        why = tr("no contact T%1").arg(enemyIndex + 1);
+    else if (findEnemy(ids[enemyIndex])->cls != EnemyClass::Mothership)
+        why = tr("only motherships can be docked with");
+    else if (classIndex < 0 || m_hangar <= 0)
+        why = tr("no ship in the hangar");
+    else if (shuttleDocked(enemyIndex))
+        why = tr("a ship is already latched on it");
+    if (!why.isEmpty()) {
+        if (error)
+            *error = why;
+        return false;
+    }
+    Enemy &a = spawnAlly(classIndex, destinyWorld({randRange(-2.0f, 2.0f), -0.6f, randRange(-1.0f, 1.0f)}), -1);
+    a.latchedOn = ids[enemyIndex];
+    a.latchTime = 0;
+    --m_hangar;
+    emit logMessage(tr("%1 on its way to latch onto T%2 - protect it").arg(m_hangarClass).arg(enemyIndex + 1),
+                    LogLevel::Success);
+    return true;
+}
+
+bool BattleView::shuttleDocked(int enemyIndex) const
+{
+    const std::vector<int> ids = aliveIds();
+    if (enemyIndex < 0 || enemyIndex >= int(ids.size()))
+        return false;
+    for (const Enemy &a : m_allies)
+        if (a.alive && a.latchedOn == ids[enemyIndex] && a.latchTime > 0.0f)
+            return true;
+    return false;
+}
+
+float BattleView::enemyDamage() const
+{
+    float sum = 0;
+    int count = 0;
+    for (const Enemy &e : m_enemies)
+        if (e.alive && e.cls == EnemyClass::Mothership) {
+            sum += 1.0f - e.hp / e.maxHp;
+            ++count;
+        }
+    return count > 0 ? sum / float(count) : 0.0f;
 }
 
 void BattleView::setFireSpots(const QList<QVector3D> &spots)
@@ -1986,6 +2185,23 @@ BattleView::Enemy &BattleView::spawnEnemy(int classIndex, bool fromHyperspace)
         e.pos += QVector3D(e.pos.x(), 0.0f, e.pos.z()).normalized() * 35.0f;
         hyperspaceWindow(e.pos, e.cls == EnemyClass::Mothership ? 1.6f : 0.7f);
     }
+    // Motherships have an inside, run by their crew (not the automated drones)
+    if (e.cls == EnemyClass::Mothership && sc.faction != QLatin1String("Drones")) {
+        e.interior = std::make_shared<Interior>(QStringLiteral("enemy"), layoutOf(sc.faction));
+        e.interior->setCrewCount(40);
+    }
+    // A fleet that fled an earlier battle comes back hurt
+    if (m_incomingDamage > 0.0f && e.cls == EnemyClass::Mothership) {
+        e.hp = std::max(1.0f, e.hp * (1.0f - m_incomingDamage));
+        for (float &system : e.systems)
+            system *= 1.0f - 0.6f * m_incomingDamage;
+        if (e.interior)
+            for (int k = 0; k < 2; ++k) {
+                const auto &rooms = e.interior->compartments();
+                e.interior->damageAt(rooms[QRandomGenerator::global()->bounded(int(rooms.size()))].rect.center(),
+                                     60.0f * m_incomingDamage);
+            }
+    }
     m_enemies.push_back(e);
     return m_enemies.back();
 }
@@ -1994,6 +2210,50 @@ void BattleView::updateEnemy(Enemy &e, float dt)
 {
     e.hitFlash = std::max(0.0f, e.hitFlash - dt * 4.0f);
     regenShield(e, dt);
+    if (e.interior && dt > 0.0f) {
+        e.interiorClock += dt;
+        if (e.interiorClock >= 0.5f) {
+            updateEnemyInterior(e, e.interiorClock);
+            enemyBoarding(e, e.interiorClock);
+            e.interiorClock = 0;
+        }
+    }
+
+    // A fighter latched on the player's hull: its team comes aboard
+    if (e.latchedOn == 0) {
+        e.pos = destinyWorld(e.latchLocal + QVector3D(0.0f, 0.5f, 0.0f));
+        e.latchTime += dt;
+        if (e.latchTime >= 4.0f) {
+            e.latchTime = -20.0f;           // the next party later
+            emit boardingParty(2 + QRandomGenerator::global()->bounded(3), classOf(e).faction, QStringLiteral("rings"));
+        }
+        return;
+    }
+
+    // Latching run: a fighter flies onto the hull to bring a team aboard
+    if (e.latchedOn == 1) {
+        const QVector3D toTarget = destinyWorld(e.latchLocal) - e.pos;
+        const float distance = toTarget.length();
+        if (distance > 1e-3f)
+            e.facing = toTarget / distance;
+        e.pos += e.facing * std::min(distance, kDiveSpeed * 0.8f * dt);
+        if (distance <= 0.9f) {
+            e.latchedOn = 0;
+            e.latchTime = 0;
+            emit logMessage(tr("T%1 %2 latched onto the hull - boarders incoming! (railguns, 'defend <room>')")
+                                .arg(indexOfId(e.id) + 1).arg(className(e)),
+                            LogLevel::Critical);
+        }
+        return;
+    }
+    if (e.cls == EnemyClass::Fighter && dt > 0.0f && !shieldProtecting() && !e.diving
+        && layoutOf(classOf(e).faction) != QLatin1String("generic") && QStringList{"Goa'uld", "Lucian Alliance", "Ori", "Ancients"}.contains(classOf(e).faction)
+        && randRange(0.0f, 1.0f) < 0.02f * dt) {
+        e.latchedOn = 1;                    // on its way (0 once latched)
+        e.latchLocal = randomHullPoint();
+        emit logMessage(tr("T%1 %2 heads for the hull to latch on - shoot it down!").arg(indexOfId(e.id) + 1).arg(className(e)),
+                        LogLevel::Warning);
+    }
 
     // Kamikaze run: straight at the impact point, no more firing
     if (e.diving) {
@@ -2503,6 +2763,14 @@ void BattleView::hitEnemy(Enemy &e, const Projectile &p)
         damage *= kSubsystemHullShare;
     } else if (randRange(0.0f, 1.0f) < 0.25f) {
         damageEnemySystem(e, QRandomGenerator::global()->bounded(4), damage * 0.4f);
+    }
+    // Inside the ship: the room under the hit (the aimed system, or any)
+    if (e.interior && (p.aimSystem >= 0 || randRange(0.0f, 1.0f) < 0.5f)) {
+        const auto &rooms = e.interior->compartments();
+        int room = p.aimSystem >= 0 ? e.interior->compartmentOfSystem(enemySystems().at(p.aimSystem)) : -1;
+        if (room < 0)
+            room = QRandomGenerator::global()->bounded(int(rooms.size()));
+        e.interior->damageAt(rooms[room].rect.center(), damage / std::max(1.0f, e.maxHp) * 120.0f);
     }
     if (fromPlayer)
         m_stats.damageDealt += std::min(damage, std::max(0.0f, e.hp));
